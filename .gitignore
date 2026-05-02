@@ -1,19 +1,60 @@
-# Environment
-.env
-*.env
-
-# OS
-.DS_Store
-Thumbs.db
-
 # Terraform
 **/.terraform/
 *.tfstate
 *.tfstate.backup
 *.tfvars
+!environments/*.tfvars
+.terraform.lock.hcl
+terraform.tfplan
 
-# AWS CLI
+# AWS credentials - never commit
 .aws/
+*.pem
+*.key
+credentials
 
-# Logs
-*.log
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+.pytest_cache/
+
+# Node.js
+node_modules/
+npm-debug.log*
+.npm
+
+# Build artifacts
+*.zip
+*.jar
+*.war
+dist/
+build/
+.build/
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.env
+.env.*
+secrets.json
+local.settings.json
+
+# SAM
+.aws-sam/
+samconfig.toml
+
+# CDK
+cdk.out/

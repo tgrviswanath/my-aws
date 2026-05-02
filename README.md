@@ -16,7 +16,11 @@ aws-cloud/
 ├── devops/                # CI/CD, CloudFormation, Terraform
 ├── security/              # IAM, KMS, Secrets Manager, WAF
 ├── monitoring/            # CloudWatch, CloudTrail, X-Ray
-├── architecture/          # HA/DR, Microservices, Cost Optimization
+├── architecture/          # HA/DR, Microservices, Cost Optimization, System Design Case Studies
+│   ├── 01_high_availability_dr.md        High availability, fault tolerance, DR strategies
+│   ├── 02_microservices_event_driven.md  SQS, SNS, EventBridge, Step Functions
+│   ├── 03_cost_optimization.md           FinOps, Reserved Instances, Spot, lifecycle policies
+│   └── 04_system_design_case_studies.md  Netflix streaming, Twitter, Uber, e-commerce on AWS
 ├── projects/              # 5 end-to-end real-world projects
 ├── interview-prep/        # Q&A for all certification levels
 ├── labs/                  # Hands-on step-by-step exercises
@@ -103,6 +107,7 @@ brew install eksctl              # EKS cluster management
 | HA & Disaster Recovery | `architecture/01_high_availability_dr.md` | 3hr |
 | Microservices & Event-Driven | `architecture/02_microservices_event_driven.md` | 3hr |
 | Cost Optimization (FinOps) | `architecture/03_cost_optimization.md` | 2hr |
+| **System Design Case Studies** | `architecture/04_system_design_case_studies.md` | 3hr |
 | **Project**: Scalable Web App | `projects/01_scalable_webapp/` | 4hr |
 | **Project**: Serverless App | `projects/02_serverless_app/` | 4hr |
 | **Project**: Data Pipeline | `projects/04_data_pipeline/` | 3hr |
@@ -221,6 +226,26 @@ The 6 pillars every architect must know:
 4. **Performance Efficiency** — Use resources efficiently
 5. **Cost Optimization** — Avoid unnecessary costs
 6. **Sustainability** — Minimize environmental impact
+
+---
+
+## 🏗️ System Design on AWS
+
+The `10_architecture/` folder covers production-grade system design using AWS services:
+
+| File | Topics |
+|------|--------|
+| `01_high_availability_dr.md` | Multi-AZ, fault tolerance, RPO/RTO, DR strategies (pilot light, warm standby, active-active) |
+| `02_microservices_event_driven.md` | SQS, SNS, EventBridge, Step Functions, API Gateway, service mesh |
+| `03_cost_optimization.md` | FinOps, Reserved Instances, Spot, Savings Plans, S3 lifecycle, right-sizing |
+| `04_system_design_case_studies.md` | **Netflix** (video streaming), **Twitter/X** (fan-out), **Uber** (geospatial), **E-commerce** (inventory) |
+
+**System Design Interview Framework for AWS:**
+1. Clarify requirements (scale, latency, consistency, availability)
+2. Estimate scale (QPS, storage, bandwidth)
+3. High-level design (draw architecture, choose AWS services)
+4. Deep dive (schema, API, bottlenecks, failure modes)
+5. Trade-offs (why you chose each service, 10x scale considerations)
 
 ---
 
