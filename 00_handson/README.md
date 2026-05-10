@@ -8,21 +8,28 @@
 
 ```
 00_handson/
-├── 01_ec2_usecases.md          Web server, bastion host, spot batch jobs
-├── 02_s3_usecases.md           Static website, data lake, cross-account sharing
-├── 03_lambda_usecases.md       Image resize, scheduled jobs, API backend
-├── 04_rds_usecases.md          Multi-AZ setup, read replicas, RDS Proxy
-├── 05_dynamodb_usecases.md     Session store, leaderboard, e-commerce cart
-├── 06_vpc_usecases.md          3-tier network, VPC peering, private endpoints
-├── 07_iam_usecases.md          Cross-account roles, least privilege, ABAC
-├── 08_cloudwatch_usecases.md   Custom metrics, log insights, anomaly detection
-├── 09_sqs_sns_usecases.md      Order processing, fan-out, dead letter queues
-├── 10_ecs_usecases.md          Fargate web app, blue/green deploy, auto-scaling
-├── 11_cloudfront_usecases.md   CDN for SPA, signed URLs, WAF integration
-├── 12_elasticache_usecases.md  Session store, query cache, rate limiter
-├── 13_kinesis_usecases.md      Real-time analytics, log streaming, CDC
+├── 00_learning_roadmap.md        Master roadmap: phases, companion skills, daily routine
+├── 01_ec2_usecases.md            Web server, bastion host, spot batch jobs
+├── 02_s3_usecases.md             Static website, data lake, cross-account sharing
+├── 03_lambda_usecases.md         Image resize, scheduled jobs, API backend
+├── 04_rds_usecases.md            Multi-AZ setup, read replicas, RDS Proxy
+├── 05_dynamodb_usecases.md       Session store, leaderboard, e-commerce cart
+├── 06_vpc_usecases.md            3-tier network, VPC peering, private endpoints
+├── 07_iam_usecases.md            Cross-account roles, least privilege, ABAC
+├── 08_cloudwatch_usecases.md     Custom metrics, log insights, anomaly detection
+├── 09_sqs_sns_usecases.md        Order processing, fan-out, dead letter queues
+├── 10_ecs_usecases.md            Fargate web app, blue/green deploy, auto-scaling
+├── 11_cloudfront_usecases.md     CDN for SPA, signed URLs, WAF integration
+├── 12_elasticache_usecases.md    Session store, query cache, rate limiter
+├── 13_kinesis_usecases.md        Real-time analytics, log streaming, CDC
 ├── 14_step_functions_usecases.md Order workflow, ETL orchestration, retry logic
-└── 15_cost_optimization_usecases.md  Right-sizing, Spot, lifecycle policies
+├── 15_cost_optimization_usecases.md  Right-sizing, Spot, lifecycle policies
+├── 16_frontend_deployment_eks.md     End-to-end: Docker → ECR → EKS (with troubleshooting)
+├── 17_scenarios_beginner.md      Scenarios 1–5:  S3, EC2, IAM, RDS, Python boto3
+├── 18_scenarios_intermediate.md  Scenarios 6–12: VPC, Docker, ECS, Terraform, CI/CD
+├── 19_scenarios_advanced.md      Scenarios 13–16: Auto Scaling, Serverless, Monitoring, Events
+├── 20_scenarios_data_engineering.md  Scenarios 17–20: Data lake, ETL, Kinesis, EMR
+└── 21_scenarios_production.md    Scenarios 21–24: Netflix-style, EKS, multi-env, data platform
 ```
 
 ---
@@ -48,6 +55,19 @@ Each file follows this pattern:
 | Intermediate | Lambda, RDS, VPC, SQS/SNS, ECS | 3–4 days |
 | Advanced | DynamoDB, ElastiCache, Kinesis, Step Functions | 3–4 days |
 | Expert | CloudFront, Cost Optimization, multi-service architectures | 2–3 days |
+| Real Project | Docker → ECR → EKS end-to-end deployment | 1 day |
+
+## 🎯 24 Hands-On Scenarios (Structured Path)
+
+| Level | Scenarios | File |
+|-------|---------|------|
+| 🟢 Beginner | 1–5: S3, EC2, IAM, RDS, Python | `17_scenarios_beginner.md` |
+| 🟡 Intermediate | 6–12: VPC, Docker, ECS, Terraform, CI/CD | `18_scenarios_intermediate.md` |
+| 🔴 Advanced | 13–16: Auto Scaling, Serverless, Monitoring | `19_scenarios_advanced.md` |
+| ⚫ Data Engineering | 17–20: Data lake, ETL, Kinesis, EMR | `20_scenarios_data_engineering.md` |
+| 🏆 Production | 21–24: Netflix-style, EKS, multi-env, data platform | `21_scenarios_production.md` |
+
+**Start here**: `00_learning_roadmap.md` → then work through scenarios 1–24 in order.
 
 
 Done — 00_handson Folder Complete
@@ -73,3 +93,38 @@ File	Use Cases	Key Concepts
 README.md	Index of all use cases with learning path	—
 Pattern used in every file
 Each use case follows: Business Problem → Architecture diagram → Step-by-step CLI/code → What you learn → Common mistakes table
+
+The document from the .docx was converted into 16_frontend_deployment_eks.md with major enhancements:
+What was in the original document → What was added/improved:
+
+Original	Enhanced Version
+Basic steps listed	Full CLI commands with expected outputs
+"Why multi-stage build?" mentioned	Detailed comparison: 1.2GB → 25MB, security benefits
+Simple Dockerfile	Added nginx.conf for React Router, layer caching explanation
+"Screenshot here" placeholders	Exact expected output for every command
+Issue 1 mentioned briefly	Root cause analysis + fix + lesson learned
+Basic YAML files	Added resources, livenessProbe, readinessProbe with explanations
+"Next enhancements" listed	Full working code for HTTPS/Ingress, GitHub Actions CI/CD, HPA, monitoring
+No resume section	7 ready-to-use resume bullet points
+No interview prep	30-second interview explanation script
+Simple architecture diagram	Full ASCII architecture diagram showing complete pipeline
+No debug commands	Complete kubectl debug/maintenance reference
+Cleanup mentioned	Step-by-step cleanup with cost warning
+All 15 use case files cover:
+File	Services	Use Cases
+01	EC2	Web server, Spot batch, bastion, auto scaling
+02	S3	SPA hosting, data lake, cross-account, pre-signed uploads, event-driven
+03	Lambda	Image thumbnails, cron reports, REST API, SQS consumer
+04	RDS/Aurora	Multi-AZ, read replicas, RDS Proxy, Serverless v2, PITR
+05	DynamoDB	Shopping cart, leaderboard, sessions, Streams notifications
+06	VPC	3-tier network, peering, endpoints, flow log investigation
+07	IAM	Least privilege, cross-account, ABAC, break-glass
+08	SQS/SNS	Order pipeline, fan-out, FIFO transactions, DLQ investigation
+09	CloudWatch	Business metrics, composite alarms, log investigation, Agent
+10	ECS	Fargate API, auto scaling, blue/green CodeDeploy
+11	CloudFront	SPA CDN, signed URLs, WAF integration
+12	ElastiCache	API caching, sessions, rate limiter, pub/sub
+13	Kinesis	Clickstream, Firehose → S3, CDC, Analytics SQL
+14	Step Functions	Order workflow, ETL, Map state bulk processing
+15	Cost	Waste audit, right-sizing, Spot, S3 lifecycle, RI vs Savings Plans
+16	Docker+ECR+EKS	Full deployment guide from the docx — enhanced with troubleshooting, resume bullets, interview prep
