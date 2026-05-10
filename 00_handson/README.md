@@ -29,7 +29,8 @@
 ├── 18_scenarios_intermediate.md  Scenarios 6–12: VPC, Docker, ECS, Terraform, CI/CD
 ├── 19_scenarios_advanced.md      Scenarios 13–16: Auto Scaling, Serverless, Monitoring, Events
 ├── 20_scenarios_data_engineering.md  Scenarios 17–20: Data lake, ETL, Kinesis, EMR
-└── 21_scenarios_production.md    Scenarios 21–24: Netflix-style, EKS, multi-env, data platform
+├── 21_scenarios_production.md    Scenarios 21–24: Netflix-style, EKS, multi-env, data platform
+└── 22_best_practices_guide.md    How to practice, project order, checklist, interview prep
 ```
 
 ---
@@ -128,3 +129,405 @@ File	Services	Use Cases
 14	Step Functions	Order workflow, ETL, Map state bulk processing
 15	Cost	Waste audit, right-sizing, Spot, S3 lifecycle, RI vs Savings Plans
 16	Docker+ECR+EKS	Full deployment guide from the docx — enhanced with troubleshooting, resume bullets, interview prep
+
+Complete Hands-on Scenarios Roadmap
+
+For Amazon Web Services + Linux + Docker + Terraform + Python + SQL
+
+The goal is:
+
+not just learning services
+but learning how real systems are built
+LEVEL 1 — Beginner Hands-on Scenarios
+
+Goal:
+Understand basic cloud workflow.
+
+Scenario 1 — Host a Static Website in S3
+Skills
+S3
+IAM
+Static website hosting
+Tasks
+Create S3 bucket
+Enable static hosting
+Upload HTML/CSS files
+Configure public access
+Access website URL
+Learn
+object storage
+bucket policies
+permissions
+public vs private access
+Scenario 2 — Launch Linux Server in EC2
+Skills
+EC2
+SSH
+Linux basics
+Tasks
+Launch EC2
+Create key pair
+SSH into server
+Install Nginx
+Host webpage
+Linux Commands
+ssh
+sudo
+apt
+yum
+systemctl
+Learn
+cloud servers
+Linux administration
+security groups
+Scenario 3 — Create IAM Users & Roles
+Skills
+IAM
+Security
+Tasks
+Create IAM user
+Create group
+Attach policies
+Create EC2 role
+Learn
+least privilege
+access management
+AWS authentication
+Scenario 4 — Create RDS MySQL Database
+Skills
+RDS
+SQL
+Networking basics
+Tasks
+Launch MySQL RDS
+Connect from EC2
+Create tables
+Insert records
+SQL Practice
+
+SELECT∗FROMusersWHEREage>25
+
+Learn
+managed databases
+DB security
+connectivity
+Scenario 5 — Python Script Uploading Files to S3
+Skills
+Python
+boto3
+S3
+Tasks
+Install boto3
+Upload files
+Download files
+List bucket objects
+Learn
+AWS SDK
+automation
+scripting
+LEVEL 2 — Intermediate Hands-on Scenarios
+
+Goal:
+Build real application infrastructure.
+
+Scenario 6 — Build Custom VPC Architecture
+Skills
+Networking
+VPC
+Routing
+Architecture
+VPC
+├── Public Subnet
+│   └── EC2
+└── Private Subnet
+    └── RDS
+Tasks
+Create VPC
+Create subnets
+Configure route tables
+Configure Internet Gateway
+Configure NAT
+Learn
+cloud networking
+subnet isolation
+secure architectures
+Scenario 7 — Deploy Full Stack App on EC2
+Stack
+React frontend
+Node backend
+MySQL database
+Skills
+Linux
+EC2
+Nginx
+PM2
+Tasks
+Deploy frontend
+Deploy backend
+Configure reverse proxy
+Run app as service
+Learn
+application deployment
+production setup
+Scenario 8 — Dockerize Full Application
+Skills
+Docker
+Containers
+Tasks
+Create Dockerfile
+Build image
+Run container
+Create docker-compose
+Architecture
+Frontend Container
+Backend Container
+Database Container
+Learn
+containerization
+environment consistency
+Scenario 9 — Push Docker Images to ECR
+Skills
+Docker
+ECR
+Tasks
+Create ECR repository
+Authenticate Docker
+Push image
+Pull image
+Learn
+container registry
+deployment workflows
+Scenario 10 — Deploy Containers to ECS
+Skills
+ECS
+Fargate
+Tasks
+Create ECS cluster
+Create task definition
+Deploy service
+Configure load balancer
+Learn
+container orchestration
+scalable deployments
+Scenario 11 — Terraform AWS Infrastructure
+Skills
+Terraform
+IaC
+Tasks
+
+Create:
+
+VPC
+Subnets
+EC2
+Security groups
+
+using Terraform only.
+
+Learn
+infrastructure automation
+reproducible deployments
+Scenario 12 — CI/CD Pipeline
+Skills
+GitHub Actions
+AWS deployment
+Tasks
+Push code to GitHub
+Auto build Docker image
+Deploy automatically to AWS
+Learn
+DevOps workflow
+automation
+LEVEL 3 — Advanced Hands-on Scenarios
+
+Goal:
+Think like production engineer.
+
+Scenario 13 — Auto Scaling Web Application
+Skills
+Load Balancer
+Auto Scaling
+Tasks
+Create launch template
+Configure ASG
+Configure ALB
+Learn
+high availability
+scalability
+Scenario 14 — Serverless REST API
+Stack
+API Gateway
+Lambda
+DynamoDB
+Tasks
+Create REST API
+Create Lambda function
+Store data in DynamoDB
+Learn
+serverless architecture
+event-driven systems
+Scenario 15 — Monitoring & Logging System
+Skills
+CloudWatch
+Logging
+Tasks
+Configure logs
+Create alarms
+Monitor EC2 metrics
+Learn
+observability
+monitoring
+Scenario 16 — Event-driven File Processing
+Flow
+S3 Upload
+→ Lambda Trigger
+→ Process File
+→ Store Metadata
+Skills
+S3 events
+Lambda
+Python
+Learn
+automation
+event architecture
+LEVEL 4 — Data Engineering Hands-on
+
+Very important for your path.
+
+Scenario 17 — Data Lake Project
+Architecture
+CSV Files
+→ S3
+→ Glue Catalog
+→ Athena Queries
+Skills
+S3
+Glue
+Athena
+Learn
+data lakes
+metadata cataloging
+Scenario 18 — ETL Pipeline
+Flow
+Raw Data
+→ Glue ETL
+→ Clean Data
+→ S3
+→ Athena
+Learn
+ETL
+transformations
+Scenario 19 — Real-time Streaming Pipeline
+Flow
+Producer
+→ Kinesis
+→ Lambda
+→ S3/Redshift
+Learn
+streaming systems
+real-time analytics
+Scenario 20 — Spark Processing on EMR
+Skills
+Spark
+EMR
+Tasks
+Create EMR cluster
+Run PySpark jobs
+Process large datasets
+Learn
+distributed processing
+big data systems
+LEVEL 5 — Production-grade Projects
+Scenario 21 — Netflix-style Architecture
+Components
+CloudFront
+S3
+ECS
+RDS
+Redis
+Learn
+scalable architecture
+caching
+CDN
+Scenario 22 — Multi-environment Terraform Setup
+Environments
+dev
+qa
+prod
+Learn
+enterprise IaC
+reusable modules
+Scenario 23 — Kubernetes on EKS
+Skills
+Kubernetes
+EKS
+Tasks
+Deploy pods
+Services
+Ingress
+Autoscaling
+Learn
+advanced orchestration
+Scenario 24 — Complete Data Platform
+Architecture
+Kafka/Kinesis
+→ Spark
+→ S3
+→ Redshift
+→ BI Dashboard
+Learn
+end-to-end data engineering
+BEST WAY TO PRACTICE
+
+For EVERY project:
+
+Step 1
+
+Create manually in AWS Console
+
+Step 2
+
+Repeat using AWS CLI
+
+Step 3
+
+Automate using Terraform
+
+Step 4
+
+Monitor using CloudWatch
+
+Step 5
+
+Document in GitHub
+
+Your GitHub Should Contain
+
+For every project:
+
+README.md
+Architecture Diagram
+Terraform Files
+Deployment Steps
+Screenshots
+
+This becomes your portfolio.
+
+BEST PROJECT ORDER FOR YOU
+Start Here
+S3 static hosting
+EC2 Linux server
+RDS setup
+Python boto3 automation
+Then
+VPC architecture
+Dockerized app
+ECS deployment
+Terraform infrastructure
+Then
+Data lake
+ETL pipeline
+Kinesis streaming
+Spark on EMR
+
+That progression is excellent for your direction.
