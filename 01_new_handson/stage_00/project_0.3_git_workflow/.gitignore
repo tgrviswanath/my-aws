@@ -1,0 +1,35 @@
+# Terraform state and cache
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+terraform.tfvars
+override.tf
+override.tf.json
+
+# AWS credentials — NEVER commit these
+.aws/
+*.pem
+*.key
+credentials
+
+# LocalStack data
+localstack-data/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+.env
+venv/
+
+# Logs
+*.log

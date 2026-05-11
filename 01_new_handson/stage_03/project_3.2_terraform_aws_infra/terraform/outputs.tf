@@ -1,0 +1,9 @@
+output "vpc_id"              { value = aws_vpc.main.id }
+output "alb_dns_name"        { value = aws_lb.app.dns_name }
+output "alb_url"             { value = "http://${aws_lb.app.dns_name}" }
+output "rds_endpoint"        { value = aws_db_instance.mysql.endpoint }
+output "public_subnet_ids"   { value = aws_subnet.public[*].id }
+output "private_app_subnet_ids" { value = aws_subnet.private_app[*].id }
+output "private_db_subnet_ids"  { value = aws_subnet.private_db[*].id }
+output "app_sg_id"           { value = aws_security_group.app.id }
+output "nat_gateway_ip"      { value = aws_eip.nat.public_ip }

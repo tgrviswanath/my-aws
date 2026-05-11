@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: "One row per order — the primary fact table for order analytics"
+    columns:
+      - name: order_id
+        description: "Unique order identifier"
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: "Customer who placed the order"
+        tests:
+          - not_null
+
+      - name: order_amount_usd
+        description: "Total order value in USD"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: order_status
+        description: "Current order status"
+        tests:
+          - accepted_values:
+              values: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'unknown']
+
+      - name: order_tier
+        description: "Order value tier for segmentation"
+        tests:
+          - accepted_values:
+              values: ['high_value', 'medium_value', 'low_value']

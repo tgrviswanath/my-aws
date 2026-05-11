@@ -1,0 +1,105 @@
+{
+  "Comment": "Document processing workflow",
+  "StartAt": "Validate",
+  "States": {
+    "Validate": {
+      "Type": "Task",
+      "Resource": "${ValidateLambdaArn}",
+      "Retry": [
+        {
+          "ErrorEquals": ["Lambda.ServiceException", "Lambda.TooManyRequestsException"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["ValueError"],
+          "Next": "ValidationFailed",
+          "ResultPath": "$.error"
+        },
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ProcessingFailed",
+          "ResultPath": "$.error"
+        }
+      ],
+      "Next": "ExtractText"
+    },
+
+    "ExtractText": {
+      "Type": "Task",
+      "Resource": "${ExtractTextLambdaArn}",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 1.5
+        }
+      ],
+      "Next": "ParallelAnalysis"
+    },
+
+    "ParallelAnalysis": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "Classify",
+          "States": {
+            "Classify": {
+              "Type": "Task",
+              "Resource": "${ClassifyLambdaArn}",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckCompliance",
+          "States": {
+            "CheckCompliance": {
+              "Type": "Task",
+              "Resource": "${CheckComplianceLambdaArn}",
+              "End": true
+            }
+          }
+        }
+      ],
+      "ResultSelector": {
+        "classification.$": "$[0].classification",
+        "compliance.$": "$[1].compliance"
+      },
+      "ResultPath": "$.analysis",
+      "Next": "StoreResults"
+    },
+
+    "StoreResults": {
+      "Type": "Task",
+      "Resource": "${StoreResultsLambdaArn}",
+      "Next": "Notify"
+    },
+
+    "Notify": {
+      "Type": "Task",
+      "Resource": "${NotifyLambdaArn}",
+      "Next": "Success"
+    },
+
+    "Success": {
+      "Type": "Succeed"
+    },
+
+    "ValidationFailed": {
+      "Type": "Fail",
+      "Error": "ValidationError",
+      "Cause": "Document failed validation checks"
+    },
+
+    "ProcessingFailed": {
+      "Type": "Fail",
+      "Error": "ProcessingError",
+      "Cause": "An unexpected error occurred during processing"
+    }
+  }
+}

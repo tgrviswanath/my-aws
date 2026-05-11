@@ -1,0 +1,46 @@
+# Project 0.1 — Local Cloud Development Setup
+
+## What This Does
+Emulates AWS services locally using LocalStack. Allows safe development and testing without AWS costs or risk.
+
+## Tools Used
+| Tool | Purpose |
+|------|---------|
+| Docker + Docker Compose | Run LocalStack and containers |
+| LocalStack | Emulate AWS services locally |
+| AWS CLI | Interact with LocalStack via terminal |
+| Terraform | Infrastructure as code (configured for local) |
+| Git | Version control |
+| VS Code | Editor |
+
+## Services Emulated Locally
+- S3
+- Lambda
+- API Gateway
+- DynamoDB
+- IAM
+- CloudWatch Logs
+
+## How to Run
+```bash
+docker compose up -d
+curl http://localhost:4566/_localstack/health
+```
+
+## Folder Structure
+```
+project_0.1_local_dev_setup/
+├── README.md
+├── steps.md
+├── docker-compose.yml
+├── terraform/
+│   └── main.tf
+├── docs/
+│   └── architecture.md
+└── cost_estimate.md
+```
+
+## Lessons Learned
+- LocalStack port 4566 handles all AWS service endpoints
+- Always use `--endpoint-url=http://localhost:4566` with AWS CLI for local testing
+- Use a separate AWS CLI profile (`localstack`) to avoid mixing with real credentials

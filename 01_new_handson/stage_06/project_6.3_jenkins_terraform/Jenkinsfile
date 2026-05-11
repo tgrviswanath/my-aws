@@ -1,0 +1,147 @@
+// Jenkinsfile — Terraform CI/CD Pipeline
+// Declarative pipeline syntax
+
+pipeline {
+    agent {
+        docker {
+            image 'hashicorp/terraform:1.7.0'
+            args  '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
+
+    environment {
+        AWS_DEFAULT_REGION = 'us-east-1'
+        TF_DIR             = 'terraform'
+        TF_VAR_environment = "${env.BRANCH_NAME == 'main' ? 'prod' : 'dev'}"
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()   // prevent parallel applies
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+                sh 'terraform --version'
+                sh 'aws --version'
+            }
+        }
+
+        stage('Format Check') {
+            steps {
+                dir(env.TF_DIR) {
+                    sh 'terraform fmt -check -recursive'
+                }
+            }
+        }
+
+        stage('Init') {
+            steps {
+                dir(env.TF_DIR) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                                      credentialsId: 'aws-credentials']]) {
+                        sh 'terraform init -input=false'
+                    }
+                }
+            }
+        }
+
+        stage('Validate') {
+            steps {
+                dir(env.TF_DIR) {
+                    sh 'terraform validate'
+                }
+            }
+        }
+
+        stage('Plan') {
+            steps {
+                dir(env.TF_DIR) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                                      credentialsId: 'aws-credentials']]) {
+                        sh '''
+                            terraform plan \
+                              -input=false \
+                              -out=plan.tfplan \
+                              -no-color \
+                              2>&1 | tee plan_output.txt
+                        '''
+                    }
+                }
+            }
+            post {
+                always {
+                    // Archive plan output as build artifact
+                    archiveArtifacts artifacts: "${env.TF_DIR}/plan_output.txt"
+                }
+            }
+        }
+
+        stage('Approval') {
+            when {
+                branch 'main'   // only require approval on main branch
+            }
+            steps {
+                script {
+                    def planOutput = readFile("${env.TF_DIR}/plan_output.txt")
+                    def userInput = input(
+                        id: 'terraform-apply-approval',
+                        message: 'Review the Terraform plan and approve to apply:',
+                        parameters: [
+                            text(name: 'PLAN', defaultValue: planOutput, description: 'Terraform Plan Output'),
+                            choice(name: 'ACTION', choices: ['Apply', 'Abort'], description: 'Choose action')
+                        ]
+                    )
+                    if (userInput['ACTION'] == 'Abort') {
+                        error('Deployment aborted by user')
+                    }
+                }
+            }
+        }
+
+        stage('Apply') {
+            when {
+                branch 'main'
+            }
+            steps {
+                dir(env.TF_DIR) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                                      credentialsId: 'aws-credentials']]) {
+                        sh 'terraform apply -input=false -auto-approve plan.tfplan'
+                    }
+                }
+            }
+        }
+
+        stage('Output') {
+            when {
+                branch 'main'
+            }
+            steps {
+                dir(env.TF_DIR) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                                      credentialsId: 'aws-credentials']]) {
+                        sh 'terraform output -json | tee outputs.json'
+                    }
+                }
+                archiveArtifacts artifacts: "${env.TF_DIR}/outputs.json"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Pipeline succeeded: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+        }
+        failure {
+            echo "❌ Pipeline failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+        }
+        always {
+            cleanWs()   // clean workspace after each build
+        }
+    }
+}

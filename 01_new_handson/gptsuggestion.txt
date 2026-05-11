@@ -1,0 +1,809 @@
+# Updated AWS Hands-on Roadmap
+
+(Structured for Real Engineering Learning)
+
+This roadmap is optimized for:
+
+* Cloud Engineering
+* DevOps
+* Data Engineering
+* Backend Engineering
+
+using Amazon Web Services.
+
+The order matters.
+Do NOT jump randomly.
+
+---
+
+# STAGE 1 — Cloud Foundations
+
+Goal:
+Understand AWS basics + Linux + networking fundamentals.
+
+---
+
+# Project 1 — Static Website Hosting
+
+## Services
+
+* S3
+* Route53
+* CloudFront
+
+## Learn
+
+* Object storage
+* CDN
+* DNS
+* Static hosting
+
+## Add-ons
+
+* HTTPS with ACM
+* Custom domain
+
+---
+
+# Project 2 — Linux Web Server on EC2
+
+## Services
+
+* EC2
+* Security Groups
+
+## Skills
+
+* Linux
+* SSH
+* Apache/Nginx
+
+## Learn
+
+* Server administration
+* Public/private IP
+* Inbound/outbound traffic
+
+---
+
+# Project 3 — IAM Security Lab
+
+## Services
+
+* IAM
+
+## Learn
+
+* Users
+* Groups
+* Roles
+* Policies
+* Least privilege
+
+## Tasks
+
+* Create EC2 role
+* Restrict S3 access
+* MFA setup
+
+---
+
+# Project 4 — MySQL Database on RDS
+
+## Services
+
+* RDS
+* EC2
+
+## Skills
+
+* SQL
+* DB connectivity
+
+## Learn
+
+* Managed databases
+* Backups
+* DB security
+
+---
+
+# Project 5 — Python AWS Automation
+
+## Services
+
+* S3
+* EC2
+
+## Skills
+
+* Python
+* boto3
+
+## Build
+
+* S3 uploader
+* EC2 status checker
+* Automated backups
+
+---
+
+# STAGE 2 — Networking & Architecture
+
+Goal:
+Learn real cloud networking.
+
+---
+
+# Project 6 — Custom VPC Architecture
+
+## Services
+
+* VPC
+* Subnets
+* IGW
+* NAT
+* Route Tables
+
+## Architecture
+
+```text id="b5g8s8"
+Public Subnet → Web Tier
+Private Subnet → DB Tier
+```
+
+## Learn
+
+* CIDR
+* Routing
+* Isolation
+* Secure architecture
+
+---
+
+# Project 7 — Multi-Tier Web Application
+
+## Services
+
+* ALB
+* EC2
+* RDS
+* VPC
+
+## Learn
+
+* Layered architecture
+* Reverse proxy
+* High availability
+
+---
+
+# Project 8 — ALB vs NLB Hands-on
+
+## ALB
+
+* HTTP/HTTPS
+* Path routing
+
+## NLB
+
+* TCP/UDP
+* Low latency
+
+## Learn
+
+* Load balancing differences
+* Real-world use cases
+
+---
+
+# Project 9 — Route53 Advanced DNS
+
+## Learn
+
+* Failover routing
+* Weighted routing
+* Latency routing
+* Health checks
+
+---
+
+# STAGE 3 — Serverless Architecture
+
+Goal:
+Learn event-driven cloud systems.
+
+---
+
+# Project 10 — Serverless REST API
+
+## Services
+
+* Lambda
+* API Gateway
+* DynamoDB
+
+## Learn
+
+* Stateless architecture
+* API security
+* No-server backend
+
+---
+
+# Project 11 — URL Shortener
+
+## Services
+
+* Lambda
+* API Gateway
+* DynamoDB
+
+## Learn
+
+* Event-driven apps
+* DynamoDB design
+
+---
+
+# Project 12 — Serverless Image Processing
+
+## Flow
+
+```text id="hxhg4t"
+S3 Upload
+→ Lambda Trigger
+→ Resize Image
+→ Store Output
+```
+
+## Learn
+
+* Event triggers
+* File processing
+
+---
+
+# Project 13 — Event-driven Microservices
+
+## Services
+
+* SNS
+* SQS
+* Lambda
+
+## Learn
+
+* Async systems
+* Message queues
+* Decoupled architecture
+
+---
+
+# Project 14 — Workflow Automation with Step Functions
+
+## Flow
+
+```text id="mfcslj"
+Upload
+→ Validate
+→ Process
+→ Notify
+```
+
+## Learn
+
+* Workflow orchestration
+* Retry handling
+* Error handling
+
+---
+
+# STAGE 4 — Containers & Modern Deployment
+
+Goal:
+Learn modern deployment methods.
+
+---
+
+# Project 15 — Dockerize Full-stack Application
+
+## Stack
+
+* React
+* Node.js
+* MySQL
+
+## Learn
+
+* Containers
+* Docker networking
+* Environment variables
+
+---
+
+# Project 16 — Push Containers to ECR
+
+## Learn
+
+* Container registry
+* Image versioning
+
+---
+
+# Project 17 — Deploy Containers to ECS Fargate
+
+## Services
+
+* ECS
+* Fargate
+* ALB
+
+## Learn
+
+* Serverless containers
+* Scalable deployments
+
+---
+
+# Project 18 — Blue-Green Deployment
+
+## Services
+
+* ECS
+* CodeDeploy
+
+## Learn
+
+* Zero downtime deployment
+* Rollbacks
+
+---
+
+# Project 19 — AWS App Runner Deployment
+
+## Learn
+
+* Simplified container hosting
+* PaaS concepts
+
+---
+
+# STAGE 5 — Infrastructure as Code (MOST IMPORTANT)
+
+Goal:
+Automate everything.
+
+---
+
+# Project 20 — Terraform AWS Infrastructure
+
+## Create
+
+* VPC
+* EC2
+* ALB
+* RDS
+
+## Learn
+
+* Infrastructure automation
+* State management
+
+---
+
+# Project 21 — Terraform Modules & Environments
+
+## Environments
+
+```text id="z6cy8z"
+dev
+qa
+prod
+```
+
+## Learn
+
+* Reusable infrastructure
+* Enterprise IaC
+
+---
+
+# Project 22 — CloudFormation Stack Automation
+
+## Learn
+
+* Native AWS IaC
+
+---
+
+# Project 23 — AWS CDK Deployment
+
+## Learn
+
+* Infrastructure using code
+
+---
+
+# Project 24 — Event-driven Infrastructure Automation
+
+## Services
+
+* EventBridge
+* Lambda
+* CloudFormation
+
+## Learn
+
+* Infrastructure automation workflows
+
+---
+
+# STAGE 6 — CI/CD & DevOps
+
+Goal:
+Learn production deployment workflow.
+
+---
+
+# Project 25 — GitHub Actions + ECS Deployment
+
+## Learn
+
+* CI/CD pipelines
+* Automated deployments
+
+---
+
+# Project 26 — Secure OIDC GitHub Authentication
+
+## Learn
+
+* Passwordless GitHub → AWS auth
+* Modern CI security
+
+VERY IMPORTANT.
+
+---
+
+# Project 27 — Jenkins + Terraform Pipeline
+
+## Learn
+
+* Enterprise CI/CD
+
+---
+
+# Project 28 — Multi-account Deployment Pipeline
+
+## Learn
+
+* Cross-account deployment
+* Enterprise AWS setup
+
+---
+
+# Project 29 — Kubernetes GitOps with ArgoCD
+
+## Services
+
+* EKS
+* ArgoCD
+
+## Learn
+
+* GitOps
+* Kubernetes deployment automation
+
+---
+
+# STAGE 7 — Monitoring, Logging & Observability
+
+Goal:
+Monitor production systems.
+
+---
+
+# Project 30 — CloudWatch Monitoring System
+
+## Learn
+
+* Metrics
+* Logs
+* Alarms
+* Dashboards
+
+---
+
+# Project 31 — Centralized Logging System
+
+## Stack
+
+* OpenSearch / ELK
+* CloudWatch
+
+## Learn
+
+* Log aggregation
+* Search & visualization
+
+---
+
+# Project 32 — AWS X-Ray Tracing
+
+## Learn
+
+* Distributed tracing
+* Performance bottlenecks
+
+---
+
+# Project 33 — Athena Log Analytics
+
+## Query
+
+* CloudTrail logs
+* VPC flow logs
+* ALB logs
+
+## Learn
+
+* Serverless analytics
+
+---
+
+# Project 34 — Grafana + Prometheus Monitoring
+
+## Learn
+
+* Modern observability stack
+
+---
+
+# STAGE 8 — Security & Governance
+
+Goal:
+Learn production cloud security.
+
+---
+
+# Project 35 — Secrets Manager Integration
+
+## Learn
+
+* Secure credential handling
+
+---
+
+# Project 36 — WAF Application Protection
+
+## Protect Against
+
+* SQL injection
+* XSS
+* Bots
+
+---
+
+# Project 37 — AWS Config Compliance Auditing
+
+## Learn
+
+* Compliance automation
+
+---
+
+# Project 38 — GuardDuty + Security Hub
+
+## Learn
+
+* Threat detection
+* Security monitoring
+
+---
+
+# Project 39 — CloudTrail + SIEM Integration
+
+## Learn
+
+* Audit logging
+* Incident investigation
+
+---
+
+# STAGE 9 — Data Engineering Projects
+
+Very important for your path.
+
+---
+
+# Project 40 — Data Lake Architecture
+
+## Stack
+
+* S3
+* Glue Catalog
+* Athena
+* Lake Formation
+
+## Learn
+
+* Modern data lake architecture
+
+---
+
+# Project 41 — ETL Pipeline with Glue
+
+## Flow
+
+```text id="h0v5es"
+Raw Data
+→ Glue ETL
+→ Processed Data
+→ Athena
+```
+
+---
+
+# Project 42 — Redshift Data Warehouse
+
+## Learn
+
+* OLAP systems
+* Warehousing
+
+---
+
+# Project 43 — Real-time Streaming with Kinesis
+
+## Flow
+
+```text id="jlwm5y"
+Producer
+→ Kinesis
+→ Lambda
+→ S3/Redshift
+```
+
+---
+
+# Project 44 — Spark Processing on EMR
+
+## Learn
+
+* Distributed data processing
+
+---
+
+# Project 45 — Airflow Data Orchestration
+
+## Learn
+
+* DAG orchestration
+* Scheduling pipelines
+
+---
+
+# STAGE 10 — Advanced Cloud Architecture
+
+Goal:
+Production-grade enterprise systems.
+
+---
+
+# Project 46 — Multi-account AWS Organization
+
+## Learn
+
+* AWS Organizations
+* SCPs
+* Cross-account IAM
+
+---
+
+# Project 47 — Disaster Recovery Architecture
+
+## Features
+
+* Cross-region replication
+* Automated failover
+
+---
+
+# Project 48 — Cost Optimization Automation
+
+## Learn
+
+* Budget alerts
+* Rightsizing
+* Auto-stop idle resources
+
+---
+
+# Project 49 — Kubernetes on EKS
+
+## Learn
+
+* Pods
+* Services
+* Ingress
+* HPA
+
+---
+
+# Project 50 — Production-grade Microservices Platform
+
+## Stack
+
+```text id="w45gqi"
+EKS/ECS
++ API Gateway
++ Kafka/Kinesis
++ Redis
++ RDS
++ Observability
+```
+
+---
+
+# BEST LEARNING METHOD
+
+For EVERY project:
+
+## Phase 1
+
+Build using AWS Console
+
+## Phase 2
+
+Repeat using AWS CLI
+
+## Phase 3
+
+Automate using Terraform
+
+## Phase 4
+
+Add Monitoring
+
+## Phase 5
+
+Add Security
+
+## Phase 6
+
+Document in GitHub
+
+---
+
+# What Your GitHub Should Contain
+
+Every project should have:
+
+```text id="y9syvb"
+README.md
+Architecture Diagram
+Terraform Code
+Deployment Steps
+Screenshots
+Cost Estimate
+```
+
+---
+
+# Most Important Projects For Job Readiness
+
+If time is limited, prioritize:
+
+1. Multi-tier VPC app
+2. Terraform infrastructure
+3. ECS deployment
+4. CI/CD pipeline
+5. Monitoring stack
+6. Data lake
+7. Glue ETL
+8. Kinesis streaming
+9. Security automation
+10. Cost optimization
+
+These projects provide the highest real-world value.
