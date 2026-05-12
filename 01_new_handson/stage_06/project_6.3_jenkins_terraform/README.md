@@ -52,3 +52,25 @@ terraform output jenkins_url
 - Shared libraries: reusable Groovy code across multiple Jenkinsfiles
 - Blue Ocean: modern Jenkins UI — much better than classic UI
 - Jenkins credentials store: use for AWS keys, not environment variables
+
+## Code
+
+### `Jenkinsfile` — Jenkins pipeline for Terraform
+
+```groovy
+// Triggered automatically on push to main
+// Stages: Checkout → Terraform Init → Plan → Approval → Apply
+```
+
+```bash
+# Build the custom Jenkins Docker image
+docker build -t my-jenkins jenkins/
+
+# Run Jenkins locally
+docker run -p 8080:8080 -p 50000:50000 my-jenkins
+
+# Access Jenkins UI
+open http://localhost:8080
+```
+
+### `jenkins/Dockerfile` — Custom Jenkins with Terraform + AWS CLI pre-installed.

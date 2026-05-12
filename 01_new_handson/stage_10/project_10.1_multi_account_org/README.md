@@ -39,3 +39,29 @@ terraform init && terraform apply
 - Management account is exempt from SCPs — be careful with it
 - AWS Control Tower: managed multi-account setup — use for enterprise
 - Account vending machine: automate new account creation with Terraform
+
+## Code
+
+### `code/org_manager.py` — Manage AWS Organizations accounts, OUs, and SCPs
+
+```bash
+pip install boto3
+
+# List all accounts in the organization
+python code/org_manager.py list-accounts
+
+# List all SCPs and which OUs they're attached to
+python code/org_manager.py list-scps
+
+# Check compliance (required tags, Config enabled)
+python code/org_manager.py check-compliance
+
+# Use a specific profile (must have Organizations access)
+python code/org_manager.py list-accounts --profile org-master
+```
+
+What it shows:
+- All accounts with OU path, status, and tags
+- SCP list with attachment targets
+- Compliance check: required tags present, Config enabled per account
+- Org tree structure

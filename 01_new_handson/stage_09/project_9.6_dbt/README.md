@@ -45,3 +45,31 @@ dbt docs generate && dbt docs serve  # view documentation
 - `ref()` function builds the dependency DAG automatically
 - dbt tests: `not_null`, `unique`, `accepted_values`, `relationships` — run after every build
 - dbt docs: auto-generated documentation with lineage graph — share with stakeholders
+
+## Code
+
+### `dbt_project/` — dbt transformation models
+
+```bash
+pip install dbt-athena-community
+# or: pip install dbt-redshift
+
+# Install dependencies
+cd dbt_project
+dbt deps
+
+# Test connection
+dbt debug
+
+# Run all models
+dbt run
+
+# Run tests
+dbt test
+
+# Generate and serve documentation
+dbt docs generate
+dbt docs serve
+```
+
+Models: `stg_orders` (staging) → `int_orders_enriched` (intermediate) → `fct_daily_revenue` (fact table).

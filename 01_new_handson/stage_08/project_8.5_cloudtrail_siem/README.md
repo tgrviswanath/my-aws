@@ -38,3 +38,36 @@ terraform init && terraform apply
 - CloudTrail Insights: detects unusual API activity automatically
 - Log file integrity validation: SHA-256 hash proves logs weren't tampered with
 - Multi-region trail: captures events from all regions in one place
+
+## Code
+
+### `code/cloudtrail_analyzer.py` — Analyze CloudTrail logs for suspicious activity
+
+```bash
+pip install boto3
+
+# Analyze last 7 days of CloudTrail logs
+python code/cloudtrail_analyzer.py --bucket my-cloudtrail-bucket --days 7
+
+# Analyze last 30 days
+python code/cloudtrail_analyzer.py --bucket my-cloudtrail-bucket --days 30
+
+# Use a specific region and profile
+python code/cloudtrail_analyzer.py \
+  --bucket my-cloudtrail-bucket \
+  --days 7 \
+  --region us-east-1 \
+  --profile security
+```
+
+Detects:
+| Event | Severity |
+|-------|----------|
+| Root account API calls | CRITICAL |
+| Failed console logins | HIGH |
+| IAM policy changes | HIGH |
+| Security group modifications | MEDIUM |
+| API calls from unusual regions | MEDIUM |
+| S3 bucket policy changes | MEDIUM |
+
+Prints events sorted by severity with timestamps and source IPs.

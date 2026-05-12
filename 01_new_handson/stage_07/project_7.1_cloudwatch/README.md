@@ -35,3 +35,29 @@ terraform output dashboard_url
 - Log Insights queries are powerful but cost per GB scanned — use time ranges
 - Composite alarms reduce alert noise — only page when multiple signals fire together
 - Metric math: combine metrics (e.g. error rate = errors / total requests × 100)
+
+## Code
+
+### `code/cloudwatch_setup.py` — Create CloudWatch alarms, dashboards, and log groups
+
+```bash
+pip install boto3
+
+# Set up monitoring for an EC2 instance
+python code/cloudwatch_setup.py \
+  --ec2-id i-0abc123def456789 \
+  --sns-arn arn:aws:sns:us-east-1:123456789:my-alerts
+
+# Use a specific region
+python code/cloudwatch_setup.py \
+  --ec2-id i-0abc123def456789 \
+  --sns-arn arn:aws:sns:us-east-1:123456789:my-alerts \
+  --region us-east-1
+```
+
+What it creates:
+- CPU alarm: triggers SNS when CPU > 80% for 5 consecutive minutes
+- Memory alarm: uses custom metric namespace
+- CloudWatch dashboard with EC2 + RDS widgets
+- Log group `/app/handson` with 30-day retention
+- Prints all created resource ARNs

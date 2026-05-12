@@ -33,3 +33,29 @@ python src/validate_orders.py
 - Expectations as code: version-controlled, reviewable, testable
 - Data docs: auto-generated HTML report — share with data consumers
 - Quarantine bad records: don't drop them — move to a quarantine zone for investigation
+
+## Code
+
+### `src/validate_orders.py` — Great Expectations data quality checks
+
+```bash
+pip install great-expectations pyarrow pandas s3fs
+
+# Create sample data with quality issues (for testing)
+python -c "
+import pandas as pd
+df = pd.DataFrame({
+    'order_id': ['ORD-001', 'ORD-002', None, 'ORD-001'],
+    'amount': [29.99, -5.00, 49.99, 19.99],
+    'product': ['Widget A', 'Widget B', 'Unknown', 'Widget C']
+})
+df.to_parquet('/tmp/test_orders.parquet', index=False)
+"
+
+# Run validation (expects FAILED — shows which checks fail)
+python src/validate_orders.py
+
+# Fix data and re-run (expects PASSED)
+```
+
+Checks: row count > 0, order_id not null + unique, amount > 0, product in known list (99%), order_date valid format.

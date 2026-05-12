@@ -34,3 +34,27 @@ terraform apply -var-file="terraform.tfvars"
 - Weighted routing with weight=0 sends no traffic (useful for draining)
 - Latency routing uses AWS's internal latency data — not real-time
 - TTL matters: low TTL = faster failover but more DNS queries (cost)
+
+## Code
+
+### `code/dns_checker.py` — Inspect Route53 routing policies and health checks
+
+```bash
+pip install boto3
+
+# List all hosted zones in your account
+python code/dns_checker.py --list-zones
+
+# Check a specific hosted zone
+python code/dns_checker.py --hosted-zone-id Z1234567890ABC
+
+# Use a specific AWS profile
+python code/dns_checker.py --hosted-zone-id Z1234567890ABC --profile my-profile
+```
+
+What it shows:
+- All record sets with their routing policy (Simple, Weighted, Failover, Latency, Geolocation, MultiValue)
+- SetIdentifier and HealthCheckId for each record
+- Health check status (healthy/unhealthy checker count)
+- Routing policy summary table
+- DNS report with total record count

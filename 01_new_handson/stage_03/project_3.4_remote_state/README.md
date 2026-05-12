@@ -46,3 +46,35 @@ terraform apply
 - DynamoDB lock table needs `LockID` as the hash key — exact name matters
 - Enable S3 versioning on the state bucket — you can roll back to previous state
 - Never store state in the same bucket as application data
+
+## Code
+
+### `code/state_manager.py` — Bootstrap and manage Terraform remote state
+
+```bash
+pip install boto3
+
+# Bootstrap: create S3 bucket + DynamoDB table for remote state
+python code/state_manager.py bootstrap \
+  --bucket my-terraform-state-123456 \
+  --table my-terraform-locks
+
+# List all .tfstate files in the bucket
+python code/state_manager.py list --bucket my-terraform-state-123456
+
+# Remove a stuck DynamoDB lock (get LockID from the Terraform error message)
+python code/state_manager.py unlock \
+  --table my-terraform-locks \
+  --lock-id abc123-def456
+
+# Use a specific region
+python code/state_manager.py bootstrap \
+  --bucket my-tf-state \
+  --table my-tf-locks \
+  --region us-west-2
+```
+
+What `bootstrap` creates:
+- S3 bucket with versioning + AES-256 encryption + public access blocked
+- DynamoDB table with `LockID` partition key (PAY_PER_REQUEST billing)
+- Prints the `backend "s3" {}` block to paste into your `main.tf`

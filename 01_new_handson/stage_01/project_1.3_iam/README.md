@@ -24,9 +24,48 @@ Sets up IAM users, groups, roles, and policies following the principle of least 
 - Enable MFA for admin user
 - Test permission boundaries
 
+## How to Run
+```bash
+cd terraform && terraform init && terraform apply -auto-approve
+
+# Or use the automation script
+pip install boto3
+python code/iam_setup.py --dry-run   # preview changes
+python code/iam_setup.py             # apply
+```
+
 ## Lessons Learned
 - Never use root account for daily work — create an admin IAM user
 - Attach policies to groups, not individual users
 - Roles are for services (EC2, Lambda) — not for humans
 - Use `aws:RequestedRegion` condition to restrict to specific regions
 - IAM is global — not region-specific
+
+## Code
+
+### `code/iam_setup.py` — Automate IAM users, groups, and roles
+
+```bash
+# Install dependencies
+pip install boto3
+
+# Dry run first — see what will be created without making changes
+python code/iam_setup.py --dry-run
+
+# Apply changes
+python code/iam_setup.py
+
+# Use a specific AWS profile
+python code/iam_setup.py --profile admin-profile
+```
+
+What it creates:
+| Resource | Name | Permissions |
+|----------|------|-------------|
+| Group | `developers` | S3 ReadOnly + EC2 ReadOnly |
+| Group | `readonly` | AWS ReadOnlyAccess |
+| User | `dev-user-1` | Added to developers group |
+| User | `dev-user-2` | Added to developers group |
+| User | `readonly-user-1` | Added to readonly group |
+| Role | `ec2-s3-access-role` | S3 FullAccess (for EC2 instances) |
+| Instance Profile | `ec2-s3-access-role-profile` | Wraps the EC2 role |

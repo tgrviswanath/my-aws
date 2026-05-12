@@ -29,3 +29,25 @@ terraform init && terraform apply
 - Metadata: non-indexed data — use for debugging details
 - X-Ray daemon: runs as a sidecar container in ECS — collects and batches traces
 - Service map: automatically built from trace data — no manual configuration
+
+## Code
+
+### `src/app_with_tracing.py` — Flask app instrumented with AWS X-Ray
+
+```bash
+pip install flask aws-xray-sdk boto3
+
+export AWS_XRAY_DAEMON_ADDRESS=127.0.0.1:2000
+
+# Start X-Ray daemon locally (Docker)
+docker run -p 2000:2000/udp amazon/aws-xray-daemon
+
+# Run the instrumented app
+python src/app_with_tracing.py
+
+# Make requests to generate traces
+curl http://localhost:8080/api/orders
+curl http://localhost:8080/api/users/123
+```
+
+X-Ray captures: incoming HTTP requests, DynamoDB calls, downstream HTTP calls, custom subsegments.

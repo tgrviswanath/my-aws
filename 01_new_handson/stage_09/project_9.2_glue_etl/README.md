@@ -30,3 +30,20 @@ aws glue start-job-run --job-name handson-etl-job
 - Dynamic frames vs DataFrames: DynamicFrame handles schema inconsistencies better
 - Pushdown predicates: filter at S3 level before loading into Spark — faster
 - Glue Studio: visual ETL builder — good for learning, generates PySpark code
+
+## Code
+
+### `src/etl_job.py` — AWS Glue PySpark ETL job
+
+```bash
+# Upload script to S3 (required before running the Glue job)
+aws s3 cp src/etl_job.py s3://my-data-lake/scripts/etl_job.py
+
+# Run the Glue job
+aws glue start-job-run --job-name handson-etl-job
+
+# Monitor job status
+aws glue get-job-run --job-name handson-etl-job --run-id <run-id>
+```
+
+What it does: reads CSV from `s3://bucket/raw/`, cleans nulls, fixes types, deduplicates, adds partition columns (year/month/day), writes Parquet to `s3://bucket/processed/`.

@@ -41,3 +41,27 @@ terraform apply -var="alert_email=your@email.com"
 - Free tier alerts and billing alarms are separate — enable both
 - Tag every resource with `Project`, `Stage`, `Owner` from day one
 - Cost Explorer takes 24 hours to activate after first use
+
+## Code
+
+### `code/billing_monitor.py` — Monitor AWS costs and budgets
+
+```bash
+# Install dependencies
+pip install boto3
+
+# Run with default profile
+python code/billing_monitor.py
+
+# Run with a specific AWS profile
+python code/billing_monitor.py --profile my-profile
+```
+
+What it does:
+- Fetches month-to-date costs from Cost Explorer
+- Lists top 5 services by spend
+- Shows cost forecast for the rest of the month
+- Checks all configured budgets for threshold breaches
+- Prints a formatted cost summary report
+
+> Note: Cost Explorer must be enabled in your AWS account (Billing → Cost Explorer → Enable).

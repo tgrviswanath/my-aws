@@ -29,3 +29,30 @@ terraform apply -var-file="terraform.tfvars"
 - Use `t3.micro` (free tier eligible) for learning
 - User data scripts run once at first boot — useful for automated setup
 - Always use key pairs, never password-based SSH
+
+## Code
+
+### `code/setup_nginx.sh` — EC2 user-data / setup script
+
+**Option A — EC2 User Data (automatic on launch):**
+Paste the contents of `setup_nginx.sh` into the EC2 "User data" field when launching an instance.
+
+**Option B — Run manually on an existing instance:**
+```bash
+# Copy to EC2
+scp code/setup_nginx.sh ec2-user@<public-ip>:~/
+
+# Run on the instance
+ssh ec2-user@<public-ip>
+sudo bash setup_nginx.sh
+```
+
+What it does:
+- Installs Nginx (supports Amazon Linux 2, AL2023, Ubuntu)
+- Creates a static site with instance metadata (ID, AZ, IP)
+- Adds a `/health` endpoint returning `{"status":"healthy"}`
+- Configures reverse proxy to port 3000 (commented out — uncomment for your app)
+- Adds security headers (X-Frame-Options, CSP, HSTS)
+- Enables Gzip compression
+- Hardens SSH (no root login, key-only auth)
+- Sets up log rotation

@@ -39,3 +39,28 @@ kubectl apply -f k8s/
 - Karpenter: better autoscaler than Cluster Autoscaler — provisions nodes in seconds
 - AWS Load Balancer Controller: creates ALBs from Ingress resources
 - IRSA: IAM Roles for Service Accounts — pods get AWS permissions without node IAM role
+
+## Code
+
+### `k8s/deployment.yaml` — Kubernetes manifests
+
+```bash
+# Connect to EKS cluster
+aws eks update-kubeconfig --region us-east-1 --name handson-eks
+
+# Apply all manifests
+kubectl apply -f k8s/
+
+# Check deployment status
+kubectl get pods -n handson
+kubectl get svc -n handson
+kubectl get hpa -n handson
+
+# View pod logs
+kubectl logs -f deployment/handson-api -n handson
+
+# Scale manually
+kubectl scale deployment handson-api --replicas=3 -n handson
+```
+
+Manifests included: Deployment, Service (ClusterIP), Ingress (ALB), HorizontalPodAutoscaler (CPU-based), ConfigMap, Namespace.

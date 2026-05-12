@@ -44,3 +44,33 @@ Push to main branch
 - Smoke tests after deploy catch issues before users do
 - Use GitHub Environments for production deployments — adds manual approval gate
 - Cache Docker layers in GitHub Actions using `cache-from` — speeds up builds significantly
+
+## Code
+
+### `code/deploy_check.py` — Post-deployment verification
+
+```bash
+pip install boto3 requests
+
+# Verify deployment after CI/CD pipeline completes
+python code/deploy_check.py \
+  --cluster prod-cluster \
+  --service api \
+  --url https://api.example.com/health
+
+# Also check ALB target group health
+python code/deploy_check.py \
+  --cluster prod-cluster \
+  --service api \
+  --url https://api.example.com/health \
+  --tg-arn arn:aws:elasticloadbalancing:us-east-1:123:targetgroup/api/abc123
+```
+
+Checks performed:
+| Check | What it verifies |
+|-------|-----------------|
+| ECS tasks | `desiredCount == runningCount` and `pendingCount == 0` |
+| ALB target group | All registered targets are `healthy` (optional) |
+| HTTP endpoint | Service URL returns HTTP 200 |
+
+Exit code: `0` = all pass, `1` = any failure. Use in GitHub Actions as a post-deploy step.

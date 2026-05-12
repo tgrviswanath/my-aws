@@ -45,3 +45,30 @@ terraform apply -var-file="terraform.tfvars"
 - Auto Scaling needs a Launch Template, not a Launch Configuration (LC is legacy)
 - Health check path must return HTTP 200 — configure your app's `/health` endpoint
 - CloudFront in front of ALB adds caching and DDoS protection
+
+## Code
+
+### `code/health_check.py` — Check health of all application tiers
+
+```bash
+pip install boto3
+
+# Check all tiers (auto-discovers ALB, EC2, RDS)
+python code/health_check.py
+
+# Check a specific ALB and RDS instance
+python code/health_check.py --alb-arn arn:aws:elasticloadbalancing:... --rds-id mydb
+
+# Use a specific region
+python code/health_check.py --region us-west-2
+```
+
+What it checks:
+| Tier | Check |
+|------|-------|
+| Tier 1 — ALB | State (active), listener count and ports |
+| Tier 1 — Target Groups | Per-target health (healthy/unhealthy count) |
+| Tier 2 — EC2 | Instance state, system status checks, instance status checks |
+| Tier 3 — RDS | Instance status, Multi-AZ warning if single-AZ |
+
+Prints an overall health report: `ALL SYSTEMS HEALTHY` or `ISSUES DETECTED`.

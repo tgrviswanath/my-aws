@@ -47,3 +47,25 @@ terraform output state_machine_arn
 - `Catch` blocks handle specific error types — always catch `States.ALL` as a fallback
 - Parallel branches must all succeed for the workflow to continue
 - Step Functions console shows a visual execution graph — invaluable for debugging
+
+## Code
+
+### `src/workflow_handlers.py` — Step Functions task Lambda handlers
+
+```bash
+pip install boto3
+
+# Start a workflow execution
+export STATE_MACHINE_ARN=arn:aws:states:us-east-1:123456789:stateMachine:handson-workflow
+python -c "
+import boto3, json
+sf = boto3.client('stepfunctions')
+resp = sf.start_execution(
+    stateMachineArn='$STATE_MACHINE_ARN',
+    input=json.dumps({'file_key': 'uploads/data.csv', 'bucket': 'my-bucket'})
+)
+print(resp['executionArn'])
+"
+```
+
+States: Upload → Validate → Process → Notify. Each state is a separate Lambda function.

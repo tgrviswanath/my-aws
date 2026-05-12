@@ -45,3 +45,41 @@ terraform apply -var-file="qa.tfvars"
 - Use `terraform workspace` as an alternative to separate directories (but separate dirs are clearer)
 - Module outputs must be explicitly declared — they don't auto-export
 - Pin module versions in production: `source = "./modules/vpc"` is fine locally; use Git tags for shared modules
+
+## Code
+
+### `code/env_switcher.py` — Switch between dev/qa/prod Terraform environments
+
+```bash
+# Plan for dev environment
+python code/env_switcher.py --env dev --action plan
+
+# Apply to qa
+python code/env_switcher.py --env qa --action apply
+
+# Apply to prod (requires typing 'yes' to confirm)
+python code/env_switcher.py --env prod --action apply
+
+# Destroy dev environment
+python code/env_switcher.py --env dev --action destroy --auto-approve
+
+# Run against a specific Terraform directory
+python code/env_switcher.py --env dev --action plan --dir ./terraform
+```
+
+Expected directory layout:
+```
+terraform/
+├── main.tf
+├── variables.tf
+└── envs/
+    ├── dev.tfvars
+    ├── qa.tfvars
+    └── prod.tfvars
+```
+
+What it does:
+- Selects the correct `.tfvars` file for the environment
+- Creates or selects the matching Terraform workspace
+- Shows a cost estimate comparison table (dev/qa/prod)
+- Requires explicit `yes` confirmation before applying to prod

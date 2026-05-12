@@ -27,3 +27,28 @@ terraform output waf_arn
 - Managed rule groups: AWS maintains them — auto-updated for new threats
 - Rate limiting: per IP, per session, or per custom key (e.g. user ID)
 - False positives: use Count mode first, review logs, then switch to Block
+
+## Code
+
+### `code/waf_tester.py` — Test WAF rules against your ALB endpoint
+
+```bash
+pip install requests
+
+# Run all WAF tests against your ALB URL
+python code/waf_tester.py --url https://your-alb-dns-name.amazonaws.com
+
+# Use a specific region for WAF API checks
+python code/waf_tester.py --url https://your-alb-dns-name.amazonaws.com --region us-east-1
+```
+
+Tests performed:
+| Test | Payload | Expected |
+|------|---------|----------|
+| Legitimate request | `GET /` | 200 OK |
+| SQL injection | `?id=1' OR '1'='1` | 403 Blocked |
+| XSS | `?q=<script>alert(1)</script>` | 403 Blocked |
+| Bad bot user-agent | `sqlmap/1.0` | 403 Blocked |
+| Path traversal | `/../../../etc/passwd` | 403 Blocked |
+
+Prints a PASS/FAIL table for each test. Use this after deploying WAF to verify rules are working.

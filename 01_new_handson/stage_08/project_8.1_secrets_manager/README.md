@@ -34,3 +34,25 @@ terraform init && terraform apply -var-file="terraform.tfvars"
 - Use `SecureString` type in SSM for sensitive values — encrypted with KMS
 - Cache secrets in Lambda: retrieve once per cold start, not per invocation
 - Least privilege: grant `secretsmanager:GetSecretValue` only for specific secret ARNs
+
+## Code
+
+### `src/secrets_client.py` — Retrieve secrets from AWS Secrets Manager
+
+```bash
+pip install boto3
+
+export SECRET_NAME=handson/db/credentials
+python src/secrets_client.py
+```
+
+Usage in your application:
+```python
+from src.secrets_client import get_secret
+
+# Returns dict: {"username": "admin", "password": "..."}
+db_creds = get_secret("handson/db/credentials")
+conn = pymysql.connect(host=db_host, user=db_creds["username"], password=db_creds["password"])
+```
+
+Never hardcode credentials — always fetch from Secrets Manager at runtime.

@@ -27,3 +27,27 @@ terraform init && terraform apply
 - Auto-remediation: Config can trigger SSM Automation to fix non-compliant resources
 - Config aggregator: view compliance across all accounts in an Organization
 - Config rules are evaluated on change AND on a schedule (every 24h)
+
+## Code
+
+### `code/compliance_checker.py` — Check AWS Config compliance rules
+
+```bash
+pip install boto3
+
+# Check all Config rules and report violations
+python code/compliance_checker.py
+
+# Use a specific region
+python code/compliance_checker.py --region us-east-1
+
+# Use a specific AWS profile
+python code/compliance_checker.py --profile security-audit
+```
+
+What it shows:
+- All Config rules with their compliance status (COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE)
+- Non-compliant resources grouped by rule
+- Severity grouping (CRITICAL, HIGH, MEDIUM)
+- Remediation hints for common violations
+- Summary: X/Y rules compliant

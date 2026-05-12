@@ -46,3 +46,34 @@ terraform output role_arns
 - `environment:production` condition requires GitHub Environments to be configured
 - OIDC tokens are valid for 1 hour — no rotation needed
 - Audit OIDC usage in CloudTrail: look for `AssumeRoleWithWebIdentity` events
+
+## Code
+
+### `code/oidc_setup.py` — Set up GitHub Actions OIDC trust with AWS IAM
+
+```bash
+pip install boto3
+
+# Create OIDC provider + IAM role for a GitHub repo
+python code/oidc_setup.py \
+  --repo myorg/my-app \
+  --role-name GitHubActionsRole
+
+# Restrict to a specific branch (more secure)
+python code/oidc_setup.py \
+  --repo myorg/my-app \
+  --role-name GitHubActionsRole \
+  --branch main
+
+# Allow any branch (use for monorepos with multiple deploy branches)
+python code/oidc_setup.py \
+  --repo myorg/my-app \
+  --role-name GitHubActionsRole \
+  --branch "*"
+```
+
+What it creates:
+- GitHub Actions OIDC identity provider (`token.actions.githubusercontent.com`)
+- IAM role with trust policy scoped to the specific repo and branch
+- Attaches `AmazonEC2ContainerRegistryPowerUser` + `AmazonECS_FullAccess`
+- Prints the role ARN and the exact GitHub Actions YAML snippet to use

@@ -30,3 +30,20 @@ python backup_manager.py --instance mysql-lab-01
 - Paginate API calls — AWS returns max 1000 items per call
 - Handle `ClientError` exceptions for proper error handling
 - Use `--dry-run` flag on EC2 operations to test permissions without executing
+
+## Code
+
+### `scripts/s3_uploader.py` — Upload files to S3
+
+```bash
+pip install boto3
+
+# Upload a single file
+python scripts/s3_uploader.py upload --bucket my-bucket --file ./data.csv --key uploads/data.csv
+
+# Sync an entire folder
+python scripts/s3_uploader.py sync --bucket my-bucket --folder ./data --prefix backups/
+
+# List bucket contents
+python scripts/s3_uploader.py list --bucket my-bucket
+```

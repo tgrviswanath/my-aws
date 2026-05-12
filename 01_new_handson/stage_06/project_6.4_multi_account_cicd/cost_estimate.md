@@ -4,12 +4,13 @@
 |----------|-------------|
 | AWS Organizations | $0 |
 | IAM cross-account roles | $0 |
-| GitHub Actions | $0 (free tier) |
+| GitHub Actions (free tier) | $0 |
 | ECS per account (if deployed) | ~$25 each |
-| **Pipeline infrastructure only** | **$0** |
+| **Total (pipeline infra only)** | **$0** |
 
 ## Notes
 - AWS Organizations is free — no charge for creating sub-accounts
 - Cross-account IAM roles are free
 - The cost comes from the ECS/RDS resources in each account
 - For learning: simulate with a single account using different IAM roles
+

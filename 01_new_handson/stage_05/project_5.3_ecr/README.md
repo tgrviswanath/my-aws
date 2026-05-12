@@ -37,3 +37,32 @@ terraform output ecr_url
 - Lifecycle policies are critical — unmanaged ECR can accumulate thousands of images
 - ECR image scanning is free and catches known CVEs — always enable it
 - Use `--platform linux/amd64` when building on Apple Silicon (M1/M2) for Lambda/ECS compatibility
+
+## Code
+
+### `code/ecr_manager.py` — Build, push, list, and clean ECR images
+
+```bash
+pip install boto3
+# Docker must be running
+
+# Push a new image (builds from current directory)
+python code/ecr_manager.py push --repo my-app --tag v1.0.0
+
+# Push from a specific Dockerfile directory
+python code/ecr_manager.py push --repo my-app --tag latest --dockerfile ./app
+
+# List all images in a repository
+python code/ecr_manager.py list --repo my-app
+
+# Delete old images, keeping the 5 most recent
+python code/ecr_manager.py clean --repo my-app --keep 5
+
+# Use a specific region
+python code/ecr_manager.py list --repo my-app --region us-west-2
+```
+
+What it does:
+- `push`: Gets ECR login token, runs `docker build`, tags, and pushes
+- `list`: Shows all images sorted by push date with sizes
+- `clean`: Deletes oldest images keeping only the N most recent (batch delete, up to 100 at a time)

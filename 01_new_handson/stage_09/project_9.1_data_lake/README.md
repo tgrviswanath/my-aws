@@ -33,3 +33,31 @@ terraform output data_lake_bucket
 - Glue Crawler: auto-discovers schema but runs on a schedule — not real-time
 - Lake Formation: fine-grained access control (column-level, row-level filtering)
 - Data lake vs data warehouse: lake = raw + flexible; warehouse = structured + fast queries
+
+## Code
+
+### `code/data_lake_setup.py` — Set up S3 data lake zones and Glue catalog
+
+```bash
+pip install boto3
+
+# Set up the full data lake structure
+python code/data_lake_setup.py --bucket my-data-lake-bucket
+
+# Use a specific region
+python code/data_lake_setup.py --bucket my-data-lake-bucket --region us-east-1
+```
+
+What it creates:
+| S3 Prefix | Purpose |
+|-----------|---------|
+| `raw/` | Landing zone — raw data as-is from sources |
+| `processed/` | Cleaned and transformed data (Parquet) |
+| `curated/` | Business-ready aggregated data |
+| `archive/` | Historical data (moved by lifecycle policy) |
+
+Also creates:
+- Glue databases: `raw_db`, `processed_db`, `curated_db`
+- Registers S3 locations with Lake Formation
+- Creates a sample Glue table for orders data
+- Prints the data lake structure summary

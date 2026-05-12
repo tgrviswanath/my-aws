@@ -39,3 +39,31 @@ terraform apply -var-file="terraform.tfvars"
 - Automated backups are enabled by default — set retention to at least 7 days
 - Use Secrets Manager (Project 8.1) to store DB credentials — never hardcode them
 - `db.t3.micro` is free tier eligible
+
+## Code
+
+### `code/db_operations.py` — Connect to RDS MySQL and run CRUD operations
+
+```bash
+# Install dependencies
+pip install pymysql
+
+# Set connection environment variables
+export DB_HOST=mydb.abc123.us-east-1.rds.amazonaws.com
+export DB_USER=admin
+export DB_PASS=yourpassword
+export DB_NAME=shopdb
+
+# Run
+python code/db_operations.py
+```
+
+What it does:
+- Connects to RDS MySQL using environment variables (never hardcoded credentials)
+- Creates an `orders` table with a generated `total_price` column
+- Inserts 5 sample orders using `executemany` (efficient batch insert)
+- Queries and prints a formatted orders table
+- Shows a connection pool pattern using a context manager
+- Rolls back automatically on any error
+
+> Tip: Use AWS Secrets Manager to store DB credentials instead of env vars in production.

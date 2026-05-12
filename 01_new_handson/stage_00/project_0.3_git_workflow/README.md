@@ -42,7 +42,45 @@ main          ← always deployable, protected
 | `chore:` | Maintenance, cleanup |
 | `refactor:` | Code restructure, no behavior change |
 
+## How to Run
+```bash
+# Run the Git workflow demo script
+chmod +x code/git_workflow_demo.sh
+./code/git_workflow_demo.sh
+
+# Or step through manually
+git init my-project && cd my-project
+git checkout -b feature/my-feature
+git add . && git commit -m "feat: add initial implementation"
+git push -u origin feature/my-feature
+# Open PR on GitHub → review → merge
+```
+
 ## Lessons Learned
 - Never commit `.terraform/`, `*.tfstate`, or `*.pem` files
 - One branch per project keeps history clean
 - Conventional commits make the log readable at a glance
+
+## Code
+
+### `code/git_workflow_demo.sh` — Git feature branch workflow
+
+```bash
+# Make executable
+chmod +x code/git_workflow_demo.sh
+
+# Run with defaults (creates ./demo-repo)
+./code/git_workflow_demo.sh
+
+# Run with custom repo path
+./code/git_workflow_demo.sh --repo-path /tmp/my-demo-repo
+```
+
+What it does:
+- Initialises a Git repo with `main` as the default branch
+- Creates a `.gitignore` for Python/Node/Terraform
+- Creates a feature branch `feature/add-user-auth`
+- Makes 3 conventional commits (feat, test, fix)
+- Simulates a PR review (diff + log)
+- Merges with `--no-ff` and tags a `v1.0.0` release
+- Cleans up the merged branch

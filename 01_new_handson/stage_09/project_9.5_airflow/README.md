@@ -38,3 +38,34 @@ aws s3 cp dags/ s3://YOUR_MWAA_BUCKET/dags/ --recursive
 - Sensors: wait for external conditions (S3 file exists, Glue job complete)
 - Task groups: organize complex DAGs visually
 - Backfill: re-run historical dates — `airflow dags backfill -s 2024-01-01 -e 2024-01-31`
+
+## Code
+
+### `code/orders_dag.py` — Airflow DAG for the orders data pipeline
+
+```bash
+pip install apache-airflow apache-airflow-providers-amazon
+
+# Copy DAG to your Airflow DAGs folder
+cp code/orders_dag.py ~/airflow/dags/
+
+# Trigger manually via CLI
+airflow dags trigger orders_pipeline
+
+# Or trigger via Airflow UI at http://localhost:8080
+```
+
+Pipeline tasks:
+```
+check_source_data (S3Sensor)
+    → run_glue_etl (GlueJobOperator)
+        → validate_data_quality (PythonOperator)
+            → run_dbt_models (BashOperator: dbt run)
+                → notify_success (SNS)
+```
+
+Features:
+- Daily schedule (`@daily`)
+- Retry logic: 2 retries with 5-minute delay
+- `on_failure_callback` sends SNS alert on any task failure
+- S3 sensor waits for source data before starting ETL

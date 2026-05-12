@@ -31,3 +31,25 @@ curl http://localhost:4000/health
 - Environment variables in `docker-compose.yml` should reference `.env` file — never hardcode passwords
 - `docker compose down -v` removes volumes too — use carefully (deletes DB data)
 - Health checks on MySQL/Redis prevent "connection refused" errors on startup
+
+## Code
+
+### `backend/server.js` — Node.js Express API
+
+```bash
+# Start all services with Docker Compose
+cp .env.example .env
+docker compose up -d
+
+# Test the API
+curl http://localhost:3000/health
+curl http://localhost:3000/api/items
+
+# View logs
+docker compose logs -f backend
+
+# Stop
+docker compose down
+```
+
+Stack: Node.js backend → MySQL database → Redis cache. All wired via Docker Compose networking.

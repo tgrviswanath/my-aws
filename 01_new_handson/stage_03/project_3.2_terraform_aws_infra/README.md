@@ -49,3 +49,31 @@ terraform destroy -var-file="terraform.tfvars"
 - Never put passwords in `.tf` files — use variables + `.tfvars` (gitignored)
 - `terraform plan -out=plan.tfplan` saves the plan; `terraform apply plan.tfplan` applies exactly that plan
 - Use `terraform graph` to visualize resource dependencies
+
+## Code
+
+### `code/infra_validator.py` — Validate Terraform-created infrastructure
+
+```bash
+pip install boto3
+
+# Validate infrastructure in default region
+python code/infra_validator.py
+
+# Validate in a specific region
+python code/infra_validator.py --region us-west-2
+
+# Use a specific AWS profile
+python code/infra_validator.py --profile staging
+```
+
+Checks performed:
+| Check | What it looks for |
+|-------|------------------|
+| VPC | VPC tagged `Project=handson` exists and is `available` |
+| Public subnets | Subnets tagged `Tier=public` exist in the VPC |
+| Private subnets | Subnets tagged `Tier=private` exist in the VPC |
+| EC2 | At least one running instance in the VPC |
+| RDS | At least one `available` RDS instance tagged `Project=handson` |
+
+Exit code: `0` = all pass, `1` = one or more failures.

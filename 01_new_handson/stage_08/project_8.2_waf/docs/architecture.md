@@ -4,27 +4,26 @@
 
 ```
 Internet
-    │
     │ HTTP/HTTPS request
     ▼
-AWS WAF Web ACL (evaluated before ALB)
+AWS WAF Web ACL (evaluated BEFORE ALB receives request)
     │
-    │ Rules evaluated in priority order:
+    │ Rules evaluated in priority order (lower = higher priority):
     │
     ├── Priority 1: Rate limit (100 req/5min/IP)
-    │     └── BLOCK if exceeded
+    │     └── BLOCK if exceeded → 429 Too Many Requests
     │
     ├── Priority 5: Blocked IP set
-    │     └── BLOCK if IP in list
+    │     └── BLOCK if IP in list → 403 Forbidden
     │
-    ├── Priority 10: Core Rule Set (OWASP Top 10)
-    │     └── BLOCK on match
+    ├── Priority 10: AWS Core Rule Set (OWASP Top 10)
+    │     └── BLOCK on SQL injection, XSS, etc.
     │
     ├── Priority 20: SQL injection rules
-    │     └── BLOCK on match
+    │     └── BLOCK on SQL patterns in query/body
     │
     ├── Priority 30: Known bad inputs (XSS, log4j)
-    │     └── BLOCK on match
+    │     └── BLOCK on known attack patterns
     │
     └── Default action: ALLOW
           │
@@ -32,14 +31,24 @@ AWS WAF Web ACL (evaluated before ALB)
          ALB → ECS Tasks
 ```
 
-## WAF Rule Actions
+## WAF Logging
 
-| Action | Effect |
-|--------|--------|
-| Block | Return 403 Forbidden |
-| Allow | Pass request through |
-| Count | Log but don't block (testing mode) |
-| CAPTCHA | Challenge with CAPTCHA |
+```
+WAF blocks request
+    │
+    │ Log entry written to CloudWatch: aws-waf-logs-handson
+    ▼
+Log entry contains:
+  {
+    "action": "BLOCK",
+    "terminatingRuleId": "AWSManagedRulesSQLiRuleSet",
+    "httpRequest": {
+      "clientIp": "1.2.3.4",
+      "uri": "/items?id=1' OR '1'='1",
+      "method": "GET"
+    }
+  }
+```
 
 ## Testing Strategy
 
@@ -48,9 +57,9 @@ Phase 1: Deploy all rules in COUNT mode
   → Monitor logs for false positives
   → Tune rules if legitimate traffic is flagged
 
-Phase 2: Switch critical rules to BLOCK
+Phase 2: Switch to BLOCK mode
   → SQL injection, XSS, known bad inputs
 
 Phase 3: Enable rate limiting
-  → Start with high threshold, lower gradually
+  → Start high (1000/5min), lower gradually
 ```

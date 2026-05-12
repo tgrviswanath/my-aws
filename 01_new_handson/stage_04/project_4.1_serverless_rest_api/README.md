@@ -43,3 +43,37 @@ terraform output api_url
 - Always return proper HTTP status codes from Lambda (200, 201, 400, 404, 500)
 - Use Lambda environment variables for config — never hardcode table names or regions
 - Lambda timeout default is 3 seconds — increase for DB operations
+
+## Code
+
+### `src/handler.py` — Lambda CRUD handler for DynamoDB
+
+```bash
+pip install boto3
+
+# Test locally (set env var first)
+export TABLE_NAME=handson-items
+python -c "
+import json
+from src.handler import handler
+
+# Test GET all
+print(handler({'requestContext': {'http': {'method': 'GET'}}, 'rawPath': '/items'}, None))
+
+# Test POST
+print(handler({
+    'requestContext': {'http': {'method': 'POST'}},
+    'rawPath': '/items',
+    'body': json.dumps({'name': 'Test Item', 'description': 'A test'})
+}, None))
+"
+```
+
+Endpoints handled:
+| Method | Path | Action |
+|--------|------|--------|
+| GET | `/items` | List all items |
+| GET | `/items/{id}` | Get one item |
+| POST | `/items` | Create item |
+| PUT | `/items/{id}` | Update item |
+| DELETE | `/items/{id}` | Delete item |

@@ -34,3 +34,25 @@ curl http://localhost:5000/health
 - `COPY requirements.txt` before `COPY .` — Docker layer caching speeds up rebuilds
 - `CMD` vs `ENTRYPOINT`: use `ENTRYPOINT` for the executable, `CMD` for default args
 - Health checks let Docker (and ECS/EKS) know when a container is ready
+
+## Code
+
+### `app/app.py` — Flask application
+
+```bash
+pip install flask
+
+# Run locally
+python app/app.py
+
+# Or with Docker
+docker build -t handson-app .
+docker run -p 8080:8080 handson-app
+
+# Test
+curl http://localhost:8080/health
+curl http://localhost:8080/api/items
+```
+
+### `Dockerfile`
+Multi-stage build: builder stage installs dependencies, final stage copies only what's needed.

@@ -41,3 +41,37 @@ terraform init && terraform apply -var-file="terraform.tfvars"
 - Canary deployment: shift 10% to green first, then 90% after validation
 - CodeDeploy rollback is automatic if health checks fail during deployment
 - Keep the blue environment for at least 1 hour — gives time to catch issues
+
+## Code
+
+### `code/blue_green_deploy.py` — Control blue-green deployments via CodeDeploy
+
+```bash
+pip install boto3
+
+# Deploy using an AppSpec stored in S3
+python code/blue_green_deploy.py \
+  --app MyApp \
+  --group prod-bg-group \
+  --revision s3://my-bucket/appspec.yaml
+
+# Deploy with automatic rollback on failure
+python code/blue_green_deploy.py \
+  --app MyApp \
+  --group prod-bg-group \
+  --revision s3://my-bucket/appspec.yaml \
+  --rollback
+
+# Use a specific region
+python code/blue_green_deploy.py \
+  --app MyApp \
+  --group prod-bg-group \
+  --revision s3://my-bucket/appspec.yaml \
+  --region us-east-1
+```
+
+What it does:
+- Creates a CodeDeploy deployment
+- Monitors traffic shift progress (BeforeAllowTraffic → AllowTraffic → AfterAllowTraffic)
+- Prints instance counts (pending/in-progress/succeeded/failed) at each poll
+- Triggers rollback on failure if `--rollback` is set

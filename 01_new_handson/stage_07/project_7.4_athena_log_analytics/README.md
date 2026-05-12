@@ -31,3 +31,26 @@ terraform output athena_query_url
 - Columnar formats (Parquet/ORC) are 10x cheaper to query than JSON/CSV
 - Use LIMIT in exploratory queries to avoid scanning full datasets
 - Workgroups: set per-query data scan limits to prevent runaway costs
+
+## Code
+
+### `queries/cloudtrail_queries.sql` — Athena queries for CloudTrail logs
+
+```bash
+# Run via AWS CLI
+aws athena start-query-execution \
+  --query-string "$(cat queries/cloudtrail_queries.sql)" \
+  --query-execution-context Database=cloudtrail_logs \
+  --result-configuration OutputLocation=s3://my-athena-results/
+```
+
+### `queries/alb_queries.sql` — Athena queries for ALB access logs
+
+```bash
+aws athena start-query-execution \
+  --query-string "$(cat queries/alb_queries.sql)" \
+  --query-execution-context Database=alb_logs \
+  --result-configuration OutputLocation=s3://my-athena-results/
+```
+
+Queries included: top IPs by request count, 5xx error analysis, slow requests (>1s), geographic distribution.

@@ -4,49 +4,40 @@
 
 ```
 ECS Tasks / ALB
-    │
-    │ Emit metrics automatically
+    │ Emit metrics automatically (AWS/ECS, AWS/ApplicationELB namespaces)
     ▼
-┌──────────────────────────────────────────────────────────────┐
-│                    CloudWatch                                 │
-│                                                               │
-│  Metrics Namespaces:                                          │
-│  ├── AWS/ECS          (CPU, Memory, TaskCount)               │
-│  ├── AWS/ApplicationELB (RequestCount, Latency, 5xx)         │
-│  └── Custom/App       (business metrics you publish)         │
-│                                                               │
-│  Alarms:                                                      │
-│  ├── ecs-cpu-high     → SNS → Email                          │
-│  ├── ecs-memory-high  → SNS → Email                          │
-│  ├── alb-5xx-errors   → SNS → Email                          │
-│  ├── alb-latency-high → SNS → Email                          │
-│  └── [composite]      → SNS → Email (CPU AND latency)        │
-│                                                               │
-│  Dashboard: handson-overview                                  │
-│  ├── ECS CPU & Memory chart                                   │
-│  ├── ALB requests & latency chart                            │
-│  ├── HTTP status codes chart                                  │
-│  └── Alarm status widget                                      │
-│                                                               │
-│  Log Insights:                                                │
-│  ├── error-rate-last-hour query                              │
-│  └── slow-requests query                                     │
-└──────────────────────────────────────────────────────────────┘
+CloudWatch Metrics
+    ├── AWS/ECS: CPUUtilization, MemoryUtilization, RunningTaskCount
+    ├── AWS/ApplicationELB: RequestCount, TargetResponseTime, HTTPCode_ELB_5XX
+    └── Custom: publish via PutMetricData API
     │
-    │ Alarm → SNS Topic → Email subscription
-    ▼
-📧 your@email.com
+    ├── Alarms (threshold-based)
+    │   ├── ecs-cpu-high (> 80% for 10 min) → SNS → Email
+    │   ├── ecs-memory-high (> 85%) → SNS → Email
+    │   ├── alb-5xx-errors (> 10/min) → SNS → Email
+    │   ├── alb-latency-high (p99 > 2s) → SNS → Email
+    │   └── [composite] CPU AND latency → SNS → Email
+    │
+    ├── Dashboard: handson-overview
+    │   ├── ECS CPU & Memory chart
+    │   ├── ALB requests & latency chart
+    │   ├── HTTP status codes chart
+    │   └── Alarm status widget
+    │
+    └── Log Insights (saved queries)
+        ├── error-rate-last-hour
+        └── slow-requests
 ```
 
 ## Alarm Evaluation
 
 ```
-Metric data points collected every 60s (period=60)
-Alarm evaluates every evaluation_periods × period
+period = 300s (5-minute average)
+evaluation_periods = 2
+→ Alarm fires after threshold exceeded for 10 consecutive minutes
+→ Reduces false positives from brief spikes
 
-Example: ecs-cpu-high
-  period=300 (5 min average)
-  evaluation_periods=2
-  → Alarm fires after CPU > 80% for 10 consecutive minutes
-  → Reduces false positives from brief spikes
+treat_missing_data = "notBreaching"
+→ If no data (service down), don't alarm on missing metrics
+→ Use "breaching" for task count alarms (missing = problem)
 ```

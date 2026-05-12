@@ -59,3 +59,33 @@ kubectl apply -f argocd/application.yaml
 - ArgoCD sync policy: `automated` with `selfHeal=true` fixes manual changes automatically
 - Image updater: ArgoCD Image Updater watches ECR and updates image tags in Git automatically
 - Health checks: ArgoCD shows deployment health — green = all pods running and ready
+
+## Code
+
+### `k8s/` — Kubernetes manifests
+
+```bash
+# Apply base manifests
+kubectl apply -f k8s/base/
+
+# Apply environment overlay (Kustomize)
+kubectl apply -k k8s/overlays/dev/
+kubectl apply -k k8s/overlays/prod/
+
+# Check deployment status
+kubectl get pods -n handson
+kubectl get svc -n handson
+```
+
+### `argocd/application.yaml` — ArgoCD Application manifest
+
+```bash
+# Register the app with ArgoCD
+kubectl apply -f argocd/application.yaml
+
+# Sync manually
+argocd app sync handson-app
+
+# Watch sync status
+argocd app get handson-app
+```

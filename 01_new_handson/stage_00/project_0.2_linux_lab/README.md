@@ -46,3 +46,14 @@ project_0.2_linux_lab/
 - `chmod 640` = owner read+write, group read, others nothing
 - Nginx config lives in `/etc/nginx/sites-available/`
 - Logs are your best debugging tool — always check them first
+
+## Code
+
+### `scripts/setup.sh` — Linux lab setup script
+
+```bash
+chmod +x scripts/setup.sh
+sudo bash scripts/setup.sh
+```
+
+Covers: Nginx install, user creation, cron job setup, log analysis commands.

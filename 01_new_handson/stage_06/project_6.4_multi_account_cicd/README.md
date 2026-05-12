@@ -50,3 +50,37 @@ terraform init && terraform apply
 - Tagging strategy: tag all resources with `Account`, `Environment`, `DeployedBy`
 - AWS Organizations SCPs can restrict what accounts can do — important for prod
 - Never deploy directly to prod — always go through staging first
+
+## Code
+
+### `code/cross_account_deploy.py` — Deploy to a target AWS account via role assumption
+
+```bash
+pip install boto3
+
+# Deploy to a target account by assuming a cross-account role
+python code/cross_account_deploy.py \
+  --target-account 123456789012 \
+  --role DeployRole \
+  --cluster prod-cluster \
+  --service api \
+  --image 123456789012.dkr.ecr.us-east-1.amazonaws.com/api:v3
+
+# Use a specific source account profile
+python code/cross_account_deploy.py \
+  --target-account 123456789012 \
+  --role DeployRole \
+  --cluster prod-cluster \
+  --service api \
+  --image 123456789012.dkr.ecr.us-east-1.amazonaws.com/api:v3 \
+  --profile ci-account
+```
+
+What it does:
+- Uses STS `AssumeRole` to get temporary credentials for the target account
+- Prints the assumed role ARN and credential expiry
+- Registers a new ECS task definition revision with the updated image
+- Updates the ECS service and polls until deployment completes
+- Verifies final task counts in the target account
+
+> The cross-account role must have a trust policy allowing the source account to assume it.

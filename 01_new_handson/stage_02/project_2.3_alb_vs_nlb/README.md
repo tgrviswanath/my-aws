@@ -37,3 +37,30 @@ terraform apply -var-file="terraform.tfvars"
 - NLB supports static Elastic IPs — useful when clients whitelist IPs
 - Use ALB for 99% of web applications; NLB for raw TCP/UDP or extreme performance
 - WebSockets work on both, but NLB is better for long-lived connections
+
+## Code
+
+### `code/load_test.py` — Measure and compare ALB vs NLB latency
+
+```bash
+pip install requests
+
+# Test a single endpoint (100 requests, 10 concurrent)
+python code/load_test.py --url https://your-alb-dns-name
+
+# Custom request count and concurrency
+python code/load_test.py --url https://your-alb-dns-name --requests 500 --concurrency 25
+
+# Side-by-side ALB vs NLB comparison
+python code/load_test.py \
+  --url https://your-alb-dns-name \
+  --compare-url https://your-nlb-dns-name \
+  --requests 200
+```
+
+Metrics reported:
+- Min / Mean / Median / P95 / P99 / Max latency (ms)
+- Requests per second (throughput)
+- Success rate (2xx responses)
+- Status code breakdown
+- Side-by-side comparison table when `--compare-url` is used

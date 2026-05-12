@@ -35,3 +35,29 @@ terraform apply -var-file="terraform.tfvars"
 - CloudFront distributions take 10–15 minutes to deploy globally
 - S3 bucket names must be globally unique
 - Use OAC (Origin Access Control) not OAI — OAI is legacy
+
+## Code
+
+### `code/deploy_website.sh` — Deploy static site to S3 + CloudFront
+
+```bash
+# Make executable
+chmod +x code/deploy_website.sh
+
+# Deploy (syncs ./site folder to S3 and invalidates CloudFront cache)
+./code/deploy_website.sh my-bucket-name E1ABCDEF123456
+
+# Deploy from a custom source directory
+./code/deploy_website.sh my-bucket-name E1ABCDEF123456 ./dist
+```
+
+What it does:
+- Syncs HTML files with `no-cache` headers
+- Syncs CSS/JS with 1-hour cache
+- Syncs images/fonts with 1-year immutable cache
+- Creates a CloudFront invalidation for `/*`
+- Waits for the invalidation to complete
+- Prints the CloudFront URL
+
+### `code/index.html` — Sample static site
+Open in browser or deploy to S3 to see the AWS-themed landing page.

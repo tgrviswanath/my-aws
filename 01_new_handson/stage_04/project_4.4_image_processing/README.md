@@ -42,3 +42,28 @@ terraform output source_bucket
 - Avoid recursive triggers: source and output buckets must be different, or use prefix/suffix filters
 - Lambda memory affects CPU — more memory = faster image processing
 - Use S3 presigned URLs to give temporary upload access without exposing credentials
+
+## Code
+
+### `src/processor.py` — S3-triggered image resize Lambda
+
+```bash
+pip install boto3 Pillow
+
+# Test locally with a sample S3 event
+export OUTPUT_BUCKET=my-processed-bucket
+python -c "
+from src.processor import handler
+event = {
+    'Records': [{
+        's3': {
+            'bucket': {'name': 'my-upload-bucket'},
+            'object': {'key': 'uploads/photo.jpg'}
+        }
+    }]
+}
+handler(event, None)
+"
+```
+
+Flow: S3 upload → Lambda trigger → resize to 800×600 → save to output bucket.

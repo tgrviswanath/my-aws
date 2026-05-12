@@ -46,3 +46,26 @@ terraform apply
 - Default VPC is fine for learning but never use it in production
 - CIDR planning matters — leave room to grow (use /16 for VPC, /24 for subnets)
 - Private subnets need NAT to download packages — without it, EC2 can't reach the internet
+
+## Code
+
+### `code/vpc_checker.py` — Verify VPC architecture
+
+```bash
+pip install boto3
+
+# Check a specific VPC
+python code/vpc_checker.py --vpc-id vpc-0abc123def456789
+
+# Use a specific AWS profile
+python code/vpc_checker.py --vpc-id vpc-0abc123def456789 --profile my-profile
+```
+
+What it checks:
+- VPC exists and is in `available` state
+- Subnets classified as public (has IGW route) or private (has NAT route)
+- Route tables — verifies IGW for public subnets, NAT for private
+- Internet Gateway attachment status
+- NAT Gateway state and subnet placement
+- Security group inbound/outbound rules
+- Prints a connectivity report summary

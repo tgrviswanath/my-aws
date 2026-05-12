@@ -25,3 +25,29 @@ terraform init && terraform apply -var="alert_email=your@email.com"
 - S3 Intelligent-Tiering: auto-moves objects between tiers — good for unpredictable access
 - Cost anomaly detection: ML-based alerts when spend spikes unexpectedly
 - Tagging is the foundation — you can't optimize what you can't identify
+
+## Code
+
+### `src/cost_optimizer.py` — Automated cost optimization
+
+```bash
+pip install boto3
+
+# Dry run — see what would be cleaned up (no changes made)
+python src/cost_optimizer.py --dry-run
+
+# Run all optimizations
+python src/cost_optimizer.py
+
+# Run specific optimization only
+python src/cost_optimizer.py --action stop-idle-ec2
+python src/cost_optimizer.py --action delete-unattached-ebs
+python src/cost_optimizer.py --action remove-old-snapshots
+```
+
+Automations:
+| Action | Savings | Criteria |
+|--------|---------|---------|
+| Stop idle EC2 | ~$15/instance/month | CPU < 5% for 7 days |
+| Delete unattached EBS | ~$0.10/GB/month | No attachment for 7 days |
+| Remove old snapshots | ~$0.05/GB/month | Older than 30 days |

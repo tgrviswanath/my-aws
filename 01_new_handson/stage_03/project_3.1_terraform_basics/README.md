@@ -49,3 +49,41 @@ terraform destroy
 - `terraform destroy` removes everything Terraform created — use carefully
 - Variables without defaults will prompt you at runtime
 - Use `terraform fmt` to auto-format code and `terraform validate` to check syntax
+
+## Code
+
+### `code/terraform_runner.py` — Python wrapper for Terraform CLI
+
+```bash
+# No extra dependencies needed (uses subprocess + stdlib)
+
+# Initialize Terraform working directory
+python code/terraform_runner.py init
+
+# Generate and save execution plan
+python code/terraform_runner.py plan
+
+# Plan with a specific tfvars file
+python code/terraform_runner.py plan --var-file dev.tfvars
+
+# Apply the saved plan
+python code/terraform_runner.py apply
+
+# Apply without confirmation prompt
+python code/terraform_runner.py apply --auto-approve
+
+# Destroy all resources
+python code/terraform_runner.py destroy
+
+# Print all Terraform outputs as key=value
+python code/terraform_runner.py output
+
+# Run against a specific directory
+python code/terraform_runner.py plan --dir ./terraform
+```
+
+What it does:
+- Wraps `terraform init/plan/apply/destroy/output` with colored output
+- Saves plan to `plan.tfplan` and uses it for apply
+- Parses `terraform output -json` and prints key=value pairs
+- Handles errors gracefully with clear messages

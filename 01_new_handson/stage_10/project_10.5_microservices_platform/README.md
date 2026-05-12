@@ -63,3 +63,31 @@ terraform apply -var-file="production.tfvars"
 - Observability is not optional — you can't fix what you can't see
 - Security is built-in, not bolted on — WAF, encryption, least privilege from day 1
 - Cost awareness at every layer — tag everything, set budgets, review monthly
+
+## Code
+
+### `code/platform_health.py` — Check health of all platform services
+
+```bash
+pip install boto3
+
+# Run full platform health check
+python code/platform_health.py
+
+# Use a specific region
+python code/platform_health.py --region us-east-1
+
+# Use a specific profile
+python code/platform_health.py --profile prod
+```
+
+Services checked:
+| Service | Check |
+|---------|-------|
+| ECS services | `desiredCount == runningCount` for all services |
+| RDS instances | All instances in `available` state |
+| ElastiCache | All clusters in `available` state |
+| API Gateway | Recent 5xx error rate < 1% |
+| Kinesis streams | No shard iterator age > 5 minutes |
+
+Prints a platform health dashboard with overall status: `ALL SYSTEMS HEALTHY` or `DEGRADED`.

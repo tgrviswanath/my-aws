@@ -42,3 +42,25 @@ terraform output redis_endpoint
 - Redis eviction policy: `allkeys-lru` evicts least recently used keys when memory is full
 - Use Redis Cluster for production — single node is a single point of failure
 - Connection pooling: reuse Redis connections across Lambda/ECS invocations
+
+## Code
+
+### `src/cache_patterns.py` — Redis caching patterns
+
+```bash
+pip install redis boto3
+
+# Set Redis connection
+export REDIS_HOST=my-cluster.abc123.cache.amazonaws.com
+export REDIS_PORT=6379
+
+python src/cache_patterns.py
+```
+
+Patterns demonstrated:
+| Pattern | Use case |
+|---------|---------|
+| Cache-aside | Read from cache, fallback to DB on miss |
+| Write-through | Write to cache and DB simultaneously |
+| TTL expiry | Auto-expire stale data |
+| Cache invalidation | Delete cache on data update |

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AWS Static Website — Hosted on S3 + CloudFront</title>
+    <style>
+        /* ── Reset & base ─────────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --aws-orange: #FF9900;
+            --aws-dark:   #232F3E;
+            --aws-blue:   #1A73E8;
+            --bg:         #F8F9FA;
+            --card-bg:    #FFFFFF;
+            --text:       #1A1A2E;
+            --muted:      #6C757D;
+            --border:     #E9ECEF;
+            --radius:     12px;
+            --shadow:     0 4px 24px rgba(0,0,0,0.08);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                         "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ── Header ───────────────────────────────────────────────────────── */
+        header {
+            background: var(--aws-dark);
+            color: #fff;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--aws-orange);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        nav a {
+            color: #ccc;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        nav a:hover { color: var(--aws-orange); }
+
+        /* ── Hero ─────────────────────────────────────────────────────────── */
+        .hero {
+            background: linear-gradient(135deg, var(--aws-dark) 0%, #1a3a5c 100%);
+            color: #fff;
+            text-align: center;
+            padding: 5rem 2rem 4rem;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(255,153,0,0.2);
+            border: 1px solid var(--aws-orange);
+            color: var(--aws-orange);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 span { color: var(--aws-orange); }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: #b0bec5;
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.75rem 1.75rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
+
+        .btn-primary { background: var(--aws-orange); color: #fff; }
+        .btn-outline  { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.4); }
+        .btn-outline:hover { border-color: #fff; }
+
+        /* ── Stats bar ────────────────────────────────────────────────────── */
+        .stats-bar {
+            background: var(--aws-orange);
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            padding: 1.25rem 2rem;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+            color: var(--aws-dark);
+        }
+        .stat-value { font-size: 1.6rem; font-weight: 800; }
+        .stat-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* ── Main content ─────────────────────────────────────────────────── */
+        main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .section-subtitle {
+            color: var(--muted);
+            margin-bottom: 2rem;
+        }
+
+        /* ── Cards grid ───────────────────────────────────────────────────── */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.75rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .icon-orange { background: rgba(255,153,0,0.12); }
+        .icon-blue   { background: rgba(26,115,232,0.12); }
+        .icon-green  { background: rgba(52,168,83,0.12); }
+        .icon-purple { background: rgba(103,58,183,0.12); }
+
+        .card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .card p  { color: var(--muted); font-size: 0.9rem; }
+
+        /* ── Architecture diagram ─────────────────────────────────────────── */
+        .arch-diagram {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .arch-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+
+        .arch-node {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            text-align: center;
+            min-width: 110px;
+        }
+        .arch-node .node-icon { font-size: 1.75rem; display: block; margin-bottom: 4px; }
+        .arch-node .node-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
+        .arch-node .node-name  { font-size: 0.85rem; font-weight: 700; }
+
+        .arch-arrow {
+            font-size: 1.5rem;
+            color: var(--aws-orange);
+            font-weight: 700;
+        }
+
+        /* ── Code block ───────────────────────────────────────────────────── */
+        .code-block {
+            background: var(--aws-dark);
+            color: #e8e8e8;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            font-family: "Fira Code", "Cascadia Code", "Courier New", monospace;
+            font-size: 0.85rem;
+            line-height: 1.7;
+            overflow-x: auto;
+            margin-bottom: 3rem;
+        }
+        .code-block .comment { color: #6a9955; }
+        .code-block .keyword { color: var(--aws-orange); }
+        .code-block .string  { color: #ce9178; }
+
+        /* ── Footer ───────────────────────────────────────────────────────── */
+        footer {
+            background: var(--aws-dark);
+            color: #8a9bb0;
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.85rem;
+        }
+        footer a { color: var(--aws-orange); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+
+        /* ── Responsive ───────────────────────────────────────────────────── */
+        @media (max-width: 600px) {
+            .stats-bar { gap: 1.5rem; }
+            nav { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<header>
+    <div class="logo">
+        <div class="logo-icon">☁️</div>
+        AWS Hands-On
+    </div>
+    <nav>
+        <a href="#">Home</a>
+        <a href="#">Projects</a>
+        <a href="#">Docs</a>
+        <a href="#">GitHub</a>
+    </nav>
+</header>
+
+<!-- ── Hero ────────────────────────────────────────────────────────────────── -->
+<section class="hero">
+    <div class="hero-badge">Project 1.1 — Static Website</div>
+    <h1>Hosted on <span>S3</span> +<br>CloudFront</h1>
+    <p>
+        A production-ready static website deployed to Amazon S3 with
+        CloudFront CDN for global low-latency delivery.
+    </p>
+    <div class="hero-buttons">
+        <a href="#architecture" class="btn btn-primary">View Architecture</a>
+        <a href="#deploy" class="btn btn-outline">Deploy Guide</a>
+    </div>
+</section>
+
+<!-- ── Stats bar ────────────────────────────────────────────────────────────── -->
+<div class="stats-bar">
+    <div class="stat">
+        <div class="stat-value">~$0.02</div>
+        <div class="stat-label">Per 10K requests</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value">450+</div>
+        <div class="stat-label">CloudFront PoPs</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value">99.99%</div>
+        <div class="stat-label">S3 Availability</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value">&lt;50ms</div>
+        <div class="stat-label">Cached Latency</div>
+    </div>
+</div>
+
+<!-- ── Main ─────────────────────────────────────────────────────────────────── -->
+<main>
+
+    <!-- Services used -->
+    <h2 class="section-title">AWS Services Used</h2>
+    <p class="section-subtitle">This project uses three core AWS services to deliver a fast, secure, and cost-effective static website.</p>
+
+    <div class="cards">
+        <div class="card">
+            <div class="card-icon icon-orange">🪣</div>
+            <h3>Amazon S3</h3>
+            <p>Stores all static assets (HTML, CSS, JS, images). Static website hosting serves files directly over HTTP.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon icon-blue">🌐</div>
+            <h3>CloudFront CDN</h3>
+            <p>Distributes content from 450+ edge locations worldwide. Handles HTTPS, caching, and custom domain support.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon icon-green">🔒</div>
+            <h3>ACM (SSL/TLS)</h3>
+            <p>AWS Certificate Manager provides free SSL certificates for your custom domain, auto-renewed.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon icon-purple">🌍</div>
+            <h3>Route 53</h3>
+            <p>DNS management with alias records pointing your custom domain to the CloudFront distribution.</p>
+        </div>
+    </div>
+
+    <!-- Architecture diagram -->
+    <div class="arch-diagram" id="architecture">
+        <h2 class="section-title">Architecture</h2>
+        <p style="color: var(--muted);">Request flow from browser to S3</p>
+
+        <div class="arch-flow">
+            <div class="arch-node">
+                <span class="node-icon">🧑‍💻</span>
+                <div class="node-name">Browser</div>
+                <div class="node-label">User</div>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-node">
+                <span class="node-icon">🌍</span>
+                <div class="node-name">Route 53</div>
+                <div class="node-label">DNS</div>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-node">
+                <span class="node-icon">🌐</span>
+                <div class="node-name">CloudFront</div>
+                <div class="node-label">CDN + HTTPS</div>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-node">
+                <span class="node-icon">🪣</span>
+                <div class="node-name">S3 Bucket</div>
+                <div class="node-label">Origin</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deploy guide -->
+    <h2 class="section-title" id="deploy">Deploy This Site</h2>
+    <p class="section-subtitle">Run the deploy script to sync files and invalidate the CloudFront cache.</p>
+
+    <div class="code-block">
+        <span class="comment"># 1. Create S3 bucket and enable static website hosting</span><br>
+        aws s3 mb s3://<span class="string">your-bucket-name</span> --region us-east-1<br>
+        aws s3 website s3://<span class="string">your-bucket-name</span> \<br>
+        &nbsp;&nbsp;--index-document index.html \<br>
+        &nbsp;&nbsp;--error-document error.html<br>
+        <br>
+        <span class="comment"># 2. Deploy using the provided script</span><br>
+        <span class="keyword">./deploy_website.sh</span> <span class="string">your-bucket-name</span> <span class="string">E1ABCDEF123456</span><br>
+        <br>
+        <span class="comment"># 3. Your site is live at:</span><br>
+        <span class="comment"># https://&lt;distribution-id&gt;.cloudfront.net</span>
+    </div>
+
+</main>
+
+<!-- ── Footer ───────────────────────────────────────────────────────────────── -->
+<footer>
+    <p>
+        Built as part of the
+        <a href="#">AWS Hands-On Projects</a> series.
+        Hosted on Amazon S3 + CloudFront.
+    </p>
+    <p style="margin-top: 0.5rem; font-size: 0.75rem;">
+        Stage 01 · Project 1.1 · Static Website Hosting
+    </p>
+</footer>
+
+</body>
+</html>

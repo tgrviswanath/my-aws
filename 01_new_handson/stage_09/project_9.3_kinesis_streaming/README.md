@@ -37,3 +37,24 @@ terraform output stream_name
 - Lambda trigger: processes records in batches (up to 10,000 records per invocation)
 - Bisect on error: Lambda splits failed batches to isolate bad records
 - Enhanced fan-out: each consumer gets dedicated throughput — no sharing
+
+## Code
+
+### `src/producer.py` — Kinesis event producer
+
+```bash
+pip install boto3
+
+export STREAM_NAME=handson-events
+# Send 50 order events to Kinesis
+python src/producer.py
+```
+
+### `src/consumer.py` — Kinesis stream consumer
+
+```bash
+export STREAM_NAME=handson-events
+python src/consumer.py
+```
+
+Flow: producer sends order events → Kinesis stream → Lambda consumer → S3/Redshift. Partition key = `customer_id` for ordered delivery per customer.

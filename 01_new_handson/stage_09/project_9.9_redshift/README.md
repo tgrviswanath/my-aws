@@ -36,3 +36,35 @@ terraform output redshift_endpoint
 - Sort keys: choose columns that are frequently filtered
 - Vacuum and Analyze: run after large loads to reclaim space and update statistics
 - Redshift Spectrum: query S3 data directly from Redshift without loading
+
+## Code
+
+### `code/redshift_operations.py` — Redshift data warehouse operations
+
+```bash
+pip install psycopg2-binary boto3
+
+# Set connection environment variables
+export REDSHIFT_HOST=my-cluster.abc123.us-east-1.redshift.amazonaws.com
+export REDSHIFT_USER=admin
+export REDSHIFT_PASS=yourpassword
+export REDSHIFT_DB=analytics
+
+# Create tables (fact + dimension)
+python code/redshift_operations.py setup
+
+# Load data from S3 Parquet files
+python code/redshift_operations.py load --bucket my-data-lake --prefix processed/orders/
+
+# Run analytical queries
+python code/redshift_operations.py query
+
+# Print full analytics report
+python code/redshift_operations.py report
+```
+
+Queries included:
+- Daily revenue trend (last 30 days)
+- Top 10 products by revenue
+- Customer lifetime value (LTV)
+- Order status distribution

@@ -849,3 +849,5 @@ AWS
 ```
 
 This is an extremely strong modern engineering stack.
+
+great, now can you provide same kind for AWS Project

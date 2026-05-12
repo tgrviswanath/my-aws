@@ -41,3 +41,23 @@ terraform output sns_topic_arn
 - Lambda SQS trigger: Lambda polls SQS automatically — no need to write polling code
 - Batch size: Lambda can process up to 10 SQS messages per invocation
 - Idempotency: design consumers to handle duplicate messages safely
+
+## Code
+
+### `src/publisher.py` — SNS message publisher
+
+```bash
+pip install boto3
+
+export SNS_TOPIC_ARN=arn:aws:sns:us-east-1:123456789:handson-orders
+python src/publisher.py
+```
+
+### `src/consumer.py` — SQS message consumer with DLQ handling
+
+```bash
+export SQS_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789/handson-orders-queue
+python src/consumer.py
+```
+
+Flow: publisher → SNS topic → SQS queue → consumer Lambda. Failed messages go to DLQ after 3 retries.

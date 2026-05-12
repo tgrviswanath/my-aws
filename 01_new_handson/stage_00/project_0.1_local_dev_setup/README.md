@@ -44,3 +44,27 @@ project_0.1_local_dev_setup/
 - LocalStack port 4566 handles all AWS service endpoints
 - Always use `--endpoint-url=http://localhost:4566` with AWS CLI for local testing
 - Use a separate AWS CLI profile (`localstack`) to avoid mixing with real credentials
+
+## Code
+
+### `code/localstack_demo.py` — Run AWS services locally
+
+```bash
+# Install dependencies
+pip install boto3
+
+# Start LocalStack first
+docker compose up -d
+
+# Wait for LocalStack to be ready
+curl http://localhost:4566/_localstack/health
+
+# Run the demo (creates DynamoDB table, Lambda, API Gateway — all locally)
+python code/localstack_demo.py
+```
+
+What it does:
+- Creates a DynamoDB table `local-items` and inserts 3 items
+- Creates a Lambda function from an inline ZIP and invokes it
+- Creates an API Gateway REST API wired to the Lambda
+- Prints the local invoke URL: `http://localhost:4566/restapis/<id>/dev/_user_request_/hello`

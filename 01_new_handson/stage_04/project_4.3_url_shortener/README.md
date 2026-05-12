@@ -40,3 +40,26 @@ terraform output api_url
 - 301 vs 302 redirect: 301 is permanent (browser caches it), 302 is temporary — use 302 for URL shorteners so stats are always tracked
 - Short code collision: use random 6-char alphanumeric + check-before-insert pattern
 - API Gateway can return 3xx redirects directly from Lambda response
+
+## Code
+
+### `src/shortener.py` — URL shortener Lambda handler
+
+```bash
+pip install boto3
+
+# Test shorten
+export TABLE_NAME=handson-urls
+python -c "
+from src.shortener import handler
+import json
+
+resp = handler({
+    'requestContext': {'http': {'method': 'POST'}},
+    'body': json.dumps({'url': 'https://aws.amazon.com/lambda'})
+}, None)
+print(resp)
+"
+```
+
+Endpoints: `POST /shorten` → returns short code | `GET /{code}` → redirects to original URL.

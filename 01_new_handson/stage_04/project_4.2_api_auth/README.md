@@ -44,3 +44,28 @@ terraform output
 - API Gateway JWT Authorizer validates tokens without Lambda — faster and cheaper
 - Store JWT in memory (not localStorage) to prevent XSS attacks
 - RBAC: use Cognito Groups to assign roles, check group claims in Lambda
+
+## Code
+
+### `src/auth_handler.py` — JWT authentication Lambda
+
+```bash
+pip install boto3 PyJWT
+
+# Test login endpoint locally
+export JWT_SECRET=my-secret-key
+python -c "
+from src.auth_handler import handler
+import json
+
+# Login
+resp = handler({
+    'requestContext': {'http': {'method': 'POST'}},
+    'rawPath': '/login',
+    'body': json.dumps({'username': 'admin', 'password': 'password123'})
+}, None)
+print(resp)
+"
+```
+
+Flow: `POST /login` → returns JWT → include as `Authorization: Bearer <token>` on protected endpoints.

@@ -48,3 +48,32 @@ terraform output alb_url
 - `minimum_healthy_percent=50` + `maximum_percent=200` allows rolling deploy with 2 tasks
 - Always set CPU and memory limits — Fargate bills by vCPU-hour and GB-hour
 - Container logs go to CloudWatch automatically with `awslogs` log driver
+
+## Code
+
+### `code/ecs_deploy.py` — Deploy new image to ECS Fargate
+
+```bash
+pip install boto3
+
+# Deploy a new image to an ECS service
+python code/ecs_deploy.py \
+  --cluster my-cluster \
+  --service my-api-service \
+  --image 123456789.dkr.ecr.us-east-1.amazonaws.com/my-app:v2
+
+# Use a specific region and profile
+python code/ecs_deploy.py \
+  --cluster prod-cluster \
+  --service api \
+  --image 123456789.dkr.ecr.us-east-1.amazonaws.com/api:v3 \
+  --region us-east-1 \
+  --profile prod
+```
+
+What it does:
+- Fetches the current task definition for the service
+- Registers a new task definition revision with the updated image (preserves all other settings)
+- Updates the ECS service with `forceNewDeployment=True`
+- Polls service events in real-time until deployment completes
+- Prints running task ARNs on success

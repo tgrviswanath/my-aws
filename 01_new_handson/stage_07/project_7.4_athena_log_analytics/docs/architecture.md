@@ -1,45 +1,52 @@
 # Architecture — Project 7.4 Athena Log Analytics
 
-## Query Flow
+## Serverless Query Architecture
 
 ```
-S3 (log files)
-  ├── CloudTrail logs (JSON, partitioned by year/month/day)
-  ├── ALB access logs (text, partitioned by year/month/day)
-  └── VPC Flow Logs (text, partitioned by year/month/day)
-        │
-        │ Glue Data Catalog (schema + partition metadata)
-        ▼
-  Amazon Athena
-  (serverless SQL engine — reads S3 directly)
-        │
-        │ Query results → S3 results bucket
-        ▼
-  You (console, CLI, or BI tool)
+S3 (log files — already stored from CloudTrail/ALB/VPC)
+    │
+    │ No data movement needed — Athena reads S3 directly
+    ▼
+Glue Data Catalog
+    └── Database: handson_logs
+          ├── Table: cloudtrail_logs (partition projection)
+          ├── Table: alb_logs (partition projection)
+          └── Table: vpc_flow_logs (partition projection)
+    │
+    │ SQL query submitted
+    ▼
+Athena (serverless query engine)
+    │ Reads only relevant S3 partitions (partition pruning)
+    │ Parallel scan across S3 objects
+    ▼
+Results → S3 results bucket → Console / CLI / BI tool
 ```
 
-## Partition Pruning (Cost Optimization)
-
-```sql
--- BAD: scans ALL data (expensive)
-SELECT * FROM cloudtrail_logs WHERE eventname = 'DeleteBucket';
-
--- GOOD: scans only Jan 2024 (cheap)
-SELECT * FROM cloudtrail_logs
-WHERE year = '2024' AND month = '01'
-  AND eventname = 'DeleteBucket';
-```
-
-## Cost Formula
+## Partition Projection (no MSCK REPAIR needed)
 
 ```
-Cost = (GB scanned) × $0.005
+Table parameter:
+  projection.enabled = true
+  projection.year.type = integer, range = 2023,2030
+  projection.month.type = integer, range = 1,12, digits = 2
+  projection.day.type = integer, range = 1,31, digits = 2
 
-Examples:
-  1 GB scanned  = $0.005
-  100 GB scanned = $0.50
-  1 TB scanned  = $5.00
+Query:
+  SELECT * FROM cloudtrail_logs
+  WHERE year = '2024' AND month = '01' AND day = '15'
 
-With partition pruning: scan 1 day instead of 1 year
-  = 1/365 of the cost
+Athena automatically maps to:
+  s3://bucket/AWSLogs/ACCOUNT/CloudTrail/us-east-1/2024/01/15/
+```
+
+## Cost Control
+
+```
+Workgroup setting: bytes_scanned_cutoff_per_query = 1 GB
+→ Query fails if it would scan > 1 GB
+→ Prevents accidental full-table scans
+
+Always use partition filters:
+  WHERE year = '2024' AND month = '01'  ← scans 1 month
+  (without filter: scans ALL years = 100x more expensive)
 ```
