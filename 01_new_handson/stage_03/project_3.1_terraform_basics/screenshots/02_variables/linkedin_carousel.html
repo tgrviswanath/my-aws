@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LinkedIn PDF Carousel — Terraform Variables</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #e8e8e8; }
+
+  .slide {
+    width: 1080px; height: 1080px;
+    margin: 20px auto;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    padding: 60px; page-break-after: always;
+    position: relative; overflow: hidden;
+  }
+
+  /* LinkedIn footer on every slide */
+  .linkedin-footer {
+    position: absolute; bottom: 28px; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 17px; font-weight: 600; color: #0A66C2;
+    text-decoration: none;
+  }
+  .li-icon {
+    background: #0A66C2; color: white; border-radius: 5px;
+    width: 24px; height: 24px; display: flex;
+    align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 900;
+  }
+
+  .slide-number {
+    position: absolute; top: 30px; right: 50px;
+    font-size: 16px; font-weight: 600; color: #999;
+  }
+
+  .tag {
+    color: white; font-weight: 800; font-size: 16px;
+    padding: 7px 20px; border-radius: 6px; margin-bottom: 28px;
+    text-transform: uppercase; letter-spacing: 1px; display: inline-block;
+  }
+
+  /* ── SLIDE 1: COVER ── */
+  .slide-1 {
+    background: linear-gradient(145deg, #FFF7ED 0%, #FFEDD5 60%, #EBF5FF 100%);
+    color: #1e293b; text-align: center; border-top: 8px solid #FF9900;
+  }
+  .slide-1 .badge {
+    background: #FF9900; color: white; border-radius: 50px;
+    padding: 10px 30px; font-size: 18px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; margin-bottom: 35px;
+  }
+  .slide-1 h1 { font-size: 68px; font-weight: 900; line-height: 1.1; margin-bottom: 25px; color: #1e293b; }
+  .slide-1 h1 span { color: #FF9900; }
+  .slide-1 .subtitle { font-size: 24px; color: #475569; margin-bottom: 35px; font-weight: 500; }
+  .meta-pills { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+  .pill {
+    background: white; border: 1.5px solid #CBD5E1; border-radius: 50px;
+    padding: 8px 20px; font-size: 16px; font-weight: 600; color: #334155;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .slide-1 .swipe-hint { position: absolute; bottom: 65px; font-size: 18px; color: #64748B; font-weight: 500; }
+
+  /* ── SLIDE 2: WHAT ARE VARIABLES ── */
+  .slide-2 { background: #F8FAFC; color: #1e293b; align-items: flex-start; border-top: 8px solid #FF9900; }
+  .slide-2 h2 { font-size: 50px; font-weight: 900; margin-bottom: 35px; color: #1e293b; line-height: 1.15; }
+  .slide-2 h2 span { color: #FF9900; }
+  .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; }
+  .concept-card {
+    background: white; border: 1.5px solid #E2E8F0; border-left: 5px solid #FF9900;
+    border-radius: 10px; padding: 18px 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .concept-card .label { font-size: 13px; color: #FF9900; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 7px; }
+  .concept-card .value { font-size: 18px; font-weight: 600; color: #334155; line-height: 1.4; }
+  .concept-card code { font-family: 'Courier New', monospace; font-size: 16px; color: #0A66C2; background: #EFF6FF; padding: 2px 6px; border-radius: 4px; }
+
+  /* ── SLIDE 3: THE FILES ── */
+  .slide-3 { background: #F0FDF4; color: #1e293b; align-items: flex-start; border-top: 8px solid #22C55E; }
+  .slide-3 h2 { font-size: 48px; font-weight: 900; margin-bottom: 30px; color: #1e293b; }
+  .slide-3 h2 span { color: #22C55E; }
+  .file-block { width: 100%; background: white; border: 1.5px solid #D1FAE5; border-radius: 12px; padding: 22px 28px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .file-block .file-name { font-size: 18px; font-weight: 800; color: #16A34A; margin-bottom: 12px; font-family: 'Courier New', monospace; }
+  .file-block pre { font-family: 'Courier New', monospace; font-size: 14px; color: #334155; line-height: 1.7; white-space: pre-wrap; }
+  .file-block pre .key { color: #0A66C2; font-weight: 700; }
+  .file-block pre .val { color: #FF9900; }
+  .file-block pre .comment { color: #94A3B8; }
+
+  /* ── SLIDE 4: 3 WAYS ── */
+  .slide-4 { background: #F8FAFC; color: #1e293b; align-items: flex-start; border-top: 8px solid #0A66C2; }
+  .slide-4 h2 { font-size: 48px; font-weight: 900; margin-bottom: 32px; color: #1e293b; }
+  .slide-4 h2 span { color: #0A66C2; }
+  .way-list { width: 100%; display: flex; flex-direction: column; gap: 18px; }
+  .way-item { padding: 20px 25px; border-radius: 12px; border-left: 5px solid; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+  .way-item.w1 { background: #EFF6FF; border-color: #3B82F6; }
+  .way-item.w2 { background: #FFF7ED; border-color: #FF9900; }
+  .way-item.w3 { background: #FAF5FF; border-color: #A855F7; }
+  .way-item .way-title { font-size: 20px; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
+  .way-item .way-cmd { font-family: 'Courier New', monospace; font-size: 15px; color: #475569; background: rgba(0,0,0,0.04); padding: 6px 12px; border-radius: 6px; margin-bottom: 8px; display: block; }
+  .way-item .way-result { font-size: 17px; color: #64748B; }
+  .way-item .way-result strong { color: #1e293b; }
+
+  /* ── SLIDE 5: WHAT WAS CREATED ── */
+  .slide-5 { background: #FFFBEB; color: #1e293b; align-items: flex-start; border-top: 8px solid #FF9900; }
+  .slide-5 h2 { font-size: 48px; font-weight: 900; margin-bottom: 10px; color: #1e293b; }
+  .slide-5 h2 span { color: #FF9900; }
+  .slide-5 .subtitle-sm { font-size: 18px; color: #64748B; margin-bottom: 30px; font-weight: 500; }
+  .resource-cards { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+  .resource-card {
+    background: white; border: 1.5px solid #FDE68A; border-radius: 12px;
+    padding: 22px 28px; display: flex; align-items: center; gap: 22px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .resource-icon { font-size: 38px; }
+  .resource-info .resource-name { font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
+  .resource-info .resource-value { font-family: 'Courier New', monospace; font-size: 16px; color: #FF9900; font-weight: 600; }
+  .resource-time { margin-left: auto; font-size: 15px; color: #94A3B8; font-weight: 500; }
+  .tags-box { width: 100%; background: white; border: 1.5px solid #FDE68A; border-radius: 12px; padding: 18px 25px; }
+  .tags-box .tags-title { font-size: 16px; font-weight: 700; color: #92400E; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .tags-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .tag-pill { background: #FFF7ED; border: 1.5px solid #FDE68A; border-radius: 20px; padding: 5px 14px; font-size: 15px; font-weight: 600; color: #92400E; }
+
+  /* ── SLIDE 6: VALIDATION ── */
+  .slide-6 { background: #FFF1F2; color: #1e293b; align-items: flex-start; border-top: 8px solid #EF4444; }
+  .slide-6 h2 { font-size: 48px; font-weight: 900; margin-bottom: 30px; color: #1e293b; }
+  .slide-6 h2 span { color: #EF4444; }
+  .validation-demo { width: 100%; display: flex; flex-direction: column; gap: 20px; }
+  .val-block { background: white; border-radius: 12px; padding: 22px 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .val-block .val-label { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .val-block.pass .val-label { color: #16A34A; }
+  .val-block.fail .val-label { color: #DC2626; }
+  .val-block.pass { border-left: 5px solid #22C55E; }
+  .val-block.fail { border-left: 5px solid #EF4444; }
+  .val-block .val-cmd { font-family: 'Courier New', monospace; font-size: 16px; color: #334155; margin-bottom: 8px; }
+  .val-block .val-result { font-size: 17px; font-weight: 600; }
+  .val-block.pass .val-result { color: #16A34A; }
+  .val-block.fail .val-result { color: #DC2626; }
+  .val-block .val-detail { font-size: 15px; color: #64748B; margin-top: 6px; font-family: 'Courier New', monospace; }
+  .validation-rule { width: 100%; background: #FEF2F2; border: 1.5px solid #FECACA; border-radius: 10px; padding: 16px 22px; }
+  .validation-rule .rule-title { font-size: 15px; font-weight: 700; color: #DC2626; margin-bottom: 8px; }
+  .validation-rule pre { font-family: 'Courier New', monospace; font-size: 14px; color: #334155; line-height: 1.6; }
+
+  /* ── SLIDE 7: KEY LEARNINGS ── */
+  .slide-7 { background: #F0F9FF; color: #1e293b; align-items: flex-start; border-top: 8px solid #0A66C2; }
+  .slide-7 h2 { font-size: 50px; font-weight: 900; margin-bottom: 35px; color: #1e293b; }
+  .slide-7 h2 span { color: #0A66C2; }
+  .learnings { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+  .learning-item {
+    display: flex; align-items: flex-start; gap: 16px; font-size: 20px; line-height: 1.5;
+    background: white; border-radius: 10px; padding: 16px 22px;
+    border: 1.5px solid #BAE6FD; box-shadow: 0 2px 6px rgba(0,0,0,0.04); color: #334155;
+  }
+  .learning-item .bullet { font-size: 22px; min-width: 30px; margin-top: 2px; }
+  .learning-item strong { color: #0A66C2; }
+
+  /* ── SLIDE 8: CTA ── */
+  .slide-8 {
+    background: linear-gradient(145deg, #FFF7ED 0%, #FFEDD5 50%, #EBF5FF 100%);
+    color: #1e293b; text-align: center; border-top: 8px solid #FF9900;
+  }
+  .slide-8 .emoji-big { font-size: 75px; margin-bottom: 22px; }
+  .slide-8 h2 { font-size: 50px; font-weight: 900; line-height: 1.2; margin-bottom: 22px; color: #1e293b; }
+  .slide-8 h2 span { color: #FF9900; }
+  .slide-8 .roadmap-info { font-size: 20px; color: #475569; margin-bottom: 25px; line-height: 1.7; }
+  .slide-8 .next-up {
+    background: white; border: 2px solid #FDE68A; border-radius: 12px;
+    padding: 16px 30px; font-size: 18px; color: #334155; margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .slide-8 .next-up strong { color: #FF9900; }
+  .slide-8 .follow-cta { font-size: 24px; font-weight: 800; color: #0A66C2; }
+  .hashtags { position: absolute; bottom: 65px; font-size: 14px; color: #94A3B8; text-align: center; width: 100%; padding: 0 60px; }
+
+  @media print {
+    body { background: white; }
+    .slide { margin: 0; page-break-after: always; page-break-inside: avoid; }
+    @page { size: 1080px 1080px; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1 — COVER -->
+<div class="slide slide-1">
+  <div class="badge">☁️ AWS Hands-on Series · Day 2</div>
+  <h1>Terraform<br><span>Variables</span><br>Explained</h1>
+  <div class="subtitle">Project 3.1 — Phase 2 · Making IaC Reusable</div>
+  <div class="meta-pills">
+    <div class="pill">👤 Viswanath TGR</div>
+    <div class="pill">🌏 ap-south-1 Mumbai</div>
+    <div class="pill">🛠️ Terraform v1.7.5</div>
+    <div class="pill">☁️ AWS S3</div>
+  </div>
+  <div class="swipe-hint">👉 Swipe to see all 3 ways to pass variables</div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- SLIDE 2 — WHAT ARE VARIABLES -->
+<div class="slide slide-2">
+  <div class="slide-number">2 / 8</div>
+  <div class="tag" style="background:#FF9900;">Why Variables?</div>
+  <h2>Same Code,<br><span>Any Environment</span></h2>
+  <div class="concept-grid">
+    <div class="concept-card">
+      <div class="label">string</div>
+      <div class="value"><code>region = "ap-south-1"</code></div>
+    </div>
+    <div class="concept-card">
+      <div class="label">bool</div>
+      <div class="value"><code>enable_versioning = true</code></div>
+    </div>
+    <div class="concept-card">
+      <div class="label">map(string)</div>
+      <div class="value"><code>tags = { Owner = "vswnth1" }</code></div>
+    </div>
+    <div class="concept-card">
+      <div class="label">validation</div>
+      <div class="value">Enforce allowed values at plan time</div>
+    </div>
+    <div class="concept-card">
+      <div class="label">no default</div>
+      <div class="value">Forces caller to provide a value</div>
+    </div>
+    <div class="concept-card">
+      <div class="label">.tfvars file</div>
+      <div class="value">One file per environment (dev/qa/prod)</div>
+    </div>
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- SLIDE 3 — THE FILES -->
+<div class="slide slide-3">
+  <div class="slide-number">3 / 8</div>
+  <div class="tag" style="background:#22C55E;">The Files</div>
+  <h2>main.tf + <span>dev.tfvars</span></h2>
+  <div class="file-block">
+    <div class="file-name">📄 dev.tfvars — environment values</div>
+    <pre><span class="key">region</span>            = <span class="val">"ap-south-1"</span>
+<span class="key">bucket_name</span>       = <span class="val">"my-app-data-495331821583"</span>
+<span class="key">environment</span>       = <span class="val">"dev"</span>
+<span class="key">enable_versioning</span> = <span class="val">true</span>
+<span class="key">tags</span> = {
+  Owner     = <span class="val">"vswnth1"</span>
+  Project   = <span class="val">"handson"</span>
+  ManagedBy = <span class="val">"terraform"</span>
+}</pre>
+  </div>
+  <div class="file-block">
+    <div class="file-name">📄 main.tf — bucket name uses variables</div>
+    <pre><span class="key">bucket</span> = <span class="val">"${var.environment}-${var.bucket_name}"</span>
+<span class="comment"># Result → "dev-my-app-data-495331821583"</span></pre>
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- SLIDE 4 — 3 WAYS TO PASS VARIABLES -->
+<div class="slide slide-4">
+  <div class="slide-number">4 / 8</div>
+  <h2><span>3 Ways</span> to Pass Variables</h2>
+  <div class="way-list">
+    <div class="way-item w1">
+      <div class="way-title">Way 1 — .tfvars file (recommended)</div>
+      <code class="way-cmd">terraform plan -var-file="dev.tfvars"</code>
+      <div class="way-result">Bucket → <strong>dev-my-app-data-495331821583</strong></div>
+    </div>
+    <div class="way-item w2">
+      <div class="way-title">Way 2 — Runtime override</div>
+      <code class="way-cmd">terraform plan -var-file="dev.tfvars" -var="environment=qa"</code>
+      <div class="way-result">Bucket → <strong>qa-my-app-data-495331821583</strong> (one flag changed everything!)</div>
+    </div>
+    <div class="way-item w3">
+      <div class="way-title">Way 3 — Interactive prompt (no flags)</div>
+      <code class="way-cmd">terraform plan</code>
+      <div class="way-result">Terraform stops and asks: <strong>"Enter a value:"</strong> — avoid in CI/CD</div>
+    </div>
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- SLIDE 5 — WHAT WAS CREATED -->
+<div class="slide slide-5">
+  <div class="slide-number">5 / 8</div>
+  <h2>What Was <span>Created</span></h2>
+  <div class="subtitle-sm">Live in AWS ap-south-1 (Mumbai) · Account: 495331821583</div>
+  <div class="resource-cards">
+    <div class="resource-card">
+      <div class="resource-icon">🪣</div>
+      <div class="resource-info">
+        <div class="resource-name">S3 Bucket</div>
+        <div class="resource-value">dev-my-app-data-495331821583</div>
+      </div>
+      <div class="resource-time">⚡ 3 seconds</div>
+    </div>
+    <div class="resource-card">
+      <div class="resource-icon">🔄</div>
+      <div class="resource-info">
+        <div class="resource-name">S3 Versioning</div>
+        <div class="resource-value">status = "Enabled" (from bool variable)</div>
+      </div>
+      <div class="resource-time">⚡ 2 seconds</div>
+    </div>
+  </div>
+  <div class="tags-box">
+    <div class="tags-title">🏷️ Tags applied from dev.tfvars</div>
+    <div class="tags-grid">
+      <div class="tag-pill">Environment = dev</div>
+      <div class="tag-pill">Owner = vswnth1</div>
+      <div class="tag-pill">Project = handson</div>
+      <div class="tag-pill">Stage = stage-03</div>
+      <div class="tag-pill">ManagedBy = terraform</div>
+    </div>
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- SLIDE 6 — VALIDATION -->
+<div class="slide slide-6">
+  <div class="slide-number">6 / 8</div>
+  <div class="tag" style="background:#EF4444;">Variable Validation</div>
+  <h2>Terraform <span>Rejects</span><br>Invalid Values</h2>
+  <div class="validation-demo">
+    <div class="val-block pass">
+      <div class="val-label">✅ ALLOWED</div>
+      <div class="val-cmd">-var="environment=dev"</div>
+      <div class="val-result">Plan proceeds normally</div>
+    </div>
+    <div class="val-block pass">
+      <div class="val-label">✅ ALLOWED</div>
+      <div class="val-cmd">-var="environment=qa"  or  -var="environment=prod"</div>
+      <div class="val-result">Plan proceeds normally</div>
+    </div>
+    <div class="val-block fail">
+      <div class="val-label">❌ REJECTED</div>
+      <div class="val-cmd">-var="environment=staging"</div>
+      <div class="val-result">Error: Environment must be dev, qa, or prod.</div>
+      <div class="val-detail">Caught BEFORE connecting to AWS ← saves time &amp; cost</div>
+    </div>
+  </div>
+  <div class="validation-rule">
+    <div class="rule-title">The validation block in main.tf:</div>
+    <pre>validation {
+  condition     = contains(["dev","qa","prod"], var.environment)
+  error_message = "Environment must be dev, qa, or prod."
+}</pre>
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- SLIDE 7 — KEY LEARNINGS -->
+<div class="slide slide-7">
+  <div class="slide-number">7 / 8</div>
+  <div class="tag" style="background:#0A66C2;">Takeaways</div>
+  <h2>Key <span>Learnings</span></h2>
+  <div class="learnings">
+    <div class="learning-item">
+      <div class="bullet">💡</div>
+      <div><strong>Variables</strong> make the same config work for dev, qa, and prod</div>
+    </div>
+    <div class="learning-item">
+      <div class="bullet">💡</div>
+      <div><strong>.tfvars files</strong> hold environment values — one file per environment</div>
+    </div>
+    <div class="learning-item">
+      <div class="bullet">💡</div>
+      <div><strong>-var flag</strong> overrides any value at runtime — no code changes needed</div>
+    </div>
+    <div class="learning-item">
+      <div class="bullet">💡</div>
+      <div><strong>Validation blocks</strong> catch invalid values before touching AWS</div>
+    </div>
+    <div class="learning-item">
+      <div class="bullet">💡</div>
+      <div>Variables without defaults <strong>prompt interactively</strong> — avoid in CI/CD pipelines</div>
+    </div>
+    <div class="learning-item">
+      <div class="bullet">💡</div>
+      <div>Bucket name = <strong>environment + bucket_name</strong> — meaningful, not random</div>
+    </div>
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- SLIDE 8 — CTA -->
+<div class="slide slide-8">
+  <div class="emoji-big">🔧</div>
+  <h2>Phase 2 of <span>62 Projects</span><br>Complete!</h2>
+  <div class="roadmap-info">
+    Building a production-oriented AWS roadmap<br>
+    Cloud Engineering · DevOps · Data Engineering
+  </div>
+  <div class="next-up">
+    📌 Next: <strong>Phase 3 — Terraform Outputs</strong><br>
+    Sensitive outputs · Object outputs · Console URLs
+  </div>
+  <div class="follow-cta">Follow for daily AWS hands-on updates! 👇</div>
+  <div class="hashtags">
+    #AWS #Terraform #InfrastructureAsCode #TerraformVariables #CloudEngineering #DevOps #LearningInPublic #IaC
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkedIn PDF Carousel — Hello Terraform</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #e8e8e8;
+  }
+
+  /* Each slide = one A4 page = one LinkedIn carousel slide */
+  .slide {
+    width: 1080px;
+    height: 1080px;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px;
+    page-break-after: always;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── LinkedIn profile footer on every slide ── */
+  .linkedin-footer {
+    position: absolute;
+    bottom: 28px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 17px;
+    font-weight: 600;
+    color: #0A66C2;
+    text-decoration: none;
+    letter-spacing: 0.3px;
+  }
+  .linkedin-footer .li-icon {
+    background: #0A66C2;
+    color: white;
+    border-radius: 5px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+  /* ── Slide number ── */
+  .slide-number {
+    position: absolute;
+    top: 30px;
+    right: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #999;
+  }
+
+  /* ══════════════════════════════════════════
+     SLIDE 1 — COVER  (light theme)
+  ══════════════════════════════════════════ */
+  .slide-1 {
+    background: linear-gradient(145deg, #EBF5FF 0%, #DBEAFE 60%, #FFF7ED 100%);
+    color: #1e293b;
+    text-align: center;
+    border-top: 8px solid #0A66C2;
+  }
+  .slide-1 .badge {
+    background: #0A66C2;
+    color: white;
+    border-radius: 50px;
+    padding: 10px 30px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 35px;
+  }
+  .slide-1 h1 {
+    font-size: 68px;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 25px;
+    color: #1e293b;
+  }
+  .slide-1 h1 span { color: #FF9900; }
+  .slide-1 .subtitle {
+    font-size: 26px;
+    color: #475569;
+    margin-bottom: 40px;
+    font-weight: 500;
+  }
+  .slide-1 .meta-pills {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .pill {
+    background: white;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 17px;
+    font-weight: 600;
+    color: #334155;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .slide-1 .swipe-hint {
+    position: absolute;
+    bottom: 65px;
+    font-size: 18px;
+    color: #64748B;
+    font-weight: 500;
+  }
+
+  /* ══════════════════════════════════════════
+     SLIDE 2 — WHAT IS TERRAFORM
+  ══════════════════════════════════════════ */
+  .slide-2 {
+    background: #F8FAFC;
+    color: #1e293b;
+    align-items: flex-start;
+    border-top: 8px solid #FF9900;
+  }
+  .tag {
+    background: #FF9900;
+    color: white;
+    font-weight: 800;
+    font-size: 16px;
+    padding: 7px 20px;
+    border-radius: 6px;
+    margin-bottom: 28px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: inline-block;
+  }
+  .slide-2 h2 {
+    font-size: 50px;
+    font-weight: 900;
+    margin-bottom: 35px;
+    color: #1e293b;
+    line-height: 1.15;
+  }
+  .slide-2 h2 span { color: #0A66C2; }
+  .concept-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+  }
+  .concept-card {
+    background: white;
+    border: 1.5px solid #E2E8F0;
+    border-left: 5px solid #FF9900;
+    border-radius: 10px;
+    padding: 18px 22px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .concept-card .label {
+    font-size: 13px;
+    color: #FF9900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    margin-bottom: 7px;
+  }
+  .concept-card .value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1.4;
+  }
+
+  /* ══════════════════════════════════════════
+     SLIDE 3 — SETUP
+  ══════════════════════════════════════════ */
+  .slide-3 {
+    background: #F0FDF4;
+    color: #1e293b;
+    align-items: flex-start;
+    border-top: 8px solid #22C55E;
+  }
+  .slide-3 h2 {
+    font-size: 50px;
+    font-weight: 900;
+    margin-bottom: 35px;
+    color: #1e293b;
+  }
+  .slide-3 h2 span { color: #22C55E; }
+  .setup-steps {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .setup-step {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    background: white;
+    border: 1.5px solid #D1FAE5;
+    border-radius: 12px;
+    padding: 20px 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .step-icon { font-size: 34px; min-width: 45px; text-align: center; }
+  .step-content .step-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 5px;
+  }
+  .step-content .step-detail {
+    font-size: 16px;
+    color: #64748B;
+    font-family: 'Courier New', monospace;
+  }
+  .check { color: #22C55E; font-size: 26px; margin-left: auto; font-weight: 900; }
+
+  /* ══════════════════════════════════════════
+     SLIDE 4 — THE COMMANDS
+  ══════════════════════════════════════════ */
+  .slide-4 {
+    background: #F8FAFC;
+    color: #1e293b;
+    align-items: flex-start;
+    border-top: 8px solid #0A66C2;
+  }
+  .slide-4 h2 {
+    font-size: 48px;
+    font-weight: 900;
+    margin-bottom: 32px;
+    color: #1e293b;
+  }
+  .slide-4 h2 span { color: #0A66C2; }
+  .cmd-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .cmd-item {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 22px;
+    border-radius: 10px;
+    border-left: 5px solid;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+  .cmd-item.init    { background: #EFF6FF; border-color: #3B82F6; }
+  .cmd-item.plan    { background: #F0FDF4; border-color: #22C55E; }
+  .cmd-item.apply   { background: #FFF7ED; border-color: #FF9900; }
+  .cmd-item.state   { background: #FAF5FF; border-color: #A855F7; }
+  .cmd-item.destroy { background: #FFF1F2; border-color: #EF4444; }
+  .cmd-name {
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    min-width: 240px;
+  }
+  .cmd-desc {
+    font-size: 17px;
+    color: #475569;
+    line-height: 1.4;
+  }
+  .aws-badge {
+    margin-left: auto;
+    font-size: 13px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+    font-weight: 700;
+  }
+  .no-aws  { background: #DCFCE7; color: #16A34A; }
+  .yes-aws { background: #FEE2E2; color: #DC2626; }
+
+  /* ══════════════════════════════════════════
+     SLIDE 5 — WHAT WAS CREATED
+  ══════════════════════════════════════════ */
+  .slide-5 {
+    background: #FFFBEB;
+    color: #1e293b;
+    align-items: flex-start;
+    border-top: 8px solid #FF9900;
+  }
+  .slide-5 h2 {
+    font-size: 48px;
+    font-weight: 900;
+    margin-bottom: 10px;
+    color: #1e293b;
+  }
+  .slide-5 h2 span { color: #FF9900; }
+  .slide-5 .subtitle-sm {
+    font-size: 18px;
+    color: #64748B;
+    margin-bottom: 32px;
+    font-weight: 500;
+  }
+  .resource-cards {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .resource-card {
+    background: white;
+    border: 1.5px solid #FDE68A;
+    border-radius: 12px;
+    padding: 22px 28px;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .resource-icon { font-size: 38px; }
+  .resource-info .resource-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 5px;
+  }
+  .resource-info .resource-value {
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    color: #FF9900;
+    font-weight: 600;
+  }
+  .resource-time {
+    margin-left: auto;
+    font-size: 15px;
+    color: #94A3B8;
+    font-weight: 500;
+  }
+  .success-banner {
+    width: 100%;
+    background: #F0FDF4;
+    border: 2px solid #22C55E;
+    border-radius: 12px;
+    padding: 20px 28px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: #16A34A;
+    margin-top: 8px;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* ══════════════════════════════════════════
+     SLIDE 6 — KEY LEARNINGS
+  ══════════════════════════════════════════ */
+  .slide-6 {
+    background: #F0F9FF;
+    color: #1e293b;
+    align-items: flex-start;
+    border-top: 8px solid #0A66C2;
+  }
+  .slide-6 h2 {
+    font-size: 50px;
+    font-weight: 900;
+    margin-bottom: 35px;
+    color: #1e293b;
+  }
+  .slide-6 h2 span { color: #0A66C2; }
+  .learnings {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .learning-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    font-size: 20px;
+    line-height: 1.5;
+    background: white;
+    border-radius: 10px;
+    padding: 16px 22px;
+    border: 1.5px solid #BAE6FD;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    color: #334155;
+  }
+  .learning-item .bullet {
+    font-size: 22px;
+    min-width: 30px;
+    margin-top: 2px;
+  }
+  .learning-item strong { color: #0A66C2; }
+
+  /* ══════════════════════════════════════════
+     SLIDE 7 — CTA
+  ══════════════════════════════════════════ */
+  .slide-7 {
+    background: linear-gradient(145deg, #EBF5FF 0%, #DBEAFE 50%, #FFF7ED 100%);
+    color: #1e293b;
+    text-align: center;
+    border-top: 8px solid #0A66C2;
+  }
+  .slide-7 .emoji-big { font-size: 75px; margin-bottom: 25px; }
+  .slide-7 h2 {
+    font-size: 52px;
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 25px;
+    color: #1e293b;
+  }
+  .slide-7 h2 span { color: #0A66C2; }
+  .slide-7 .roadmap-info {
+    font-size: 20px;
+    color: #475569;
+    margin-bottom: 30px;
+    line-height: 1.7;
+  }
+  .slide-7 .next-up {
+    background: white;
+    border: 2px solid #BAE6FD;
+    border-radius: 12px;
+    padding: 18px 35px;
+    font-size: 19px;
+    color: #334155;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .slide-7 .next-up strong { color: #0A66C2; }
+  .slide-7 .follow-cta {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0A66C2;
+  }
+  .hashtags {
+    position: absolute;
+    bottom: 65px;
+    font-size: 14px;
+    color: #94A3B8;
+    text-align: center;
+    width: 100%;
+    padding: 0 60px;
+  }
+
+  /* Print settings */
+  @media print {
+    body { background: white; }
+    .slide {
+      margin: 0;
+      page-break-after: always;
+      page-break-inside: avoid;
+    }
+    @page {
+      size: 1080px 1080px;
+      margin: 0;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 1 — COVER
+═══════════════════════════════════════════════════════════ -->
+<div class="slide slide-1">
+  <div class="badge">☁️ AWS Hands-on Series</div>
+  <h1>My First<br><span>Terraform</span><br>Resource on AWS</h1>
+  <div class="subtitle">Project 3.1 — Hello Terraform · Phase 1</div>
+  <div class="meta-pills">
+    <div class="pill">👤 Viswanath TGR</div>
+    <div class="pill">🌏 ap-south-1 Mumbai</div>
+    <div class="pill">🛠️ Terraform v1.7.5</div>
+    <div class="pill">☁️ AWS S3</div>
+  </div>
+  <div class="swipe-hint">👉 Swipe to see the full journey</div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 2 — WHAT IS TERRAFORM
+═══════════════════════════════════════════════════════════ -->
+<div class="slide slide-2">
+  <div class="slide-number">2 / 7</div>
+  <div class="tag">What is Terraform?</div>
+  <h2>Infrastructure<br>as <span>Code</span></h2>
+  <div class="concept-grid">
+    <div class="concept-card">
+      <div class="label">Provider</div>
+      <div class="value">Plugin that talks to AWS API</div>
+    </div>
+    <div class="concept-card">
+      <div class="label">Resource</div>
+      <div class="value">AWS resource to create (S3, EC2...)</div>
+    </div>
+    <div class="concept-card">
+      <div class="label">State File</div>
+      <div class="value">Terraform's memory of what it created</div>
+    </div>
+    <div class="concept-card">
+      <div class="label">Plan</div>
+      <div class="value">Safe preview — never touches AWS</div>
+    </div>
+    <div class="concept-card">
+      <div class="label">Apply</div>
+      <div class="value">Actually creates resources in AWS</div>
+    </div>
+    <div class="concept-card">
+      <div class="label">Destroy</div>
+      <div class="value">Removes all managed resources</div>
+    </div>
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 3 — SETUP
+═══════════════════════════════════════════════════════════ -->
+<div class="slide slide-3">
+  <div class="slide-number">3 / 7</div>
+  <div class="tag" style="background:#22C55E;">Environment Setup</div>
+  <h2>Before We <span>Start</span></h2>
+  <div class="setup-steps">
+    <div class="setup-step">
+      <div class="step-icon">🔑</div>
+      <div class="step-content">
+        <div class="step-title">AWS IAM User Configured</div>
+        <div class="step-detail">aws sts get-caller-identity → vswnth1 ✅</div>
+      </div>
+      <div class="check">✅</div>
+    </div>
+    <div class="setup-step">
+      <div class="step-icon">⚙️</div>
+      <div class="step-content">
+        <div class="step-title">Terraform Installed</div>
+        <div class="step-detail">terraform --version → v1.7.5 ✅</div>
+      </div>
+      <div class="check">✅</div>
+    </div>
+    <div class="setup-step">
+      <div class="step-icon">🌏</div>
+      <div class="step-content">
+        <div class="step-title">Region Set to Mumbai</div>
+        <div class="step-detail">aws configure set region ap-south-1 ✅</div>
+      </div>
+      <div class="check">✅</div>
+    </div>
+    <div class="setup-step">
+      <div class="step-icon">📝</div>
+      <div class="step-content">
+        <div class="step-title">main.tf Written</div>
+        <div class="step-detail">S3 bucket + versioning + random suffix ✅</div>
+      </div>
+      <div class="check">✅</div>
+    </div>
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 4 — THE COMMANDS
+═══════════════════════════════════════════════════════════ -->
+<div class="slide slide-4">
+  <div class="slide-number">4 / 7</div>
+  <h2>The <span>5 Commands</span> I Ran</h2>
+  <div class="cmd-list">
+    <div class="cmd-item init">
+      <div class="cmd-name">terraform init</div>
+      <div class="cmd-desc">Downloads AWS provider plugin locally</div>
+      <div class="aws-badge no-aws">❌ No AWS</div>
+    </div>
+    <div class="cmd-item plan">
+      <div class="cmd-name">terraform plan</div>
+      <div class="cmd-desc">Previews 3 resources — safe dry run</div>
+      <div class="aws-badge no-aws">❌ No AWS</div>
+    </div>
+    <div class="cmd-item apply">
+      <div class="cmd-name">terraform apply</div>
+      <div class="cmd-desc">Creates S3 bucket in Mumbai in 5 seconds</div>
+      <div class="aws-badge yes-aws">✅ AWS</div>
+    </div>
+    <div class="cmd-item state">
+      <div class="cmd-name">terraform state list</div>
+      <div class="cmd-desc">Shows 3 tracked resources in state</div>
+      <div class="aws-badge no-aws">❌ No AWS</div>
+    </div>
+    <div class="cmd-item destroy">
+      <div class="cmd-name">terraform destroy</div>
+      <div class="cmd-desc">Deletes all resources — cost = $0</div>
+      <div class="aws-badge yes-aws">✅ AWS</div>
+    </div>
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 5 — WHAT WAS CREATED
+═══════════════════════════════════════════════════════════ -->
+<div class="slide slide-5">
+  <div class="slide-number">5 / 7</div>
+  <h2>What Was <span>Created</span></h2>
+  <div class="subtitle-sm">Live in AWS ap-south-1 (Mumbai) · Account: 495331821583</div>
+  <div class="resource-cards">
+    <div class="resource-card">
+      <div class="resource-icon">🎲</div>
+      <div class="resource-info">
+        <div class="resource-name">Random ID</div>
+        <div class="resource-value">hex = "9273bec5"</div>
+      </div>
+      <div class="resource-time">⚡ 0 seconds</div>
+    </div>
+    <div class="resource-card">
+      <div class="resource-icon">🪣</div>
+      <div class="resource-info">
+        <div class="resource-name">S3 Bucket</div>
+        <div class="resource-value">hello-terraform-9273bec5</div>
+      </div>
+      <div class="resource-time">⚡ 3 seconds</div>
+    </div>
+    <div class="resource-card">
+      <div class="resource-icon">🔄</div>
+      <div class="resource-info">
+        <div class="resource-name">S3 Versioning</div>
+        <div class="resource-value">status = "Enabled"</div>
+      </div>
+      <div class="resource-time">⚡ 2 seconds</div>
+    </div>
+  </div>
+  <div class="success-banner">
+    ✅ Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 6 — KEY LEARNINGS
+═══════════════════════════════════════════════════════════ -->
+<div class="slide slide-6">
+  <div class="slide-number">6 / 7</div>
+  <div class="tag">Takeaways</div>
+  <h2>Key <span>Learnings</span></h2>
+  <div class="learnings">
+    <div class="learning-item">
+      <div class="bullet">💡</div>
+      <div><strong>terraform init</strong> only downloads plugins — never touches AWS</div>
+    </div>
+    <div class="learning-item">
+      <div class="bullet">💡</div>
+      <div><strong>terraform plan</strong> is always safe — always run before apply</div>
+    </div>
+    <div class="learning-item">
+      <div class="bullet">💡</div>
+      <div>Only <strong>apply</strong> and <strong>destroy</strong> make real changes in AWS</div>
+    </div>
+    <div class="learning-item">
+      <div class="bullet">💡</div>
+      <div>AWS <strong>auto-added AES256 encryption</strong> — default security since 2023</div>
+    </div>
+    <div class="learning-item">
+      <div class="bullet">💡</div>
+      <div>State file = Terraform's <strong>memory</strong> — never edit it manually</div>
+    </div>
+    <div class="learning-item">
+      <div class="bullet">💡</div>
+      <div>Terraform runs <strong>locally</strong> and talks to AWS via API calls</div>
+    </div>
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 7 — CTA
+═══════════════════════════════════════════════════════════ -->
+<div class="slide slide-7">
+  <div class="emoji-big">🚀</div>
+  <h2>Day 1 of <span>62 Projects</span><br>Done!</h2>
+  <div class="roadmap-info">
+    Building a production-oriented AWS roadmap<br>
+    Cloud Engineering · DevOps · Data Engineering
+  </div>
+  <div class="next-up">
+    📌 Next: <strong>Project 3.1 Phase 2 — Terraform Variables</strong><br>
+    Making infrastructure reusable across dev / qa / prod
+  </div>
+  <div class="follow-cta">Follow for daily AWS hands-on updates! 👇</div>
+  <div class="hashtags">
+    #AWS #Terraform #InfrastructureAsCode #CloudEngineering #DevOps #LearningInPublic #IaC #AWSCloud
+  </div>
+  <a class="linkedin-footer" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank">
+    <div class="li-icon">in</div>
+    linkedin.com/in/viswanath-tgr-328b11264
+  </a>
+</div>
+
+</body>
+</html>
