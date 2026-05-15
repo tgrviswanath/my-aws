@@ -1,10 +1,13 @@
 # modules/vpc/main.tf
 # Reusable VPC module — accepts inputs, creates VPC infrastructure, exports outputs.
 
-variable "name_prefix"  { type = string }
-variable "vpc_cidr"     { default = "10.0.0.0/16" }
-variable "azs"          { type = list(string) }
-variable "common_tags"  { type = map(string) default = {} }
+variable "name_prefix" { type = string }
+variable "vpc_cidr"    { default = "10.0.0.0/16" }
+variable "azs"         { type = list(string) }
+variable "common_tags" {
+  type    = map(string)
+  default = {}
+}
 
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
@@ -57,7 +60,10 @@ resource "aws_nat_gateway" "main" {
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
-  route { cidr_block = "0.0.0.0/0" gateway_id = aws_internet_gateway.main.id }
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
+  }
   tags = merge(var.common_tags, { Name = "${var.name_prefix}-public-rt" })
 }
 
@@ -69,7 +75,10 @@ resource "aws_route_table_association" "public" {
 
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
-  route { cidr_block = "0.0.0.0/0" nat_gateway_id = aws_nat_gateway.main.id }
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main.id
+  }
   tags = merge(var.common_tags, { Name = "${var.name_prefix}-private-rt" })
 }
 

@@ -1,0 +1,738 @@
+AWS Terraform Hands-on Series
+Project 3.1  Terraform Basics
+Phase 2: Variables
+
+IAM User      : vswnth1
+AWS Account   : 495331821583
+AWS Region    : ap-south-1 (Mumbai)
+Terraform     : v1.7.5
+AWS CLI       : v2.x
+Date          : May 2026
+LinkedIn      : linkedin.com/in/viswanath-tgr-328b11264
+
+Working Directory:
+  D:\1.projects\AI\my-aws\01_new_handson\stage_03\
+  project_3.1_terraform_basics\02_variables\
+
+
+PART A  TOOL THEORY: TERRAFORM VARIABLES
+
+
+A1. What is Infrastructure as Code (IaC)?
+
+
+  Traditional Way (Before IaC):
+    Engineer logs into AWS Console
+    clicks through menus manually
+    creates EC2, S3, RDS by hand
+    no record of what was done
+    cannot repeat it exactly
+    team cannot review it
+    disaster recovery = start from scratch
+
+  Infrastructure as Code (IaC):
+    Engineer writes a .tf file
+    describes the desired infrastructure
+    commits to Git (version controlled)
+    team reviews via Pull Request
+    Terraform creates it automatically
+    same result every single time
+    disaster recovery = terraform apply
+
+
+A2. What is Terraform?
+
+
+  Created by  : HashiCorp (2014)
+  Type        : Open-source Infrastructure as Code tool
+  Language    : HCL (HashiCorp Configuration Language)
+  Runs on     : Your local machine or CI/CD server
+  Talks to    : AWS, Azure, GCP, Kubernetes, 1000+ providers
+
+  Terraform is NOT:
+    An AWS service (it runs locally on your machine)
+    A programming language
+    Only for AWS (works with any cloud)
+
+  Terraform IS:
+    A CLI tool you install on your machine
+    Declarative  you describe WHAT, not HOW
+    State-aware  tracks what it created
+    Provider-based  plugins for each cloud
+    The industry standard for IaC
+
+
+A3. What Are Terraform Variables?
+
+
+  Variables make Terraform configurations REUSABLE.
+  Instead of hardcoding values, you pass them in.
+
+  Without variables (hardcoded):
+    resource "aws_s3_bucket" "main" {
+      bucket = "dev-my-app-data-495331821583"   hardcoded!
+    }
+    Problem: To deploy to qa, you must edit the code.
+
+  With variables:
+    resource "aws_s3_bucket" "main" {
+      bucket = "${var.environment}-${var.bucket_name}"
+    }
+    Solution: Change dev.tfvars to qa.tfvars  no code changes!
+
+
+A4. Variable Types in Terraform
+
+
+  Type              Example                          Use case
+  
+  string            region = "ap-south-1"            Text values
+  number            port = 8080                      Numeric values
+  bool              enable_versioning = true         Feature flags (on/off)
+  list(string)      ["us-east-1", "ap-south-1"]      Multiple values
+  map(string)       { Owner = "vswnth1" }            Key-value pairs
+  object            { name = string, age = number }  Structured data
+  any               accepts any type                 Flexible inputs
+
+
+A5. Variable Declaration Syntax
+
+
+  variable "bucket_name" {
+    description = "S3 bucket name (must be globally unique)"
+    type        = string
+    default     = "my-default-bucket"   optional
+
+    validation {                         optional
+      condition     = length(var.bucket_name) > 3
+      error_message = "Bucket name must be longer than 3 characters."
+    }
+  }
+
+  Parts explained:
+    description  : Human-readable explanation (shown in prompts)
+    type         : Enforces the data type
+    default      : Used if no value is provided
+    validation   : Rejects invalid values BEFORE touching AWS
+
+
+A6. 3 Ways to Pass Variable Values
+
+
+  Way 1  .tfvars file (RECOMMENDED for real projects)
+    terraform plan -var-file="dev.tfvars"
+    All values loaded from file
+    One file per environment: dev.tfvars, qa.tfvars, prod.tfvars
+
+  Way 2  Runtime override (-var flag)
+    terraform plan -var-file="dev.tfvars" -var="environment=qa"
+    Overrides a single value at runtime
+    Useful for quick one-off changes
+
+  Way 3  Interactive prompt (no flags)
+    terraform plan
+    Terraform stops and asks for missing required values
+    NEVER use in CI/CD pipelines  blocks automation
+
+  Way 4  Environment variables (TF_VAR_)
+    export TF_VAR_bucket_name="my-bucket"
+    terraform plan
+    Useful in CI/CD when you can't use files
+
+
+A7. Variable Validation
+
+
+  validation {
+    condition     = contains(["dev", "qa", "prod"], var.environment)
+    error_message = "Environment must be dev, qa, or prod."
+  }
+
+  Benefits:
+    Catches invalid values BEFORE connecting to AWS
+    Saves time and prevents mistakes
+    Self-documenting  shows allowed values in error message
+    Works at plan time  no resources created on failure
+
+
+A8. Common Terraform Commands (Variables Context)
+
+
+  Command                                    Purpose
+  
+  terraform plan -var-file="dev.tfvars"      Plan with tfvars file
+  terraform apply -var-file="dev.tfvars"     Apply with tfvars file
+  terraform destroy -var-file="dev.tfvars"   Destroy with tfvars file
+  terraform plan -var="key=value"            Override single variable
+  terraform plan                             Interactive prompt for missing vars
+  terraform output                           Show output values after apply
+  terraform output -raw bucket_name          Get clean value for scripts
+
+
+A9. .tfvars File Best Practices
+
+
+  File naming convention:
+    dev.tfvars    development environment
+    qa.tfvars     quality assurance environment
+    prod.tfvars   production environment
+
+  What to put in .tfvars:
+    Environment-specific values (region, sizes, counts)
+    Non-sensitive configuration
+
+  What NOT to put in .tfvars:
+    Passwords, API keys, secrets
+    Use AWS Secrets Manager or environment variables instead
+
+  Git rules:
+    COMMIT:   dev.tfvars, qa.tfvars (non-sensitive)
+    NEVER:    prod.tfvars with real passwords
+    ALWAYS:   Add *.tfvars to .gitignore if they contain secrets
+
+
+A10. Real-World Variable Usage
+
+
+  Developer's laptop              CI/CD Pipeline
+  
+  1. Write main.tf with vars       5. PR opened
+  2. Create dev.tfvars             6. Pipeline runs:
+  3. terraform plan                   terraform plan -var-file="dev.tfvars"
+     -var-file="dev.tfvars"           posts plan as PR comment
+  4. git push feature branch       7. Merge to main
+                                   8. Pipeline runs:
+                                      terraform apply
+                                        -var-file="prod.tfvars"
+                                        -auto-approve
+
+
+PART B  PREREQUISITES
+
+
+  (Same as Phase 1  already completed)
+
+  AWS Account ID  : 495331821583
+  IAM User        : vswnth1
+  Region          : ap-south-1 (Mumbai)
+  Terraform       : v1.7.5 (verified in Phase 1)
+  AWS CLI         : v2.x (verified in Phase 1)
+
+  Verification commands (already done in Phase 1):
+    aws sts get-caller-identity   confirmed vswnth1
+    terraform --version           confirmed v1.7.5
+
+
+PART C  PHASE OBJECTIVE
+
+
+  Goal: Learn how Terraform variables make infrastructure reusable.
+  Deploy the same S3 bucket config to dev and qa environments
+  using only variable changes  no code modifications.
+
+  What you will do:
+    Review main.tf with 5 variable types
+    Review dev.tfvars with environment values
+    Run terraform init
+    Run terraform plan 3 different ways (tfvars, override, prompt)
+    Run terraform apply to create dev bucket
+    Test validation with invalid environment value
+    Run terraform destroy to clean up
+
+  Resources created in this phase:
+    1. aws_s3_bucket.main             S3 bucket: dev-my-app-data-495331821583
+    2. aws_s3_bucket_versioning.main  Versioning enabled (from bool variable)
+
+
+PART D  THE FILES
+
+
+D1. main.tf
+
+
+  File location:
+    D:\1.projects\AI\my-aws\01_new_handson\stage_03\
+    project_3.1_terraform_basics\02_variables\main.tf
+
+  File contents:
+
+    terraform {
+      required_providers {
+        aws = { source = "hashicorp/aws", version = "~> 5.0" }
+      }
+    }
+
+    provider "aws" { region = var.region }
+
+    variable "region" {
+      description = "AWS region"
+      type        = string
+      default     = "ap-south-1"
+    }
+
+    variable "bucket_name" {
+      description = "S3 bucket name (must be globally unique)"
+      type        = string
+      # No default  will prompt at runtime
+    }
+
+    variable "environment" {
+      description = "Deployment environment"
+      type        = string
+      default     = "dev"
+      validation {
+        condition     = contains(["dev", "qa", "prod"], var.environment)
+        error_message = "Environment must be dev, qa, or prod."
+      }
+    }
+
+    variable "enable_versioning" {
+      description = "Enable S3 versioning"
+      type        = bool
+      default     = true
+    }
+
+    variable "tags" {
+      description = "Tags to apply to all resources"
+      type        = map(string)
+      default = {
+        Project   = "handson"
+        Stage     = "stage-03"
+        ManagedBy = "terraform"
+      }
+    }
+
+    resource "aws_s3_bucket" "main" {
+      bucket = "${var.environment}-${var.bucket_name}"
+      tags   = merge(var.tags, { Environment = var.environment })
+    }
+
+    resource "aws_s3_bucket_versioning" "main" {
+      bucket = aws_s3_bucket.main.id
+      versioning_configuration {
+        status = var.enable_versioning ? "Enabled" : "Suspended"
+      }
+    }
+
+    output "bucket_name"   { value = aws_s3_bucket.main.bucket }
+    output "bucket_arn"    { value = aws_s3_bucket.main.arn }
+    output "environment"   { value = var.environment }
+
+
+D2. dev.tfvars
+
+
+  File location:
+    D:\1.projects\AI\my-aws\01_new_handson\stage_03\
+    project_3.1_terraform_basics\02_variables\dev.tfvars
+
+  File contents:
+
+    region            = "ap-south-1"
+    bucket_name       = "my-app-data-495331821583"
+    environment       = "dev"
+    enable_versioning = true
+
+    tags = {
+      Project     = "handson"
+      Stage       = "stage-03"
+      ManagedBy   = "terraform"
+      Owner       = "vswnth1"
+    }
+
+  Note: bucket_name includes account ID (495331821583) to ensure
+  global uniqueness across all AWS accounts worldwide.
+
+
+D3. Bug Fixed Before Running
+
+
+  Error encountered:
+    Error: Missing attribute separator
+      on main.tf line 6, in terraform:
+         6:     aws = { source = "hashicorp/aws" version = "~> 5.0" }
+      Expected a newline or comma to mark the beginning of the next attribute.
+
+  Root cause:
+    Missing comma between source and version on the same line.
+
+  Fix applied:
+    Before (broken):
+      aws = { source = "hashicorp/aws" version = "~> 5.0" }
+
+    After (fixed):
+      aws = { source = "hashicorp/aws", version = "~> 5.0" }
+
+  Result: terraform init succeeded after this fix.
+
+
+PART E  HANDS-ON STEPS
+
+
+STEP 1  terraform init
+
+
+  Command:
+    terraform init
+
+  Output received:
+    Initializing the backend...
+    Initializing provider plugins...
+    - Finding hashicorp/aws versions matching "~> 5.0"...
+    - Installing hashicorp/aws v5.100.0...
+    - Installed hashicorp/aws v5.100.0 (signed by HashiCorp)
+
+    Terraform has been successfully initialized!
+
+  What happened:
+    Downloaded AWS provider v5.100.0 to local .terraform/ folder
+    Created .terraform.lock.hcl lock file
+    NOTHING created in AWS  local machine only
+
+  Key learning:
+    terraform init NEVER touches AWS.
+    Only downloads plugins to your local machine.
+
+[Screenshot Placeholder  01_terraform_init.png]
+  Take screenshot of terminal showing "Terraform has been successfully initialized!"
+
+
+STEP 2  Way 1: terraform plan with .tfvars file
+
+
+  Command:
+    terraform plan -var-file="dev.tfvars"
+
+  Key output:
+    + bucket = "dev-my-app-data-495331821583"
+    + tags = {
+        "Environment" = "dev"
+        "ManagedBy"   = "terraform"
+        "Owner"       = "vswnth1"
+        "Project"     = "handson"
+        "Stage"       = "stage-03"
+      }
+
+    Plan: 2 to add, 0 to change, 0 to destroy.
+
+    Changes to Outputs:
+    + bucket_name = "dev-my-app-data-495331821583"
+    + environment = "dev"
+
+  What happened:
+    All values loaded from dev.tfvars
+    Bucket name = dev- + my-app-data-495331821583
+    5 tags applied including Owner = vswnth1
+    NOTHING created in AWS yet  safe preview
+
+  Key learning:
+    .tfvars file provides all values in one place.
+    Bucket name is now meaningful: dev-my-app-data-495331821583
+    Compare to Phase 1: hello-terraform-9273bec5 (random, meaningless)
+
+[Screenshot Placeholder  02_plan_with_tfvars.png]
+  Take screenshot showing bucket = "dev-my-app-data-495331821583" in plan output
+
+
+STEP 3  Way 2: Override one variable at runtime
+
+
+  Command:
+    terraform plan -var-file="dev.tfvars" -var="environment=qa"
+
+  Key output:
+    + bucket = "qa-my-app-data-495331821583"
+    + tags = {
+        "Environment" = "qa"
+        ...
+      }
+
+    Changes to Outputs:
+    + bucket_name = "qa-my-app-data-495331821583"
+    + environment = "qa"
+
+  What changed with just ONE flag:
+    Way 1 (dev.tfvars)          Way 2 (-var override)
+    
+    bucket: dev-my-app-data-... bucket: qa-my-app-data-...
+    Environment tag: "dev"      Environment tag: "qa"
+    Code changed: NO            Code changed: NO
+
+  Key learning:
+    -var flag overrides any value from .tfvars at runtime.
+    Same main.tf, same dev.tfvars  just one flag changed everything.
+    This is exactly how real companies deploy to multiple environments.
+
+[Screenshot Placeholder  03_plan_qa_override.png]
+  Take screenshot showing bucket = "qa-my-app-data-495331821583" and environment = "qa"
+
+
+STEP 4  Way 3: No tfvars  interactive prompt
+
+
+  Command:
+    terraform plan
+
+  Terraform prompted:
+    var.bucket_name
+      S3 bucket name (must be globally unique)
+
+      Enter a value: test-bucket
+
+  Key output:
+    + bucket = "dev-test-bucket"
+    + tags = {
+        "Environment" = "dev"
+        "ManagedBy"   = "terraform"
+        "Project"     = "handson"
+        "Stage"       = "stage-03"
+      }
+
+  What happened:
+    Terraform stopped and asked for bucket_name (no default)
+    Typed test-bucket  bucket became dev-test-bucket
+    NO Owner tag  because dev.tfvars was not loaded
+    Tags are incomplete without the .tfvars file
+
+  Key learning:
+    Variables without defaults PROMPT interactively.
+    This blocks CI/CD pipelines  never use in automation.
+    Always use -var-file in real projects.
+    Without .tfvars, tags are incomplete (missing Owner).
+
+[Screenshot Placeholder  04_plan_interactive_prompt.png]
+  Take screenshot showing "var.bucket_name" prompt and "Enter a value:" line
+
+
+STEP 5  terraform apply (create dev bucket)
+
+
+  Command:
+    terraform apply -var-file="dev.tfvars"
+    (typed: yes when prompted)
+
+  Output received:
+    aws_s3_bucket.main: Creating...
+    aws_s3_bucket.main: Creation complete after 3s [id=dev-my-app-data-495331821583]
+    aws_s3_bucket_versioning.main: Creating...
+    aws_s3_bucket_versioning.main: Creation complete after 2s [id=dev-my-app-data-495331821583]
+
+    Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+
+    Outputs:
+    bucket_arn  = "arn:aws:s3:::dev-my-app-data-495331821583"
+    bucket_name = "dev-my-app-data-495331821583"
+    environment = "dev"
+
+  What was created in AWS:
+    Resource                        Name                              Time
+    
+    S3 Bucket                       dev-my-app-data-495331821583      3s
+    S3 Versioning                   Enabled (from bool variable)      2s
+
+  Bucket details:
+    Name    : dev-my-app-data-495331821583
+    ARN     : arn:aws:s3:::dev-my-app-data-495331821583
+    Region  : ap-south-1 (Mumbai)
+    Account : 495331821583
+
+  Tags applied (from dev.tfvars):
+    Environment = dev
+    ManagedBy   = terraform
+    Owner       = vswnth1
+    Project     = handson
+    Stage       = stage-03
+
+[Screenshot Placeholder  05_terraform_apply.png]
+  Take screenshot of terminal showing "Apply complete! Resources: 2 added"
+
+[Screenshot Placeholder  06_s3_bucket_in_console.png]
+  AWS Console  S3  take screenshot showing "dev-my-app-data-495331821583" in list
+
+[Screenshot Placeholder  07_s3_tags_in_console.png]
+  Click bucket  Properties tab  Tags section  screenshot showing all 5 tags
+
+
+STEP 6  Validation test (invalid environment)
+
+
+  Command:
+    terraform plan -var-file="dev.tfvars" -var="environment=staging"
+
+  Error output:
+    Error: Invalid value for variable
+
+      on main.tf line 28, in variable "environment":
+      28:   validation {
+
+      Environment must be dev, qa, or prod.
+
+  What happened:
+    staging is NOT in the allowed list ["dev", "qa", "prod"]
+    Terraform rejected it IMMEDIATELY
+    No connection to AWS was made
+    Caught BEFORE any resources were created
+
+  Key learning:
+    Validation blocks catch errors at plan time.
+    Saves time  no waiting for AWS API calls.
+    Self-documenting  error message shows allowed values.
+    Allowed values: dev, qa, prod ONLY.
+
+[Screenshot Placeholder  08_validation_error.png]
+  Take screenshot of terminal showing the validation error for "staging"
+
+
+STEP 7  terraform destroy
+
+
+  Command:
+    terraform destroy -var-file="dev.tfvars"
+    (typed: yes when prompted)
+
+  Output received:
+    aws_s3_bucket_versioning.main: Destroying... [id=dev-my-app-data-495331821583]
+    aws_s3_bucket_versioning.main: Destruction complete after 0s
+    aws_s3_bucket.main: Destroying... [id=dev-my-app-data-495331821583]
+    aws_s3_bucket.main: Destruction complete after 1s
+
+    Destroy complete! Resources: 2 destroyed.
+
+  What happened:
+    Versioning config removed first (dependency order)
+    S3 bucket deleted from AWS
+    AWS account is clean
+    Cost = $0.00
+
+  Key learning:
+    Always pass -var-file with destroy too.
+    Terraform needs variable values to identify what to destroy.
+    Without -var-file, it would prompt interactively.
+
+[Screenshot Placeholder  09_terraform_destroy.png]
+  Take screenshot of terminal showing "Destroy complete! Resources: 2 destroyed"
+
+
+PART F  SUMMARY
+
+
+Command Summary
+
+
+  Command                                    Touches AWS?   Result
+  
+  terraform init                             NO             Downloaded AWS provider
+  terraform plan -var-file="dev.tfvars"      NO             Previewed dev bucket
+  terraform plan -var-file="dev.tfvars"      NO             Previewed qa bucket
+    -var="environment=qa"
+  terraform plan (no flags)                  NO             Interactive prompt
+  terraform apply -var-file="dev.tfvars"     YES            Created dev bucket
+  terraform plan -var="environment=staging"  NO             Validation error
+  terraform destroy -var-file="dev.tfvars"   YES            Deleted dev bucket
+
+
+3 Ways to Pass Variables
+
+
+  Way          Command                                When to use
+  
+  .tfvars file -var-file="dev.tfvars"                Standard  all real projects
+  Override     -var="environment=qa"                 Quick one-off change
+  Interactive  no flags                              Testing only  never CI/CD
+  Env var      export TF_VAR_name="value"            CI/CD pipelines
+
+
+Variable Types Demonstrated
+
+
+  Type          Example                              Use case
+  
+  string        region = "ap-south-1"               Text values
+  bool          enable_versioning = true             Feature flags
+  map(string)   tags = { Owner = "vswnth1" }        Key-value pairs
+  Validation    contains(["dev","qa","prod"])        Enforce allowed values
+  No default    bucket_name (required)               Force caller to provide
+
+
+Key Concepts Learned
+
+
+  Variables make Terraform configs REUSABLE across environments
+  .tfvars files hold environment-specific values  one per environment
+  -var flag overrides any value at runtime  no code changes needed
+  Validation blocks reject invalid values BEFORE touching AWS
+  Variables without defaults PROMPT interactively  avoid in CI/CD
+  Bucket name = environment + bucket_name  meaningful, not random
+  Always pass -var-file with destroy too  not just apply
+
+
+Phase 1 vs Phase 2 Comparison
+
+
+  Feature              Phase 1 (hardcoded)              Phase 2 (variables)
+  
+  Bucket name          hello-terraform-9273bec5         dev-my-app-data-495331821583
+  Name type            Random  meaningless              Meaningful  env + purpose
+  Tags                 4 basic tags                     5 tags + Owner + Environment
+  Versioning           Always enabled                   Controlled by bool variable
+  Reusable?            NO  hardcoded values             YES  change tfvars file
+  Multi-environment    NO  edit code each time          YES  different .tfvars files
+
+
+Cost
+
+
+  Resource                    Cost
+  
+  S3 bucket (empty, ~5 sec)   $0.00
+  Total                       $0.00
+
+
+PART G  PROGRESS TRACKER
+
+
+  Phase 1  Hello Terraform    COMPLETED
+  Phase 2  Variables          COMPLETED
+  Phase 3  Outputs            COMPLETED
+  Phase 4  Data Sources       NEXT
+  Phase 5  Locals             Upcoming
+
+
+SCREENSHOTS CHECKLIST
+
+
+  [ ] 01_terraform_init.png
+      Terminal showing "Terraform has been successfully initialized!"
+
+  [ ] 02_plan_with_tfvars.png
+      Plan output showing bucket = "dev-my-app-data-495331821583"
+
+  [ ] 03_plan_qa_override.png
+      Plan output showing bucket = "qa-my-app-data-495331821583"
+
+  [ ] 04_plan_interactive_prompt.png
+      Terminal showing "var.bucket_name" prompt and "Enter a value:"
+
+  [ ] 05_terraform_apply.png
+      Terminal showing "Apply complete! Resources: 2 added"
+
+  [ ] 06_s3_bucket_in_console.png
+      AWS Console S3 showing "dev-my-app-data-495331821583" in list
+
+  [ ] 07_s3_tags_in_console.png
+      S3 bucket Properties  Tags showing all 5 tags including Owner=vswnth1
+
+  [ ] 08_validation_error.png
+      Terminal showing validation error for "staging"
+
+  [ ] 09_terraform_destroy.png
+      Terminal showing "Destroy complete! Resources: 2 destroyed"
+
+  Save screenshots to:
+  D:\1.projects\AI\my-aws\01_new_handson\stage_03\
+  project_3.1_terraform_basics\screenshots\02_variables\
+
+
+  Author  : Viswanath TGR
+  LinkedIn: linkedin.com/in/viswanath-tgr-328b11264
+  Series  : AWS Terraform Hands-on  62 Projects

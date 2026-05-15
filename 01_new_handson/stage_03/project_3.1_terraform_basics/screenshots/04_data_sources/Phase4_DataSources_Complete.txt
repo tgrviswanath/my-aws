@@ -1,0 +1,559 @@
+AWS Terraform Hands-on Series
+Project 3.1  Terraform Basics
+Phase 4: Data Sources
+
+IAM User      : vswnth1
+AWS Account   : 495331821583
+AWS Region    : ap-south-1 (Mumbai)
+Terraform     : v1.7.5
+AWS CLI       : v2.x
+Date          : May 2026
+LinkedIn      : linkedin.com/in/viswanath-tgr-328b11264
+
+Working Directory:
+  D:\1.projects\AI\my-aws\01_new_handson\stage_03\
+  project_3.1_terraform_basics\04_data_sources\
+
+
+PART A  TOOL THEORY: TERRAFORM DATA SOURCES
+
+
+A1. What Are Data Sources?
+
+
+  Data sources allow Terraform to READ existing AWS resources
+  without creating, modifying, or deleting them.
+
+  They solve a critical problem:
+    Without data sources: ami = "ami-0abcd1234"   hardcoded, breaks when AMI updates
+    With data sources:    ami = data.aws_ami.amazon_linux.id   always latest
+
+  Key rule:
+    Resources  CREATE infrastructure (cost money)
+    Data sources  READ infrastructure (always free)
+
+
+A2. Why Data Sources Matter
+
+
+  Problem 1  Hardcoded AMI IDs
+    AMI IDs are region-specific and change when AWS releases updates.
+    Hardcoding ami-0abcd1234 will break when that AMI is deprecated.
+    Solution: data "aws_ami" always fetches the latest matching AMI.
+
+  Problem 2  Hardcoded Account IDs
+    Your account ID (495331821583) should not be in code.
+    Other team members have different account IDs.
+    Solution: data "aws_caller_identity" reads it dynamically.
+
+  Problem 3  Hardcoded VPC/Subnet IDs
+    VPC IDs differ between accounts and regions.
+    Solution: data "aws_vpc" and data "aws_subnets" read them dynamically.
+
+  Problem 4  Referencing resources not in this Terraform config
+    Some resources are created manually or by another team.
+    Solution: data sources reference them without importing into state.
+
+
+A3. Data Source Syntax
+
+
+  data "aws_ami" "amazon_linux" {
+    most_recent = true
+    owners      = ["amazon"]
+
+    filter {
+      name   = "name"
+      values = ["al2023-ami-*-x86_64"]
+    }
+  }
+
+  Parts explained:
+    data          : keyword (not resource)
+    "aws_ami"     : data source type (provider-specific)
+    "amazon_linux": local name (used to reference it)
+    most_recent   : get the newest matching AMI
+    owners        : only AMIs owned by Amazon
+    filter        : narrow down by name pattern
+
+  How to reference it:
+    data.aws_ami.amazon_linux.id      the AMI ID
+    data.aws_ami.amazon_linux.name    the full AMI name
+
+
+A4. Data Sources vs Resources
+
+
+  Feature              Resource                    Data Source
+  
+  Keyword              resource                    data
+  Creates AWS object   YES                         NO
+  Costs money          YES (if resource costs)     NO (always free)
+  Shows in plan        + create                    Reading...
+  In state file        YES                         YES (cached)
+  Destroyable          YES (terraform destroy)     NO (nothing to destroy)
+  Prefix in code       aws_s3_bucket.name          data.aws_s3_bucket.name
+
+
+A5. Common Data Sources
+
+
+  Data Source                    What it reads
+  
+  aws_ami                        Latest AMI matching filters
+  aws_caller_identity            Current account ID, user ARN
+  aws_region                     Current region name
+  aws_vpc                        VPC by ID, name, or default=true
+  aws_subnets                    Subnets filtered by VPC, tags, AZ
+  aws_availability_zones         Available AZs in current region
+  aws_s3_bucket                  Existing S3 bucket details
+  aws_iam_role                   Existing IAM role ARN
+  aws_security_group             Existing security group
+  aws_route53_zone               Existing hosted zone ID
+  aws_secretsmanager_secret      Secret ARN from Secrets Manager
+  aws_ssm_parameter              Parameter value from SSM
+
+
+A6. Real-World Use Cases
+
+
+  Use case 1  EC2 with latest AMI (never hardcode AMI IDs):
+    resource "aws_instance" "web" {
+      ami           = data.aws_ami.amazon_linux.id   always latest
+      instance_type = "t3.micro"
+      subnet_id     = data.aws_subnets.default.ids[0]
+    }
+
+  Use case 2  S3 bucket name with account ID:
+    resource "aws_s3_bucket" "data" {
+      bucket = "my-data-${data.aws_caller_identity.current.account_id}"
+    }
+
+  Use case 3  Reference existing VPC for new resources:
+    resource "aws_security_group" "app" {
+      vpc_id = data.aws_vpc.default.id
+    }
+
+  Use case 4  Get secret from Secrets Manager:
+    data "aws_secretsmanager_secret_version" "db_pass" {
+      secret_id = "prod/db/password"
+    }
+    resource "aws_db_instance" "main" {
+      password = data.aws_secretsmanager_secret_version.db_pass.secret_string
+    }
+
+
+A7. Common Terraform Commands (Data Sources Context)
+
+
+  Command              Purpose
+  
+  terraform init       Download providers
+  terraform plan       Reads data sources + shows outputs (no AWS changes)
+  terraform apply      Reads data sources + saves outputs to state
+  terraform output     Show all output values
+  terraform output -raw <name>   Get clean value for scripts
+
+
+PART B  PREREQUISITES
+
+
+  (Same as Phase 1  already completed)
+
+  AWS Account ID  : 495331821583
+  IAM User        : vswnth1
+  Region          : ap-south-1 (Mumbai)
+  Terraform       : v1.7.5 (verified in Phase 1)
+  AWS CLI         : v2.x (verified in Phase 1)
+
+
+PART C  PHASE OBJECTIVE
+
+
+  Goal: Learn how data sources read existing AWS infrastructure
+  without creating anything. Discover real values from your
+  AWS account dynamically.
+
+  What you will do:
+    Review main.tf with 5 data sources
+    Run terraform init
+    Run terraform plan  see data sources reading from AWS
+    Run terraform apply  save outputs to state (0 resources created)
+    Run terraform output  view all discovered values
+    Verify each value in AWS Console
+
+  Data sources used in this phase:
+    1. aws_ami              Latest Amazon Linux 2023 AMI
+    2. aws_caller_identity  Current account ID
+    3. aws_region           Current region
+    4. aws_vpc              Default VPC details
+    5. aws_subnets          All subnets in default VPC
+    6. aws_availability_zones  Available AZs in ap-south-1
+
+  Resources created: ZERO
+  Cost: $0.00
+
+
+PART D  THE main.tf FILE
+
+
+  File location:
+    D:\1.projects\AI\my-aws\01_new_handson\stage_03\
+    project_3.1_terraform_basics\04_data_sources\main.tf
+
+  File contents:
+
+    terraform {
+      required_providers {
+        aws = { source = "hashicorp/aws", version = "~> 5.0" }
+      }
+    }
+
+    provider "aws" { region = "ap-south-1" }
+
+    # Data Source 1: Latest Amazon Linux 2023 AMI
+    data "aws_ami" "amazon_linux" {
+      most_recent = true
+      owners      = ["amazon"]
+      filter {
+        name   = "name"
+        values = ["al2023-ami-*-x86_64"]
+      }
+      filter {
+        name   = "virtualization-type"
+        values = ["hvm"]
+      }
+    }
+
+    # Data Source 2: Current AWS Account & Region
+    data "aws_caller_identity" "current" {}
+    data "aws_region" "current" {}
+
+    # Data Source 3: Default VPC
+    data "aws_vpc" "default" {
+      default = true
+    }
+
+    # Data Source 4: Subnets in Default VPC
+    data "aws_subnets" "default" {
+      filter {
+        name   = "vpc-id"
+        values = [data.aws_vpc.default.id]
+      }
+    }
+
+    # Data Source 5: Availability Zones
+    data "aws_availability_zones" "available" {
+      state = "available"
+    }
+
+    output "ami_id"            { value = data.aws_ami.amazon_linux.id }
+    output "ami_name"          { value = data.aws_ami.amazon_linux.name }
+    output "account_id"        { value = data.aws_caller_identity.current.account_id }
+    output "current_region"    { value = data.aws_region.current.name }
+    output "default_vpc_id"    { value = data.aws_vpc.default.id }
+    output "default_vpc_cidr"  { value = data.aws_vpc.default.cidr_block }
+    output "default_subnet_ids"{ value = data.aws_subnets.default.ids }
+    output "availability_zones"{ value = data.aws_availability_zones.available.names }
+    output "useful_for_ec2"    {
+      value = "ami = ${data.aws_ami.amazon_linux.id} | subnet_id = ${data.aws_subnets.default.ids[0]}"
+    }
+
+  Note: EC2 instance was intentionally removed from this phase.
+  Data sources alone demonstrate the concept at zero cost.
+  The useful_for_ec2 output shows how you would use these in Project 3.2.
+
+
+PART E  HANDS-ON STEPS
+
+
+STEP 1  terraform init
+
+
+  Command:
+    terraform init
+
+  Output received:
+    Initializing the backend...
+    Initializing provider plugins...
+    - Finding hashicorp/aws versions matching "~> 5.0"...
+    - Installing hashicorp/aws v5.100.0...
+    - Installed hashicorp/aws v5.100.0 (signed by HashiCorp)
+
+    Terraform has been successfully initialized!
+
+  What happened:
+    Downloaded AWS provider v5.100.0 to local .terraform/ folder
+    Created .terraform.lock.hcl lock file
+    NOTHING created in AWS  local machine only
+
+[Screenshot Placeholder  01_terraform_init.png]
+  Take screenshot of terminal showing "Terraform has been successfully initialized!"
+
+
+STEP 2  terraform plan
+
+
+  Command:
+    terraform plan
+
+  Output received:
+    data.aws_caller_identity.current: Reading...
+    data.aws_region.current: Reading...
+    data.aws_ami.amazon_linux: Reading...
+    data.aws_vpc.default: Reading...
+    data.aws_availability_zones.available: Reading...
+    data.aws_region.current: Read complete after 0s [id=ap-south-1]
+    data.aws_caller_identity.current: Read complete after 0s [id=495331821583]
+    data.aws_availability_zones.available: Read complete after 0s [id=ap-south-1]
+    data.aws_vpc.default: Read complete after 1s [id=vpc-037f017eee3062491]
+    data.aws_subnets.default: Reading...
+    data.aws_ami.amazon_linux: Read complete after 1s [id=ami-0627662924eb1b8c6]
+    data.aws_subnets.default: Read complete after 0s [id=ap-south-1]
+
+    Changes to Outputs:
+    + account_id         = "495331821583"
+    + ami_id             = "ami-0627662924eb1b8c6"
+    + ami_name           = "al2023-ami-minimal-2023.11.20260509.0-kernel-6.18-x86_64"
+    + availability_zones = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
+    + current_region     = "ap-south-1"
+    + default_subnet_ids = ["subnet-0b4de952205c30013", "subnet-0b58ab8f767a2690b", "subnet-0e133633325b2845b"]
+    + default_vpc_cidr   = "172.31.0.0/16"
+    + default_vpc_id     = "vpc-037f017eee3062491"
+    + useful_for_ec2     = "ami = ami-0627662924eb1b8c6 | subnet_id = subnet-0b4de952205c30013"
+
+    You can apply this plan to save these new output values to the
+    Terraform state, without changing any real infrastructure.
+
+  Key observations:
+    Data sources show "Reading..." NOT "Creating..."
+    No "Plan: X to add"  zero resources will be created
+    All values resolved from your real AWS account
+    AMI ID is the latest Amazon Linux 2023 in ap-south-1
+
+[Screenshot Placeholder  02_terraform_plan.png]
+  Take screenshot of terminal showing all 9 outputs in "Changes to Outputs" section
+
+
+STEP 3  terraform apply
+
+
+  Command:
+    terraform apply
+    (typed: yes when prompted)
+
+  Output received:
+    (all data sources read again)
+
+    Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+
+    Outputs:
+    account_id         = "495331821583"
+    ami_id             = "ami-0627662924eb1b8c6"
+    ami_name           = "al2023-ami-minimal-2023.11.20260509.0-kernel-6.18-x86_64"
+    availability_zones = tolist(["ap-south-1a", "ap-south-1b", "ap-south-1c"])
+    current_region     = "ap-south-1"
+    default_subnet_ids = tolist(["subnet-0b4de952205c30013", "subnet-0b58ab8f767a2690b", "subnet-0e133633325b2845b"])
+    default_vpc_cidr   = "172.31.0.0/16"
+    default_vpc_id     = "vpc-037f017eee3062491"
+    useful_for_ec2     = "ami = ami-0627662924eb1b8c6 | subnet_id = subnet-0b4de952205c30013"
+
+  Key observation:
+    Resources: 0 added, 0 changed, 0 destroyed
+    This is the ONLY Terraform apply that creates nothing in AWS
+    Outputs are saved to terraform.tfstate for use by other configs
+
+[Screenshot Placeholder  03_terraform_apply.png]
+  Take screenshot of terminal showing "Apply complete! Resources: 0 added, 0 changed, 0 destroyed"
+  and all 9 output values
+
+
+STEP 4  terraform output
+
+
+  Command:
+    terraform output
+
+  Output received:
+    account_id         = "495331821583"
+    ami_id             = "ami-0627662924eb1b8c6"
+    ami_name           = "al2023-ami-minimal-2023.11.20260509.0-kernel-6.18-x86_64"
+    availability_zones = tolist(["ap-south-1a", "ap-south-1b", "ap-south-1c"])
+    current_region     = "ap-south-1"
+    default_subnet_ids = tolist(["subnet-0b4de952205c30013", "subnet-0b58ab8f767a2690b", "subnet-0e133633325b2845b"])
+    default_vpc_cidr   = "172.31.0.0/16"
+    default_vpc_id     = "vpc-037f017eee3062491"
+    useful_for_ec2     = "ami = ami-0627662924eb1b8c6 | subnet_id = subnet-0b4de952205c30013"
+
+[Screenshot Placeholder  04_terraform_output.png]
+  Take screenshot of terminal showing all 9 output values
+
+
+STEP 5  Verify in AWS Console
+
+
+  5a. Account ID and Region
+      AWS Console  top right corner  click username
+      Account ID: 495331821583
+      Region shown in top navigation bar: Asia Pacific (Mumbai) ap-south-1
+
+[Screenshot Placeholder  05_aws_console_account_region.png]
+  Take screenshot of AWS Console top-right showing account ID and region
+
+
+  5b. AMI ID
+      AWS Console  EC2  Images  AMIs
+      Change filter to "Public images"
+      Search: ami-0627662924eb1b8c6
+      Name: al2023-ami-minimal-2023.11.20260509.0-kernel-6.18-x86_64
+
+[Screenshot Placeholder  06_aws_console_ami.png]
+  Take screenshot of EC2  AMIs showing ami-0627662924eb1b8c6
+
+
+  5c. Default VPC
+      AWS Console  VPC  Your VPCs
+      Look for: Default VPC = Yes
+      VPC ID: vpc-037f017eee3062491
+      IPv4 CIDR: 172.31.0.0/16
+
+[Screenshot Placeholder  07_aws_console_vpc.png]
+  Take screenshot of VPC console showing default VPC with ID and CIDR
+
+
+  5d. Subnets
+      AWS Console  VPC  Subnets
+      Filter by VPC: vpc-037f017eee3062491
+      3 subnets visible:
+        subnet-0b4de952205c30013  ap-south-1a
+        subnet-0b58ab8f767a2690b  ap-south-1b
+        subnet-0e133633325b2845b  ap-south-1c
+
+[Screenshot Placeholder  08_aws_console_subnets.png]
+  Take screenshot of VPC  Subnets showing 3 subnets with their AZs
+
+
+  5e. Availability Zones
+      AWS Console  EC2  EC2 Dashboard
+      Or: EC2  Launch Instance  Subnet dropdown
+      Shows: ap-south-1a, ap-south-1b, ap-south-1c
+
+[Screenshot Placeholder  09_aws_console_azs.png]
+  Take screenshot showing 3 availability zones in ap-south-1
+
+
+  No destroy needed  data sources created zero resources.
+
+
+PART F  SUMMARY
+
+
+What Was Discovered From Your AWS Account
+
+
+  Value                  Discovered                    Source
+  
+  Account ID             495331821583                  aws_caller_identity
+  Region                 ap-south-1                    aws_region
+  Latest AMI ID          ami-0627662924eb1b8c6         aws_ami
+  AMI Name               al2023-ami-minimal-...        aws_ami
+  Default VPC ID         vpc-037f017eee3062491         aws_vpc
+  VPC CIDR               172.31.0.0/16                 aws_vpc
+  Subnet 1 (1a)          subnet-0b4de952205c30013      aws_subnets
+  Subnet 2 (1b)          subnet-0b58ab8f767a2690b      aws_subnets
+  Subnet 3 (1c)          subnet-0e133633325b2845b      aws_subnets
+  AZs                    ap-south-1a/b/c               aws_availability_zones
+
+
+Command Summary
+
+
+  Command              Touched AWS?   Result
+  
+  terraform init       NO             Downloaded AWS provider
+  terraform plan       NO (read-only) Discovered 9 values from account
+  terraform apply      NO resources   Saved outputs to state (0 created)
+  terraform output     NO             Displayed all 9 discovered values
+
+
+Key Concepts Learned
+
+
+  Data sources READ existing AWS resources  never create anything
+  Data sources show "Reading..." in plan  not "Creating..."
+  Apply with only data sources = Resources: 0 added, 0 changed, 0 destroyed
+  AMI IDs are region-specific  always use data source, never hardcode
+  Data sources reference resources not managed by this Terraform config
+  useful_for_ec2 output shows how to use data in real EC2 resources (Project 3.2)
+  No destroy needed  nothing was created
+
+
+Where to Find Each Value in AWS Console
+
+
+  Value              AWS Console Path
+  
+  Account ID         Top right  username dropdown
+  Region             Top navigation bar
+  AMI ID             EC2  Images  AMIs  Public images
+  Default VPC        VPC  Your VPCs  Default VPC = Yes
+  Subnets            VPC  Subnets  filter by VPC ID
+  AZs                EC2  Launch Instance  Subnet dropdown
+
+
+Cost
+
+
+  Resource    Cost
+  
+  Total       $0.00  (data sources are always free)
+
+
+PART G  PROGRESS TRACKER
+
+
+  Phase 1  Hello Terraform    COMPLETED
+  Phase 2  Variables          COMPLETED
+  Phase 3  Outputs            COMPLETED
+  Phase 4  Data Sources       COMPLETED
+  Phase 5  Locals             NEXT
+
+
+SCREENSHOTS CHECKLIST
+
+
+  [ ] 01_terraform_init.png
+      Terminal showing "Terraform has been successfully initialized!"
+
+  [ ] 02_terraform_plan.png
+      Plan output showing all 9 outputs + "without changing any real infrastructure"
+
+  [ ] 03_terraform_apply.png
+      Terminal showing "Apply complete! Resources: 0 added, 0 changed, 0 destroyed"
+
+  [ ] 04_terraform_output.png
+      Terminal showing all 9 output values
+
+  [ ] 05_aws_console_account_region.png
+      AWS Console top-right showing account ID 495331821583 and region ap-south-1
+
+  [ ] 06_aws_console_ami.png
+      EC2  AMIs showing ami-0627662924eb1b8c6
+
+  [ ] 07_aws_console_vpc.png
+      VPC console showing default VPC vpc-037f017eee3062491 with CIDR 172.31.0.0/16
+
+  [ ] 08_aws_console_subnets.png
+      VPC  Subnets showing 3 subnets with their AZ assignments
+
+  [ ] 09_aws_console_azs.png
+      Showing ap-south-1a, ap-south-1b, ap-south-1c
+
+  Save screenshots to:
+  D:\1.projects\AI\my-aws\01_new_handson\stage_03\
+  project_3.1_terraform_basics\screenshots\04_data_sources\
+
+
+  Author  : Viswanath TGR
+  LinkedIn: linkedin.com/in/viswanath-tgr-328b11264
+  Series  : AWS Terraform Hands-on  62 Projects

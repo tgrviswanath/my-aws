@@ -1,0 +1,202 @@
+﻿<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Phase 4 Data Sources</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#e8e8e8;}
+.slide{width:1080px;height:1080px;margin:20px auto;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:55px 60px;page-break-after:always;position:relative;overflow:hidden;}
+.lf{position:absolute;bottom:26px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:600;color:#0A66C2;text-decoration:none;}
+.li{background:#0A66C2;color:white;border-radius:5px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;}
+.sn{position:absolute;top:28px;right:48px;font-size:15px;font-weight:600;color:#999;}
+.tag{color:white;font-weight:800;font-size:15px;padding:6px 18px;border-radius:6px;margin-bottom:22px;text-transform:uppercase;letter-spacing:1px;display:inline-block;}
+h2{font-size:44px;font-weight:900;line-height:1.15;margin-bottom:26px;color:#1e293b;}
+/* S1 COVER */
+.s1{background:linear-gradient(145deg,#F0FDF4,#DCFCE7 60%,#EBF5FF);text-align:center;border-top:8px solid #22C55E;}
+.s1 .badge{background:#22C55E;color:white;border-radius:50px;padding:9px 28px;font-size:17px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:28px;}
+.s1 h1{font-size:62px;font-weight:900;line-height:1.1;margin-bottom:20px;color:#1e293b;}
+.s1 h1 span{color:#22C55E;}
+.s1 .sub{font-size:21px;color:#475569;margin-bottom:28px;font-weight:500;}
+.pills{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+.pill{background:white;border:1.5px solid #CBD5E1;border-radius:50px;padding:7px 16px;font-size:15px;font-weight:600;color:#334155;box-shadow:0 2px 5px rgba(0,0,0,0.06);}
+.sh{position:absolute;bottom:62px;font-size:17px;color:#64748B;font-weight:500;}
+/* S2 WHAT */
+.s2{background:#F8FAFC;align-items:flex-start;border-top:8px solid #22C55E;}
+.s2 h2 span{color:#22C55E;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px;width:100%;}
+.card{background:white;border:1.5px solid #E2E8F0;border-left:5px solid #22C55E;border-radius:10px;padding:15px 19px;box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+.card .lbl{font-size:12px;color:#22C55E;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;}
+.card .val{font-size:16px;font-weight:600;color:#334155;line-height:1.4;}
+.card code{font-family:'Courier New',monospace;font-size:14px;color:#0A66C2;background:#EFF6FF;padding:2px 5px;border-radius:3px;}
+/* S3 PLAN */
+.s3{background:#0d1117;align-items:flex-start;border-top:8px solid #22C55E;}
+.s3 h2{color:white;}
+.s3 h2 span{color:#22C55E;}
+.term{width:100%;font-family:'Courier New',monospace;font-size:13.5px;line-height:1.8;}
+.term .tc{color:#64748B;font-size:12px;margin-bottom:10px;}
+.term .tr{color:#7DD3FC;}
+.term .td{color:#4ADE80;}
+.term .to{color:#FDE68A;}
+.term .tk{color:#C4B5FD;}
+.term .tv{color:#86EFAC;}
+.term .tz{color:#4ADE80;font-weight:700;font-size:15px;margin-top:10px;}
+/* S4 OUTPUTS */
+.s4{background:#FFFBEB;align-items:flex-start;border-top:8px solid #FF9900;}
+.s4 h2 span{color:#FF9900;}
+.olist{width:100%;display:flex;flex-direction:column;gap:11px;}
+.orow{background:white;border:1.5px solid #FDE68A;border-radius:10px;padding:14px 20px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 5px rgba(0,0,0,0.04);}
+.orow .oi{font-size:28px;min-width:38px;}
+.orow .ok{font-family:'Courier New',monospace;font-size:15px;font-weight:700;color:#92400E;min-width:200px;}
+.orow .ov{font-family:'Courier New',monospace;font-size:14px;color:#334155;}
+/* S5 CONSOLE */
+.s5{background:#F8FAFC;align-items:flex-start;border-top:8px solid #0A66C2;}
+.s5 h2 span{color:#0A66C2;}
+.clist{width:100%;display:flex;flex-direction:column;gap:13px;}
+.crow{background:white;border-radius:11px;padding:16px 22px;border-left:5px solid #3B82F6;box-shadow:0 2px 5px rgba(0,0,0,0.05);}
+.crow .ct{font-size:17px;font-weight:800;color:#1e293b;margin-bottom:6px;}
+.crow .cp{font-size:14px;color:#64748B;margin-bottom:5px;}
+.crow .cv{font-family:'Courier New',monospace;font-size:14px;color:#0A66C2;font-weight:600;}
+/* S6 COMPARE */
+.s6{background:#F0FDF4;align-items:flex-start;border-top:8px solid #22C55E;}
+.s6 h2 span{color:#22C55E;}
+.cmp{width:100%;display:flex;flex-direction:column;gap:14px;}
+.cmp-row{background:white;border-radius:11px;padding:16px 22px;box-shadow:0 2px 5px rgba(0,0,0,0.05);}
+.cmp-row .cr-title{font-size:16px;font-weight:800;color:#1e293b;margin-bottom:8px;}
+.cmp-row .cr-bad{font-family:'Courier New',monospace;font-size:14px;color:#DC2626;margin-bottom:4px;}
+.cmp-row .cr-good{font-family:'Courier New',monospace;font-size:14px;color:#16A34A;}
+.cmp-row .cr-note{font-size:14px;color:#64748B;margin-top:5px;}
+/* S7 LEARNINGS */
+.s7{background:#F0F9FF;align-items:flex-start;border-top:8px solid #0A66C2;}
+.s7 h2 span{color:#0A66C2;}
+.learns{width:100%;display:flex;flex-direction:column;gap:13px;}
+.learn{display:flex;align-items:flex-start;gap:13px;font-size:18px;line-height:1.5;background:white;border-radius:9px;padding:13px 18px;border:1.5px solid #BAE6FD;box-shadow:0 2px 4px rgba(0,0,0,0.04);color:#334155;}
+.learn .b{font-size:20px;min-width:26px;margin-top:2px;}
+.learn strong{color:#0A66C2;}
+/* S8 CTA */
+.s8{background:linear-gradient(145deg,#F0FDF4,#DCFCE7 50%,#EBF5FF);text-align:center;border-top:8px solid #22C55E;}
+.s8 .eb{font-size:70px;margin-bottom:18px;}
+.s8 h2{font-size:46px;font-weight:900;line-height:1.2;margin-bottom:18px;color:#1e293b;}
+.s8 h2 span{color:#22C55E;}
+.s8 .ri{font-size:18px;color:#475569;margin-bottom:20px;line-height:1.7;}
+.s8 .nu{background:white;border:2px solid #BBF7D0;border-radius:11px;padding:13px 26px;font-size:17px;color:#334155;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
+.s8 .nu strong{color:#22C55E;}
+.s8 .fc{font-size:22px;font-weight:800;color:#0A66C2;}
+.ht{position:absolute;bottom:62px;font-size:13px;color:#94A3B8;text-align:center;width:100%;padding:0 60px;}
+@media print{body{background:white;}.slide{margin:0;page-break-after:always;page-break-inside:avoid;}@page{size:1080px 1080px;margin:0;}}
+</style></head><body>
+
+<div class="slide s1">
+  <div class="badge">&#9729;&#65039; AWS Hands-on Series &middot; Day 4</div>
+  <h1>Terraform<br><span>Data Sources</span><br>Explained</h1>
+  <div class="sub">Project 3.1 &mdash; Phase 4 &middot; Read AWS Without Creating Anything</div>
+  <div class="pills">
+    <div class="pill">&#128100; Viswanath TGR</div>
+    <div class="pill">&#127759; ap-south-1 Mumbai</div>
+    <div class="pill">&#128295; Terraform v1.7.5</div>
+    <div class="pill">&#128181; Cost: $0.00</div>
+  </div>
+  <div class="sh">&#128073; Swipe to see what data sources discovered</div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s2">
+  <div class="sn">2 / 8</div>
+  <div class="tag" style="background:#22C55E;">What Are Data Sources?</div>
+  <h2>Read AWS.<br><span>Create Nothing.</span></h2>
+  <div class="grid2">
+    <div class="card"><div class="lbl">aws_ami</div><div class="val">Latest Amazon Linux 2023 AMI &mdash; always current</div></div>
+    <div class="card"><div class="lbl">aws_caller_identity</div><div class="val">Your account ID &mdash; no hardcoding</div></div>
+    <div class="card"><div class="lbl">aws_region</div><div class="val">Current region name dynamically</div></div>
+    <div class="card"><div class="lbl">aws_vpc</div><div class="val">Default VPC ID and CIDR block</div></div>
+    <div class="card"><div class="lbl">aws_subnets</div><div class="val">All subnet IDs in the VPC</div></div>
+    <div class="card"><div class="lbl">aws_availability_zones</div><div class="val">All AZs available in the region</div></div>
+  </div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s3">
+  <div class="sn">3 / 8</div>
+  <div class="tag" style="background:#22C55E;">terraform plan</div>
+  <h2 style="color:white;">Data Sources <span>Reading</span> Live</h2>
+  <div class="term">
+    <div class="tc">$ terraform plan</div>
+    <span class="tr">data.aws_caller_identity.current: Reading...</span><br>
+    <span class="tr">data.aws_ami.amazon_linux: Reading...</span><br>
+    <span class="tr">data.aws_vpc.default: Reading...</span><br>
+    <span class="td">data.aws_region.current: Read complete [id=ap-south-1]</span><br>
+    <span class="td">data.aws_caller_identity.current: Read complete [id=495331821583]</span><br>
+    <span class="td">data.aws_vpc.default: Read complete [id=vpc-037f017eee3062491]</span><br>
+    <span class="td">data.aws_ami.amazon_linux: Read complete [id=ami-0627662924eb1b8c6]</span><br><br>
+    <span class="to">Changes to Outputs:</span><br>
+    <span class="tk">+ ami_id</span>         = <span class="tv">"ami-0627662924eb1b8c6"</span><br>
+    <span class="tk">+ default_vpc_id</span> = <span class="tv">"vpc-037f017eee3062491"</span><br>
+    <span class="tk">+ account_id</span>     = <span class="tv">"495331821583"</span><br><br>
+    <span class="tz">You can apply this plan without changing any real infrastructure.</span>
+  </div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s4">
+  <div class="sn">4 / 8</div>
+  <div class="tag" style="background:#FF9900;">Discovered Values</div>
+  <h2>Your AWS Account <span>Revealed</span></h2>
+  <div class="olist">
+    <div class="orow"><div class="oi">&#128100;</div><div class="ok">account_id</div><div class="ov">495331821583</div></div>
+    <div class="orow"><div class="oi">&#127759;</div><div class="ok">current_region</div><div class="ov">ap-south-1</div></div>
+    <div class="orow"><div class="oi">&#128190;</div><div class="ok">ami_id</div><div class="ov">ami-0627662924eb1b8c6</div></div>
+    <div class="orow"><div class="oi">&#127760;</div><div class="ok">default_vpc_id</div><div class="ov">vpc-037f017eee3062491 (172.31.0.0/16)</div></div>
+    <div class="orow"><div class="oi">&#128268;</div><div class="ok">subnets</div><div class="ov">3 subnets (ap-south-1a/b/c)</div></div>
+    <div class="orow"><div class="oi">&#128295;</div><div class="ok">useful_for_ec2</div><div class="ov">ami + subnet ready to use in Project 3.2</div></div>
+  </div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s5">
+  <div class="sn">5 / 8</div>
+  <div class="tag" style="background:#0A66C2;">Verify in AWS Console</div>
+  <h2>Where to <span>Find</span> Each Value</h2>
+  <div class="clist">
+    <div class="crow"><div class="ct">&#128100; Account ID &amp; Region</div><div class="cp">AWS Console &rarr; Top right &rarr; username dropdown</div><div class="cv">495331821583 | ap-south-1</div></div>
+    <div class="crow"><div class="ct">&#128190; AMI ID</div><div class="cp">EC2 &rarr; Images &rarr; AMIs &rarr; Public images &rarr; search</div><div class="cv">ami-0627662924eb1b8c6</div></div>
+    <div class="crow"><div class="ct">&#127760; Default VPC</div><div class="cp">VPC &rarr; Your VPCs &rarr; Default VPC = Yes</div><div class="cv">vpc-037f017eee3062491 | 172.31.0.0/16</div></div>
+    <div class="crow"><div class="ct">&#128268; Subnets</div><div class="cp">VPC &rarr; Subnets &rarr; filter by VPC ID</div><div class="cv">3 subnets: ap-south-1a, 1b, 1c</div></div>
+  </div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s6">
+  <div class="sn">6 / 8</div>
+  <div class="tag" style="background:#22C55E;">Why Data Sources?</div>
+  <h2>Never <span>Hardcode</span> Again</h2>
+  <div class="cmp">
+    <div class="cmp-row"><div class="cr-title">&#128308; Without data source (hardcoded)</div><div class="cr-bad">ami = "ami-0abcd1234"</div><div class="cr-note">Breaks when AWS deprecates the AMI. Different in every region.</div></div>
+    <div class="cmp-row"><div class="cr-title">&#128994; With data source (dynamic)</div><div class="cr-good">ami = data.aws_ami.amazon_linux.id</div><div class="cr-note">Always the latest AMI. Works in any region. Never breaks.</div></div>
+    <div class="cmp-row"><div class="cr-title">&#128308; Without data source (hardcoded)</div><div class="cr-bad">bucket = "my-data-495331821583"</div><div class="cr-note">Breaks for other team members with different account IDs.</div></div>
+    <div class="cmp-row"><div class="cr-title">&#128994; With data source (dynamic)</div><div class="cr-good">bucket = "my-data-${data.aws_caller_identity.current.account_id}"</div><div class="cr-note">Works for any account. No hardcoding needed.</div></div>
+  </div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s7">
+  <div class="sn">7 / 8</div>
+  <div class="tag" style="background:#0A66C2;">Takeaways</div>
+  <h2>Key <span>Learnings</span></h2>
+  <div class="learns">
+    <div class="learn"><div class="b">&#128161;</div><div><strong>Data sources READ</strong> existing AWS resources &mdash; never create anything</div></div>
+    <div class="learn"><div class="b">&#128161;</div><div>Plan shows <strong>"Reading..."</strong> not "Creating..." &mdash; zero resources added</div></div>
+    <div class="learn"><div class="b">&#128161;</div><div><strong>Apply with only data sources</strong> = Resources: 0 added, 0 changed, 0 destroyed</div></div>
+    <div class="learn"><div class="b">&#128161;</div><div><strong>AMI IDs are region-specific</strong> &mdash; always use data source, never hardcode</div></div>
+    <div class="learn"><div class="b">&#128161;</div><div><strong>No destroy needed</strong> &mdash; nothing was created, nothing to clean up</div></div>
+    <div class="learn"><div class="b">&#128161;</div><div>Data sources are used in <strong>Project 3.2</strong> to build real EC2 + VPC infrastructure</div></div>
+  </div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s8">
+  <div class="eb">&#128270;</div>
+  <h2>Phase 4 of <span>62 Projects</span><br>Complete!</h2>
+  <div class="ri">Building a production-oriented AWS roadmap<br>Cloud Engineering &middot; DevOps &middot; Data Engineering</div>
+  <div class="nu">&#128204; Next: <strong>Phase 5 &mdash; Terraform Locals</strong><br>Computed values &middot; DRY configs &middot; Consistent naming</div>
+  <div class="fc">Follow for daily AWS hands-on updates! &#128071;</div>
+  <div class="ht">#AWS #Terraform #TerraformDataSources #InfrastructureAsCode #CloudEngineering #DevOps #LearningInPublic</div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+</body></html>

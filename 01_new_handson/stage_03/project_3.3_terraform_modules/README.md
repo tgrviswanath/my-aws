@@ -11,9 +11,9 @@ project_3.3_terraform_modules/
 │   ├── ec2/          ← reusable EC2/ALB/ASG module
 │   └── rds/          ← reusable RDS module
 ├── environments/
-│   ├── dev/          ← dev environment (small, cheap)
-│   ├── qa/           ← qa environment (medium)
-│   └── prod/         ← prod environment (HA, larger)
+│   ├── dev/          ← dev environment (small, cheap, desired_capacity=1)
+│   ├── qa/           ← qa environment (separate state, same size as dev)
+│   └── prod/         ← prod environment (HA, larger, 3 AZs)
 └── README.md
 ```
 
@@ -31,12 +31,12 @@ project_3.3_terraform_modules/
 # Deploy dev environment
 cd environments/dev
 terraform init
-terraform apply -var-file="dev.tfvars"
+terraform apply -var="db_password=Handson2026Pass!"
 
-# Deploy qa environment
+# Deploy qa environment (separate state — independent from dev)
 cd environments/qa
 terraform init
-terraform apply -var-file="qa.tfvars"
+terraform apply -var="db_password=Handson2026Pass!"
 ```
 
 ## Lessons Learned

@@ -17,7 +17,7 @@ resource "aws_db_instance" "mysql" {
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.rds.id]
   publicly_accessible    = false
-  backup_retention_period = 7
+  backup_retention_period = 0
   skip_final_snapshot    = true
   tags                   = merge(local.common_tags, { Name = "${local.name_prefix}-mysql" })
 }

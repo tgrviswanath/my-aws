@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Project 3.3 — Terraform Modules & Environments</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f4f8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    gap: 32px;
+  }
+
+  .slide {
+    width: 1080px;
+    min-height: 566px;
+    border-radius: 16px;
+    padding: 56px 64px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    overflow: hidden;
+  }
+
+  /* ── Slide colour themes ── */
+  .slide-1  { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: #fff; }
+  .slide-2  { background: #ffffff; color: #1a1a2e; border: 2px solid #e2e8f0; }
+  .slide-3  { background: #ffffff; color: #1a1a2e; border: 2px solid #e2e8f0; }
+  .slide-4  { background: #ffffff; color: #1a1a2e; border: 2px solid #e2e8f0; }
+  .slide-5  { background: #ffffff; color: #1a1a2e; border: 2px solid #e2e8f0; }
+  .slide-6  { background: #ffffff; color: #1a1a2e; border: 2px solid #e2e8f0; }
+  .slide-7  { background: #ffffff; color: #1a1a2e; border: 2px solid #e2e8f0; }
+  .slide-8  { background: linear-gradient(135deg, #0f3460 0%, #16213e 100%); color: #fff; }
+
+  /* ── Accent bar ── */
+  .accent-bar {
+    width: 56px; height: 5px;
+    background: #e94560;
+    border-radius: 3px;
+    margin-bottom: 24px;
+  }
+  .accent-bar.light { background: #fff; opacity: 0.7; }
+
+  /* ── Slide number ── */
+  .slide-num {
+    position: absolute;
+    top: 24px; right: 32px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0.45;
+    letter-spacing: 1px;
+  }
+
+  /* ── LinkedIn URL ── */
+  .linkedin-url {
+    position: absolute;
+    bottom: 20px; right: 32px;
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.55;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── Typography ── */
+  .tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #e94560;
+    margin-bottom: 16px;
+  }
+  .tag.light { color: #a8d8ea; }
+
+  h1 {
+    font-size: 44px;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 20px;
+  }
+  h2 {
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 20px;
+    color: #1a1a2e;
+  }
+  .subtitle {
+    font-size: 18px;
+    line-height: 1.6;
+    opacity: 0.85;
+    max-width: 780px;
+  }
+
+  /* ── Code block ── */
+  .code-block {
+    background: #1a1a2e;
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 24px 28px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    margin-top: 20px;
+    border-left: 4px solid #e94560;
+  }
+  .code-block .kw  { color: #e94560; font-weight: 700; }
+  .code-block .str { color: #a8d8ea; }
+  .code-block .cmt { color: #718096; font-style: italic; }
+  .code-block .val { color: #f6c90e; }
+
+  /* ── Two-column layout ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 20px;
+  }
+
+  /* ── Info card ── */
+  .card {
+    background: #f7fafc;
+    border-radius: 10px;
+    padding: 20px 24px;
+    border-left: 4px solid #e94560;
+  }
+  .card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .card p, .card li {
+    font-size: 14px;
+    color: #4a5568;
+    line-height: 1.6;
+  }
+  .card ul { padding-left: 16px; }
+
+  /* ── Comparison table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 14px;
+  }
+  th {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #2d3748;
+  }
+  tr:nth-child(even) td { background: #f7fafc; }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .badge-green  { background: #c6f6d5; color: #276749; }
+  .badge-blue   { background: #bee3f8; color: #2b6cb0; }
+  .badge-orange { background: #feebc8; color: #c05621; }
+
+  /* ── Bullet list ── */
+  .bullet-list {
+    list-style: none;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .bullet-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    font-size: 16px;
+    color: #2d3748;
+    line-height: 1.5;
+  }
+  .bullet-list .icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #e94560;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ── Terminal output ── */
+  .terminal {
+    background: #1a1a2e;
+    border-radius: 10px;
+    padding: 20px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #e2e8f0;
+    margin-top: 20px;
+  }
+  .terminal .prompt { color: #e94560; }
+  .terminal .out    { color: #68d391; }
+  .terminal .dim    { color: #718096; }
+
+  /* ── Slide 8 CTA ── */
+  .cta-box {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-top: 28px;
+  }
+  .cta-box p {
+    font-size: 16px;
+    line-height: 1.6;
+    opacity: 0.9;
+  }
+  .hashtags {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #a8d8ea;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 1 — Title
+════════════════════════════════════════════════════════════ -->
+<div class="slide slide-1">
+  <div class="slide-num">01 / 08</div>
+  <div class="tag light">AWS · Terraform · Stage 03 · Project 3.3</div>
+  <div class="accent-bar light"></div>
+  <h1>Terraform Modules<br>&amp; Environments</h1>
+  <p class="subtitle">
+    Write infrastructure once. Deploy it to dev, qa, and prod — with separate state,
+    separate VPCs, and zero code duplication.
+  </p>
+  <div class="linkedin-url">linkedin.com/in/viswanath-tgr-328b11264</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 2 — The Problem: Why Modules?
+════════════════════════════════════════════════════════════ -->
+<div class="slide slide-2">
+  <div class="slide-num">02 / 08</div>
+  <div class="tag">The Problem</div>
+  <div class="accent-bar"></div>
+  <h2>Project 3.2 worked.<br>But it didn't scale.</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3>❌ Project 3.2 (flat)</h3>
+      <ul>
+        <li>All resources in one folder</li>
+        <li>To deploy qa — copy-paste everything</li>
+        <li>Bug fix? Update in every environment</li>
+        <li>One state file for everything</li>
+        <li>No reuse, no isolation</li>
+      </ul>
+    </div>
+    <div class="card" style="border-left-color: #38a169;">
+      <h3>✅ Project 3.3 (modules)</h3>
+      <ul>
+        <li>3 reusable modules: vpc, ec2, rds</li>
+        <li>Deploy qa — just call the same modules</li>
+        <li>Bug fix? Update the module once</li>
+        <li>Separate state per environment</li>
+        <li>DRY — Don't Repeat Yourself</li>
+      </ul>
+    </div>
+  </div>
+  <div class="linkedin-url" style="color:#1a1a2e;">linkedin.com/in/viswanath-tgr-328b11264</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 3 — Module Structure
+════════════════════════════════════════════════════════════ -->
+<div class="slide slide-3">
+  <div class="slide-num">03 / 08</div>
+  <div class="tag">Module Structure</div>
+  <div class="accent-bar"></div>
+  <h2>3 modules. 3 environments.<br>28 resources each.</h2>
+  <div class="code-block">
+<span class="cmt"># Project structure</span>
+project_3.3_terraform_modules/
+├── <span class="kw">modules/</span>
+│   ├── <span class="str">vpc/</span>        <span class="cmt">← VPC, subnets, IGW, NAT, route tables</span>
+│   ├── <span class="str">ec2/</span>        <span class="cmt">← ALB, ASG, Launch Template, SGs</span>
+│   └── <span class="str">rds/</span>        <span class="cmt">← RDS MySQL, subnet group, SG</span>
+└── <span class="kw">environments/</span>
+    ├── <span class="str">dev/</span>        <span class="cmt">← 10.0.0.0/16 · t3.micro · capacity=1</span>
+    ├── <span class="str">qa/</span>         <span class="cmt">← 10.1.0.0/16 · t3.micro · capacity=1</span>
+    └── <span class="str">prod/</span>       <span class="cmt">← 10.2.0.0/16 · t3.small · multi_az=true</span>
+  </div>
+  <div class="linkedin-url" style="color:#1a1a2e;">linkedin.com/in/viswanath-tgr-328b11264</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 4 — How Modules Wire Together
+════════════════════════════════════════════════════════════ -->
+<div class="slide slide-4">
+  <div class="slide-num">04 / 08</div>
+  <div class="tag">Module Wiring</div>
+  <div class="accent-bar"></div>
+  <h2>Modules talk to each other<br>through outputs.</h2>
+  <div class="code-block">
+<span class="cmt"># environments/dev/main.tf</span>
+<span class="kw">module</span> <span class="str">"vpc"</span> {
+  source   = <span class="str">"../../modules/vpc"</span>
+  vpc_cidr = <span class="val">"10.0.0.0/16"</span>
+  azs      = [<span class="val">"ap-south-1a"</span>, <span class="val">"ap-south-1b"</span>]
+}
+
+<span class="kw">module</span> <span class="str">"ec2"</span> {
+  source            = <span class="str">"../../modules/ec2"</span>
+  vpc_id            = <span class="val">module.vpc.vpc_id</span>          <span class="cmt">← output from vpc module</span>
+  public_subnet_ids = <span class="val">module.vpc.public_subnet_ids</span>
+}
+
+<span class="kw">module</span> <span class="str">"rds"</span> {
+  source    = <span class="str">"../../modules/rds"</span>
+  vpc_id    = <span class="val">module.vpc.vpc_id</span>
+  app_sg_id = <span class="val">module.ec2.app_sg_id</span>          <span class="cmt">← output from ec2 module</span>
+}
+  </div>
+  <div class="linkedin-url" style="color:#1a1a2e;">linkedin.com/in/viswanath-tgr-328b11264</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 5 — Deploy Dev
+════════════════════════════════════════════════════════════ -->
+<div class="slide slide-5">
+  <div class="slide-num">05 / 08</div>
+  <div class="tag">Dev Environment</div>
+  <div class="accent-bar"></div>
+  <h2>Dev deployed.<br>28 resources. App live.</h2>
+  <div class="terminal">
+<span class="prompt">$</span> cd environments/dev &amp;&amp; terraform init
+<span class="out">  - ec2 in ../../modules/ec2</span>
+<span class="out">  - rds in ../../modules/rds</span>
+<span class="out">  - vpc in ../../modules/vpc</span>
+<span class="out">  Terraform has been successfully initialized!</span>
+
+<span class="prompt">$</span> terraform apply -var="db_password=***"
+<span class="out">  Apply complete! Resources: 28 added, 0 changed, 0 destroyed.</span>
+
+<span class="out">  alb_url      = "http://handson-dev-alb-683186817.ap-south-1.elb.amazonaws.com"</span>
+<span class="out">  rds_endpoint = "handson-dev-mysql.chew84266ne7.ap-south-1.rds.amazonaws.com:3306"</span>
+<span class="out">  vpc_id       = "vpc-0ae2e324b5a34ee35"</span>
+
+<span class="dim">  Browser → ip-10-0-11-11.ap-south-1.compute.internal | Env: dev ✅</span>
+  </div>
+  <div class="linkedin-url" style="color:#1a1a2e;">linkedin.com/in/viswanath-tgr-328b11264</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 6 — Deploy QA (Separate State)
+════════════════════════════════════════════════════════════ -->
+<div class="slide slide-6">
+  <div class="slide-num">06 / 08</div>
+  <div class="tag">QA Environment</div>
+  <div class="accent-bar"></div>
+  <h2>Same modules. Different state.<br>Zero code duplication.</h2>
+  <div class="terminal">
+<span class="prompt">$</span> cd environments/qa &amp;&amp; terraform init &amp;&amp; terraform apply -var="db_password=***"
+<span class="out">  Apply complete! Resources: 28 added, 0 changed, 0 destroyed.</span>
+
+<span class="out">  alb_url      = "http://handson-qa-alb-611087484.ap-south-1.elb.amazonaws.com"</span>
+<span class="out">  rds_endpoint = "handson-qa-mysql.chew84266ne7.ap-south-1.rds.amazonaws.com:3306"</span>
+<span class="out">  vpc_id       = "vpc-0bffd322056a89968"</span>
+
+<span class="dim">  Browser → ip-10-1-11-122.ap-south-1.compute.internal | Env: qa ✅</span>
+  </div>
+  <p style="margin-top:16px; font-size:15px; color:#4a5568;">
+    Notice: Dev IP is <strong>10.0.x.x</strong>, QA IP is <strong>10.1.x.x</strong> — separate VPCs, separate state files,
+    completely independent. Destroying QA has zero impact on dev.
+  </p>
+  <div class="linkedin-url" style="color:#1a1a2e;">linkedin.com/in/viswanath-tgr-328b11264</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 7 — Key Learnings
+════════════════════════════════════════════════════════════ -->
+<div class="slide slide-7">
+  <div class="slide-num">07 / 08</div>
+  <div class="tag">Key Learnings</div>
+  <div class="accent-bar"></div>
+  <h2>What Terraform modules<br>actually give you.</h2>
+  <ul class="bullet-list">
+    <li>
+      <div class="icon">1</div>
+      <div><strong>DRY infrastructure</strong> — vpc, ec2, rds modules written once, deployed to dev and qa with zero duplication</div>
+    </li>
+    <li>
+      <div class="icon">2</div>
+      <div><strong>Module namespacing in state</strong> — <code style="background:#f0f4f8;padding:2px 6px;border-radius:4px;font-size:13px;">module.vpc.*</code>, <code style="background:#f0f4f8;padding:2px 6px;border-radius:4px;font-size:13px;">module.ec2.*</code>, <code style="background:#f0f4f8;padding:2px 6px;border-radius:4px;font-size:13px;">module.rds.*</code> — clear ownership</div>
+    </li>
+    <li>
+      <div class="icon">3</div>
+      <div><strong>State isolation</strong> — each environment has its own <code style="background:#f0f4f8;padding:2px 6px;border-radius:4px;font-size:13px;">terraform.tfstate</code>. Changes to dev never touch qa</div>
+    </li>
+    <li>
+      <div class="icon">4</div>
+      <div><strong>Module outputs wire modules together</strong> — <code style="background:#f0f4f8;padding:2px 6px;border-radius:4px;font-size:13px;">module.ec2.app_sg_id</code> passed directly into the rds module</div>
+    </li>
+    <li>
+      <div class="icon">5</div>
+      <div><strong>CIDR planning matters</strong> — dev=10.0.x.x, qa=10.1.x.x, prod=10.2.x.x — no overlap, safe to VPC peer later</div>
+    </li>
+  </ul>
+  <div class="linkedin-url" style="color:#1a1a2e;">linkedin.com/in/viswanath-tgr-328b11264</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 8 — CTA
+════════════════════════════════════════════════════════════ -->
+<div class="slide slide-8">
+  <div class="slide-num">08 / 08</div>
+  <div class="tag light">AWS Terraform Hands-on Series</div>
+  <div class="accent-bar light"></div>
+  <h1 style="font-size:38px;">Project 3.3 complete.<br>Modules deployed to dev &amp; qa.</h1>
+  <div class="cta-box">
+    <p>
+      56 resources created and destroyed across two environments — same 3 modules, different configs, completely isolated state.
+      This is how real teams manage multi-environment infrastructure without copy-pasting Terraform code.
+    </p>
+    <p style="margin-top:12px;">
+      Next up: <strong>Project 3.4 — Remote State &amp; State Locking</strong> (S3 backend + DynamoDB lock table)
+    </p>
+  </div>
+  <div class="hashtags">
+    #Terraform #AWS #InfrastructureAsCode #DevOps #CloudEngineering #TerraformModules #AWSTerraform #HandsOn
+  </div>
+  <div class="linkedin-url">linkedin.com/in/viswanath-tgr-328b11264</div>
+</div>
+
+</body>
+</html>

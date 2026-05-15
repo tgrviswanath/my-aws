@@ -1,18 +1,19 @@
 # 04_data_sources/main.tf
 # Data sources READ existing AWS resources without creating them.
 # Use them to reference resources not managed by this Terraform config.
+# Cost: $0 — data sources only read, never create resources.
 
 terraform {
   required_providers {
-    aws = { source = "hashicorp/aws" version = "~> 5.0" }
+    aws = { source = "hashicorp/aws", version = "~> 5.0" }
   }
 }
 
-provider "aws" { region = "us-east-1" }
+provider "aws" { region = "ap-south-1" }
 
-# ─── Data Sources ─────────────────────────────────────────────────────────────
+# ─── Data Source 1: Latest Amazon Linux 2023 AMI ─────────────────────────────
+# No more hardcoded AMI IDs — always gets the latest automatically
 
-# Get the latest Amazon Linux 2023 AMI — no hardcoded AMI IDs
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -28,16 +29,21 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-# Get current AWS account ID and region
+# ─── Data Source 2: Current AWS Account & Region ─────────────────────────────
+# Useful for building ARNs and bucket names dynamically
+
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
-# Get the default VPC (already exists in every account)
+# ─── Data Source 3: Default VPC ──────────────────────────────────────────────
+# Every AWS account has a default VPC — read it without creating one
+
 data "aws_vpc" "default" {
   default = true
 }
 
-# Get subnets in the default VPC
+# ─── Data Source 4: Subnets in Default VPC ───────────────────────────────────
+
 data "aws_subnets" "default" {
   filter {
     name   = "vpc-id"
@@ -45,32 +51,55 @@ data "aws_subnets" "default" {
   }
 }
 
-# Get an existing S3 bucket (not managed by this config)
-# data "aws_s3_bucket" "existing" {
-#   bucket = "my-existing-bucket"
-# }
+# ─── Data Source 5: Availability Zones ───────────────────────────────────────
 
-# ─── Use data sources in resources ───────────────────────────────────────────
-
-resource "aws_instance" "example" {
-  # Use data source instead of hardcoded AMI ID
-  ami           = data.aws_ami.amazon_linux.id
-  instance_type = "t3.micro"
-
-  # Use data source for subnet
-  subnet_id = data.aws_subnets.default.ids[0]
-
-  tags = {
-    Name    = "data-source-demo"
-    Project = "handson"
-  }
+data "aws_availability_zones" "available" {
+  state = "available"
 }
 
-# ─── Outputs ──────────────────────────────────────────────────────────────────
+# ─── Outputs — show what data sources discovered ─────────────────────────────
 
-output "ami_id"          { value = data.aws_ami.amazon_linux.id }
-output "ami_name"        { value = data.aws_ami.amazon_linux.name }
-output "account_id"      { value = data.aws_caller_identity.current.account_id }
-output "current_region"  { value = data.aws_region.current.name }
-output "default_vpc_id"  { value = data.aws_vpc.default.id }
-output "default_subnets" { value = data.aws_subnets.default.ids }
+output "ami_id" {
+  description = "Latest Amazon Linux 2023 AMI ID in ap-south-1"
+  value       = data.aws_ami.amazon_linux.id
+}
+
+output "ami_name" {
+  description = "Full AMI name"
+  value       = data.aws_ami.amazon_linux.name
+}
+
+output "account_id" {
+  description = "Current AWS account ID"
+  value       = data.aws_caller_identity.current.account_id
+}
+
+output "current_region" {
+  description = "Current AWS region"
+  value       = data.aws_region.current.name
+}
+
+output "default_vpc_id" {
+  description = "Default VPC ID"
+  value       = data.aws_vpc.default.id
+}
+
+output "default_vpc_cidr" {
+  description = "Default VPC CIDR block"
+  value       = data.aws_vpc.default.cidr_block
+}
+
+output "default_subnet_ids" {
+  description = "All subnet IDs in the default VPC"
+  value       = data.aws_subnets.default.ids
+}
+
+output "availability_zones" {
+  description = "Available AZs in ap-south-1"
+  value       = data.aws_availability_zones.available.names
+}
+
+output "useful_for_ec2" {
+  description = "How you would use these in an EC2 resource"
+  value       = "ami = ${data.aws_ami.amazon_linux.id} | subnet_id = ${data.aws_subnets.default.ids[0]}"
+}

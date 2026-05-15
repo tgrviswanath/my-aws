@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project 3.4 — Terraform Remote State Hands-On</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1a1a1a; background: #fff; }
+    .cover { background: linear-gradient(135deg, #1a237e 0%, #0d47a1 50%, #01579b 100%); color: white; padding: 80px 60px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; page-break-after: always; }
+    .cover h1 { font-size: 36px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px; }
+    .cover h2 { font-size: 20px; font-weight: 300; margin-bottom: 40px; opacity: 0.85; }
+    .cover .meta { border-top: 1px solid rgba(255,255,255,0.3); padding-top: 24px; margin-top: 40px; }
+    .cover .meta p { font-size: 13px; opacity: 0.8; margin-bottom: 6px; }
+    .cover .badge { display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 4px 14px; font-size: 12px; margin: 4px 4px 0 0; }
+    .toc { padding: 50px 60px; page-break-after: always; }
+    .toc h2 { font-size: 22px; color: #0d47a1; border-bottom: 2px solid #0d47a1; padding-bottom: 10px; margin-bottom: 24px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { padding: 6px 0; font-size: 13px; color: #333; }
+    .toc li span { color: #0d47a1; font-weight: 600; }
+    .toc .sub { padding-left: 20px; list-style: none; }
+    .toc .sub li { font-size: 12px; color: #555; padding: 3px 0; }
+    .toc .sub li::before { content: "→ "; color: #0d47a1; }
+    .section { padding: 40px 60px; page-break-inside: avoid; }
+    .section + .section { border-top: 1px solid #e8eaf6; }
+    .page-break { page-break-after: always; }
+    h2.section-title { font-size: 20px; color: #0d47a1; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    h2.section-title .num { background: #0d47a1; color: white; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+    .section-subtitle { font-size: 12px; color: #666; margin-bottom: 20px; padding-left: 40px; }
+    h3 { font-size: 14px; color: #1a237e; margin: 18px 0 8px; }
+    p { line-height: 1.7; color: #333; margin-bottom: 10px; }
+    pre { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; margin: 12px 0; border-left: 4px solid #0d47a1; }
+    code { background: #e8eaf6; color: #1a237e; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 11px; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px; }
+    th { background: #0d47a1; color: white; padding: 9px 12px; text-align: left; font-weight: 600; }
+    td { padding: 8px 12px; border-bottom: 1px solid #e8eaf6; }
+    tr:nth-child(even) td { background: #f5f7ff; }
+    .status-ok { color: #2e7d32; font-weight: 700; }
+    .status-warn { color: #e65100; font-weight: 700; }
+    .callout { border-left: 4px solid #0d47a1; background: #e8eaf6; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 12px; }
+    .callout.warn { border-color: #e65100; background: #fff3e0; }
+    .callout.success { border-color: #2e7d32; background: #e8f5e9; }
+    .callout strong { display: block; margin-bottom: 4px; }
+    .output-box { background: #0d1117; color: #58a6ff; padding: 14px 18px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 11px; line-height: 1.7; margin: 12px 0; }
+    .output-box .ok { color: #3fb950; }
+    .output-box .warn { color: #d29922; }
+    .output-box .err { color: #f85149; }
+    .arch-box { background: #1e1e2e; color: #cdd6f4; padding: 20px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 11px; line-height: 1.8; margin: 14px 0; }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+    .summary-card { border: 1px solid #c5cae9; border-radius: 8px; padding: 16px; }
+    .summary-card h4 { color: #0d47a1; font-size: 13px; margin-bottom: 8px; }
+    .summary-card p { font-size: 12px; color: #555; margin: 0; }
+    .phase-header { background: linear-gradient(90deg, #0d47a1, #1565c0); color: white; padding: 10px 16px; border-radius: 6px; margin-bottom: 14px; font-size: 13px; font-weight: 600; }
+    .fix-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+    .fix-badge { background: #c62828; color: white; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+    .fix-badge.ok { background: #2e7d32; }
+    footer { background: #1a237e; color: rgba(255,255,255,0.7); text-align: center; padding: 20px; font-size: 11px; margin-top: 40px; }
+  </style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <div>
+    <p style="font-size:12px; opacity:0.6; margin-bottom:16px; letter-spacing:2px; text-transform:uppercase;">AWS Hands-On Series · Stage 03</p>
+    <h1>Project 3.4</h1>
+    <h2>Terraform Remote State</h2>
+    <p style="font-size:15px; opacity:0.9; max-width:500px; line-height:1.7;">
+      A complete hands-on walkthrough of migrating Terraform state from local to S3,
+      enabling DynamoDB locking, cross-config state sharing, state migration, and
+      terraform import.
+    </p>
+    <div style="margin-top:30px;">
+      <span class="badge">Terraform</span>
+      <span class="badge">AWS S3</span>
+      <span class="badge">DynamoDB</span>
+      <span class="badge">SSM Parameter Store</span>
+      <span class="badge">IAC</span>
+    </div>
+  </div>
+  <div class="meta">
+    <p><strong>Account ID:</strong> 495331821583</p>
+    <p><strong>Region:</strong> us-east-1 (N. Virginia)</p>
+    <p><strong>Date:</strong> May 15, 2026</p>
+    <p><strong>Terraform Version:</strong> 1.7.5 &nbsp;|&nbsp; AWS Provider: 5.100.0</p>
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><span>Project Overview</span> — What this project does and why remote state matters</li>
+    <li><span>Architecture</span> — S3 + DynamoDB locking flow</li>
+    <li><span>Project Structure</span> — Folder layout and file descriptions</li>
+    <li><span>Code Review & Fixes</span> — Issues found and corrected before execution</li>
+    <li><span>Phase 1 — Bootstrap</span> — Creating S3 bucket and DynamoDB table
+      <ul class="sub">
+        <li>terraform init</li>
+        <li>terraform plan</li>
+        <li>terraform apply</li>
+      </ul>
+    </li>
+    <li><span>Phase 2 — Remote Backend</span> — Connecting main config to S3
+      <ul class="sub">
+        <li>Backend configuration</li>
+        <li>terraform init (backend migration)</li>
+        <li>terraform apply</li>
+      </ul>
+    </li>
+    <li><span>Phase 3 — Verify State in S3</span> — Confirming state file in S3</li>
+    <li><span>Phase 4 — DynamoDB Locking</span> — Observed on every operation</li>
+    <li><span>Phase 5 — Remote State Consumer</span> — Cross-config state sharing</li>
+    <li><span>Phase 6 — State Migration</span> — Local to remote migration</li>
+    <li><span>Phase 7 — Terraform Import</span> — Importing existing resources</li>
+    <li><span>AWS Console Verification</span> — Where to verify each resource</li>
+    <li><span>Cleanup & Destroy</span> — Teardown order and steps</li>
+    <li><span>Key Takeaways</span> — Lessons learned</li>
+  </ol>
+</div>
+
+<!-- SECTION 1: OVERVIEW -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">1</span> Project Overview</h2>
+  <p class="section-subtitle">What this project does and why remote state matters</p>
+
+  <p>This project demonstrates how to move Terraform state from a local file to <strong>Amazon S3 with DynamoDB locking</strong> — the industry-standard setup for team-based infrastructure management. It also covers reading outputs across Terraform configurations using <code>terraform_remote_state</code>, live state migration, and importing existing AWS resources.</p>
+
+  <h3>Why Remote State Matters</h3>
+  <table>
+    <tr><th>Problem (Local State)</th><th>Solution (Remote State)</th></tr>
+    <tr><td>State file only on your laptop</td><td>Stored in S3 — accessible to the whole team</td></tr>
+    <tr><td>Two people apply at once → corruption</td><td>DynamoDB lock prevents concurrent applies</td></tr>
+    <tr><td>Config A can't read Config B's outputs</td><td><code>terraform_remote_state</code> data source</td></tr>
+    <tr><td>State lost if laptop dies</td><td>S3 versioning keeps full history</td></tr>
+    <tr><td>Secrets visible in local file</td><td>S3 encryption at rest (AES-256)</td></tr>
+  </table>
+
+  <h3>Resources Created</h3>
+  <table>
+    <tr><th>Resource</th><th>Name</th><th>Purpose</th></tr>
+    <tr><td>S3 Bucket (state)</td><td>handson-terraform-state-495331821583</td><td>Stores all .tfstate files</td></tr>
+    <tr><td>DynamoDB Table</td><td>handson-terraform-locks</td><td>State locking</td></tr>
+    <tr><td>S3 Bucket (app)</td><td>handson-app-data-495331821583</td><td>Demo application bucket</td></tr>
+    <tr><td>SSM Parameter</td><td>/handson/migration-demo/message</td><td>Migration demo resource</td></tr>
+  </table>
+
+  <h3>Cost Estimate</h3>
+  <table>
+    <tr><th>Resource</th><th>Monthly Cost</th></tr>
+    <tr><td>S3 bucket (state files, &lt;1 MB)</td><td>$0 (free tier)</td></tr>
+    <tr><td>S3 versioning storage</td><td>~$0.01</td></tr>
+    <tr><td>DynamoDB (PAY_PER_REQUEST, minimal ops)</td><td>$0 (free tier)</td></tr>
+    <tr><td>S3 API calls</td><td>~$0.01</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>~$0.02/month</strong></td></tr>
+  </table>
+</div>
+
+<!-- SECTION 2: ARCHITECTURE -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">2</span> Architecture</h2>
+  <p class="section-subtitle">S3 + DynamoDB locking flow</p>
+
+  <div class="arch-box">
+Developer 1                         Developer 2
+    │                                    │
+    │ terraform apply                    │ terraform apply
+    │                                    │
+    ▼                                    ▼
+┌────────────────────────────────────────────────────────┐
+│                        AWS                              │
+│                                                         │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │        DynamoDB: handson-terraform-locks          │  │
+│  │                                                    │  │
+│  │  Dev1 acquires lock → LockID = "stage-03/..."    │  │
+│  │  Dev2 tries to lock → ConditionalCheckFailed     │  │
+│  │  Dev2 waits or errors                            │  │
+│  │  Dev1 finishes → releases lock                   │  │
+│  │  Dev2 can now acquire lock                       │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │    S3: handson-terraform-state-495331821583       │  │
+│  │                                                    │  │
+│  │  stage-03/project-3.4/main/terraform.tfstate     │  │
+│  │  stage-03/project-3.4/migration-demo/...         │  │
+│  │                                                    │  │
+│  │  Versioning: ON  |  Encryption: AES256            │  │
+│  │  Public access: BLOCKED                           │  │
+│  └──────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────┘</div>
+
+  <h3>Remote State Data Source Flow</h3>
+  <div class="arch-box">
+Config: main/                    Config: remote_state_consumer/
+  outputs:                         reads via terraform_remote_state:
+  app_bucket_name ───────────────► data.terraform_remote_state.main.outputs.app_bucket_name
+  app_bucket_arn  ───────────────► data.terraform_remote_state.main.outputs.app_bucket_arn
+  account_id      ───────────────► data.terraform_remote_state.main.outputs.account_id
+  region          ───────────────► data.terraform_remote_state.main.outputs.region</div>
+</div>
+
+<!-- SECTION 3: PROJECT STRUCTURE -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">3</span> Project Structure</h2>
+  <p class="section-subtitle">Folder layout and file descriptions</p>
+
+  <div class="arch-box">
+project_3.4_remote_state/
+├── bootstrap/                  ← Run ONCE — creates S3 + DynamoDB (uses local state)
+│   └── main.tf
+├── main/                       ← Main infrastructure using remote S3 backend
+│   ├── backend.tf              ← S3 backend configuration
+│   └── main.tf                 ← App S3 bucket + outputs
+├── remote_state_consumer/      ← Reads outputs from main/ via terraform_remote_state
+│   └── main.tf
+├── migration_demo/             ← Phase 6: demonstrates local → remote state migration
+│   └── main.tf
+├── import_demo/                ← Phase 7: demonstrates terraform import
+│   └── main.tf
+├── code/
+│   └── state_manager.py        ← Python helper: bootstrap, list states, unlock
+├── docs/
+│   └── handson_documentation.html
+├── README.md
+├── steps.md
+└── cost_estimate.md</div>
+
+  <table>
+    <tr><th>File</th><th>Description</th></tr>
+    <tr><td><code>bootstrap/main.tf</code></td><td>Creates S3 bucket (versioning + AES-256 + public block) and DynamoDB table. Uses local state — chicken-and-egg pattern.</td></tr>
+    <tr><td><code>main/backend.tf</code></td><td>S3 backend block only. Kept separate from main.tf for clarity.</td></tr>
+    <tr><td><code>main/main.tf</code></td><td>Creates app S3 bucket with all security configs. Exports 4 outputs readable by other configs.</td></tr>
+    <tr><td><code>remote_state_consumer/main.tf</code></td><td>No resources — only reads outputs from main/ state via terraform_remote_state data source.</td></tr>
+    <tr><td><code>migration_demo/main.tf</code></td><td>Started with local state, then backend block added to trigger live migration to S3.</td></tr>
+    <tr><td><code>import_demo/main.tf</code></td><td>Imported existing handson-app-data bucket into Terraform management.</td></tr>
+    <tr><td><code>code/state_manager.py</code></td><td>Python CLI: bootstrap S3+DynamoDB, list state files, remove stuck locks.</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 4: CODE REVIEW -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">4</span> Code Review &amp; Fixes</h2>
+  <p class="section-subtitle">Issues identified and corrected before execution</p>
+
+  <p>Before running any Terraform commands, a full code review was performed across all configuration files. Three issues were found and fixed:</p>
+
+  <div class="fix-item">
+    <span class="fix-badge">FIX 1</span>
+    <div>
+      <strong>State key mismatch — remote_state_consumer/main.tf</strong>
+      <p><code>main/main.tf</code> writes state to <code>stage-03/project-3.4/main/terraform.tfstate</code> but the consumer was pointing to <code>stage-03/project-3.4/terraform.tfstate</code> — it would never find the state file.</p>
+      <p><strong>Fix:</strong> Updated consumer key to match <code>stage-03/project-3.4/main/terraform.tfstate</code>.</p>
+    </div>
+  </div>
+
+  <div class="fix-item">
+    <span class="fix-badge">FIX 2</span>
+    <div>
+      <strong>Non-existent output reference — remote_state_consumer/main.tf</strong>
+      <p>Consumer referenced <code>outputs.vpc_id</code> which was never defined in <code>main/main.tf</code>. Would fail at plan time.</p>
+      <p><strong>Fix:</strong> Replaced with the 4 actual outputs: <code>app_bucket_name</code>, <code>app_bucket_arn</code>, <code>account_id</code>, <code>region</code>.</p>
+    </div>
+  </div>
+
+  <div class="fix-item">
+    <span class="fix-badge">FIX 3</span>
+    <div>
+      <strong>Duplicate backend block — main/main.tf + main/backend.tf</strong>
+      <p>Both files had a <code>terraform { backend "s3" {} }</code> block. Two terraform blocks in the same directory causes a conflict.</p>
+      <p><strong>Fix:</strong> Removed backend block from <code>main.tf</code>, kept it only in <code>backend.tf</code> (conventional pattern).</p>
+    </div>
+  </div>
+
+  <div class="fix-item">
+    <span class="fix-badge">FIX 4</span>
+    <div>
+      <strong>Inline provider syntax error — main/main.tf, remote_state_consumer/main.tf</strong>
+      <p>Inline <code>{ source = "..." version = "..." }</code> missing separator between attributes. Terraform requires newline or comma.</p>
+      <p><strong>Fix:</strong> Expanded to multi-line format with <code>source</code> and <code>version</code> on separate lines.</p>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>✅ Everything else was correct</strong>
+    bootstrap/main.tf was clean. DynamoDB LockID hash key was exact. Provider versions consistent (~> 5.0). S3 bucket naming pattern consistent. Encryption, versioning, public access block all properly configured.
+  </div>
+</div>
+
+<!-- SECTION 5: PHASE 1 BOOTSTRAP -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">5</span> Phase 1 — Bootstrap</h2>
+  <p class="section-subtitle">Creating the S3 bucket and DynamoDB table</p>
+
+  <div class="phase-header">📁 Working Directory: bootstrap/</div>
+
+  <div class="callout">
+    <strong>The Chicken-and-Egg Problem</strong>
+    To use S3 as a Terraform backend, the S3 bucket must already exist. But if we use Terraform to create it, where does that Terraform's state go? Answer: bootstrap/ uses LOCAL state intentionally — it's run once and never touched again.
+  </div>
+
+  <h3>Step 1 — terraform init</h3>
+  <pre>cd bootstrap
+terraform init</pre>
+  <div class="output-box">
+<span class="ok">Initializing the backend...</span>
+<span class="ok">Initializing provider plugins...</span>
+- Finding hashicorp/aws versions matching "~> 5.0"...
+- Installing hashicorp/aws v5.100.0...
+- Installed hashicorp/aws v5.100.0 (signed by HashiCorp)
+<span class="ok">Terraform has been successfully initialized!</span>
+  </div>
+
+  <h3>Step 2 — terraform plan</h3>
+  <pre>terraform plan</pre>
+  <p>Plan showed <strong>5 resources to add</strong>:</p>
+  <table>
+    <tr><th>Resource</th><th>Name</th></tr>
+    <tr><td>aws_s3_bucket</td><td>handson-terraform-state-495331821583</td></tr>
+    <tr><td>aws_s3_bucket_versioning</td><td>status = Enabled</td></tr>
+    <tr><td>aws_s3_bucket_server_side_encryption_configuration</td><td>AES256</td></tr>
+    <tr><td>aws_s3_bucket_public_access_block</td><td>all 4 = true</td></tr>
+    <tr><td>aws_dynamodb_table</td><td>handson-terraform-locks (LockID hash key)</td></tr>
+  </table>
+
+  <h3>Step 3 — terraform apply</h3>
+  <pre>terraform apply</pre>
+  <div class="output-box">
+aws_s3_bucket.state: Creating...
+aws_dynamodb_table.locks: Creating...
+aws_s3_bucket.state: <span class="ok">Creation complete after 6s</span> [id=handson-terraform-state-495331821583]
+aws_s3_bucket_public_access_block.state: <span class="ok">Creation complete after 3s</span>
+aws_s3_bucket_versioning.state: <span class="ok">Creation complete after 3s</span>
+aws_s3_bucket_server_side_encryption_configuration.state: <span class="ok">Creation complete after 1s</span>
+aws_dynamodb_table.locks: <span class="ok">Creation complete after 10s</span> [id=handson-terraform-locks]
+
+<span class="ok">Apply complete! Resources: 5 added, 0 changed, 0 destroyed.</span>
+
+Outputs:
+state_bucket_name = "handson-terraform-state-495331821583"
+lock_table_name   = "handson-terraform-locks"
+  </div>
+</div>
+
+<!-- SECTION 6: PHASE 2 -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">6</span> Phase 2 — Remote Backend</h2>
+  <p class="section-subtitle">Connecting main config to S3 and applying infrastructure</p>
+
+  <div class="phase-header">📁 Working Directory: main/</div>
+
+  <h3>backend.tf — Final Configuration</h3>
+  <pre>terraform {
+  backend "s3" {
+    bucket         = "handson-terraform-state-495331821583"
+    key            = "stage-03/project-3.4/main/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "handson-terraform-locks"
+    encrypt        = true
+  }
+}</pre>
+
+  <h3>terraform init — Backend Connection</h3>
+  <div class="output-box">
+<span class="ok">Initializing the backend...</span>
+<span class="ok">Successfully configured the backend "s3"!</span>
+Terraform will automatically use this backend unless the backend configuration changes.
+<span class="ok">Terraform has been successfully initialized!</span>
+  </div>
+
+  <h3>terraform apply — App Bucket Created</h3>
+  <div class="output-box">
+<span class="warn">Acquiring state lock. This may take a few moments...</span>
+data.aws_caller_identity.current: Read complete after 1s [id=495331821583]
+aws_s3_bucket.app_data: <span class="ok">Creation complete after 6s</span> [id=handson-app-data-495331821583]
+aws_s3_bucket_public_access_block.app_data: <span class="ok">Creation complete after 1s</span>
+aws_s3_bucket_server_side_encryption_configuration.app_data: <span class="ok">Creation complete after 1s</span>
+aws_s3_bucket_versioning.app_data: <span class="ok">Creation complete after 2s</span>
+<span class="warn">Releasing state lock. This may take a few moments...</span>
+
+<span class="ok">Apply complete! Resources: 4 added, 0 changed, 0 destroyed.</span>
+
+Outputs:
+account_id      = "495331821583"
+app_bucket_arn  = "arn:aws:s3:::handson-app-data-495331821583"
+app_bucket_name = "handson-app-data-495331821583"
+region          = "us-east-1"
+  </div>
+
+  <div class="callout success">
+    <strong>DynamoDB Locking Observed</strong>
+    Every plan and apply showed "Acquiring state lock" at the start and "Releasing state lock" at the end — confirming DynamoDB locking is active on all operations.
+  </div>
+</div>
+
+<!-- SECTION 7: PHASE 3 VERIFY -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">7</span> Phase 3 — Verify State in S3</h2>
+  <p class="section-subtitle">Confirming the state file landed in S3</p>
+
+  <h3>List State File</h3>
+  <pre>aws s3 ls s3://handson-terraform-state-495331821583/stage-03/project-3.4/main/</pre>
+  <div class="output-box">
+2026-05-15 08:04:31    <span class="ok">6559</span>  terraform.tfstate
+  </div>
+
+  <h3>State File Contents (key fields)</h3>
+  <pre>aws s3 cp s3://handson-terraform-state-495331821583/stage-03/project-3.4/main/terraform.tfstate - | python -m json.tool</pre>
+  <table>
+    <tr><th>Field</th><th>Value</th><th>Meaning</th></tr>
+    <tr><td>version</td><td>4</td><td>Terraform state format version</td></tr>
+    <tr><td>terraform_version</td><td>1.7.5</td><td>Version that wrote this state</td></tr>
+    <tr><td>serial</td><td>1</td><td>First write to this state file</td></tr>
+    <tr><td>lineage</td><td>12153387-f346-...</td><td>Unique ID — never changes for this state</td></tr>
+    <tr><td>outputs</td><td>4 outputs</td><td>Readable by terraform_remote_state</td></tr>
+    <tr><td>resources</td><td>4 managed + 1 data</td><td>Exactly what was applied</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>Why outputs in state matter</strong>
+    The outputs section is what makes <code>terraform_remote_state</code> work. Any other config pointing at this S3 key can read <code>app_bucket_name</code>, <code>app_bucket_arn</code>, <code>account_id</code>, and <code>region</code> directly — no API calls between configs needed.
+  </div>
+</div>
+
+<!-- SECTION 8: PHASE 4 LOCKING -->
+<div class="section">
+  <h2 class="section-title"><span class="num">8</span> Phase 4 — DynamoDB Locking</h2>
+  <p class="section-subtitle">Observed automatically on every plan and apply</p>
+
+  <p>DynamoDB locking was observed on every single Terraform operation throughout this hands-on. No separate test was needed — it was working from the first apply.</p>
+
+  <div class="output-box">
+<span class="warn">Acquiring state lock. This may take a few moments...</span>
+  ... terraform operation runs ...
+<span class="warn">Releasing state lock. This may take a few moments...</span>
+  </div>
+
+  <h3>How It Works</h3>
+  <table>
+    <tr><th>Step</th><th>What Happens</th></tr>
+    <tr><td>1. terraform plan/apply starts</td><td>Terraform writes a lock item to DynamoDB with LockID = state key path</td></tr>
+    <tr><td>2. Second apply tries to run</td><td>DynamoDB ConditionalCheckFailedException — lock already exists</td></tr>
+    <tr><td>3. First apply finishes</td><td>Lock item deleted from DynamoDB</td></tr>
+    <tr><td>4. Second apply can proceed</td><td>Acquires lock, runs safely</td></tr>
+  </table>
+
+  <div class="callout warn">
+    <strong>Stuck Lock Recovery</strong>
+    If terraform apply crashes mid-run, the lock may not be released. Use: <code>terraform force-unlock &lt;LOCK_ID&gt;</code> or the <code>state_manager.py unlock</code> command to remove it manually.
+  </div>
+</div>
+
+<!-- SECTION 9: PHASE 5 REMOTE STATE CONSUMER -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">9</span> Phase 5 — Remote State Consumer</h2>
+  <p class="section-subtitle">Reading outputs from main/ across configs using terraform_remote_state</p>
+
+  <div class="phase-header">📁 Working Directory: remote_state_consumer/</div>
+
+  <h3>How It Works</h3>
+  <p>The consumer config has no resources of its own. It uses the <code>terraform_remote_state</code> data source to read the outputs that <code>main/</code> wrote into S3 state.</p>
+
+  <pre>data "terraform_remote_state" "main" {
+  backend = "s3"
+  config = {
+    bucket = "handson-terraform-state-495331821583"
+    key    = "stage-03/project-3.4/main/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
+output "app_bucket_name_from_remote_state" {
+  value = data.terraform_remote_state.main.outputs.app_bucket_name
+}</pre>
+
+  <h3>terraform init — Built-in Provider Detected</h3>
+  <div class="output-box">
+- <span class="ok">terraform.io/builtin/terraform is built in to Terraform</span>
+- Finding hashicorp/aws versions matching "~> 5.0"...
+<span class="ok">Terraform has been successfully initialized!</span>
+  </div>
+
+  <div class="callout">
+    <strong>terraform.io/builtin/terraform</strong>
+    This built-in provider powers the <code>terraform_remote_state</code> data source. Its presence in init output confirms Terraform detected the data source and is ready to read from S3.
+  </div>
+
+  <h3>terraform plan — Remote State Read</h3>
+  <div class="output-box">
+data.terraform_remote_state.main: Reading...
+data.terraform_remote_state.main: <span class="ok">Read complete after 2s</span>
+
+Changes to Outputs:
++ <span class="ok">account_id_from_remote_state</span>      = "495331821583"
++ <span class="ok">app_bucket_arn_from_remote_state</span>  = "arn:aws:s3:::handson-app-data-495331821583"
++ <span class="ok">app_bucket_name_from_remote_state</span> = "handson-app-data-495331821583"
++ <span class="ok">region_from_remote_state</span>          = "us-east-1"
+
+You can apply this plan to save these new output values to the Terraform state,
+without changing any real infrastructure.
+  </div>
+
+  <div class="callout success">
+    <strong>✅ Cross-config state sharing working</strong>
+    No resources created. The consumer reached into S3, read main/'s state file, and surfaced all 4 outputs — without any direct coupling between the two configs. This is how real teams share VPC IDs, subnet IDs, and other infrastructure outputs across team boundaries.
+  </div>
+</div>
+
+<!-- SECTION 10: PHASE 6 STATE MIGRATION -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">10</span> Phase 6 — State Migration</h2>
+  <p class="section-subtitle">Migrating local state to S3 backend live</p>
+
+  <div class="phase-header">📁 Working Directory: migration_demo/</div>
+
+  <h3>The Scenario</h3>
+  <p>A config already exists with local state (terraform.tfstate on disk). We need to migrate it to S3 without losing any state data. This is the real-world scenario when onboarding an existing project to remote state.</p>
+
+  <h3>Step 1 — Start with Local State</h3>
+  <p>Created <code>migration_demo/main.tf</code> with <strong>no backend block</strong> — intentionally using local state. Applied an SSM Parameter resource:</p>
+  <div class="output-box">
+aws_ssm_parameter.demo: <span class="ok">Creation complete after 2s</span> [id=/handson/migration-demo/message]
+<span class="ok">Apply complete! Resources: 1 added, 0 changed, 0 destroyed.</span>
+
+Outputs:
+parameter_name = "/handson/migration-demo/message"
+  </div>
+  <p>At this point <code>terraform.tfstate</code> exists locally on disk with the SSM parameter state.</p>
+
+  <h3>Step 2 — Add Backend Block</h3>
+  <p>Added the S3 backend block to <code>migration_demo/main.tf</code>:</p>
+  <pre>backend "s3" {
+  bucket         = "handson-terraform-state-495331821583"
+  key            = "stage-03/project-3.4/migration-demo/terraform.tfstate"
+  region         = "us-east-1"
+  dynamodb_table = "handson-terraform-locks"
+  encrypt        = true
+}</pre>
+
+  <h3>Step 3 — terraform init (Migration Moment)</h3>
+  <pre>terraform init</pre>
+  <div class="output-box">
+Initializing the backend...
+
+<span class="warn">Do you want to copy existing state to the new backend?</span>
+Pre-existing state was found while migrating the previous "local" backend to the
+newly configured "s3" backend. No existing state was found in the newly
+configured "s3" backend. Do you want to copy this state to the new "s3"
+backend? Enter "yes" to copy and "no" to start with an empty state.
+
+Enter a value: <span class="ok">yes</span>
+
+Releasing state lock. This may take a few moments...
+<span class="ok">Successfully configured the backend "s3"!</span>
+<span class="ok">Terraform has been successfully initialized!</span>
+  </div>
+
+  <h3>Step 4 — Verify Migration</h3>
+  <table>
+    <tr><th>Location</th><th>Result</th></tr>
+    <tr><td>Local <code>terraform.tfstate</code></td><td class="status-ok">Empty (0 bytes) — state moved to S3</td></tr>
+    <tr><td>S3 <code>migration-demo/terraform.tfstate</code></td><td class="status-ok">2,108 bytes — state in S3 ✅</td></tr>
+  </table>
+
+  <div class="callout success">
+    <strong>Key insight</strong>
+    Migration is just: add backend block → run terraform init → type yes. Terraform handles copying the state automatically. The local file becomes empty — state now lives in S3.
+  </div>
+</div>
+
+<!-- SECTION 11: PHASE 7 TERRAFORM IMPORT -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">11</span> Phase 7 — Terraform Import</h2>
+  <p class="section-subtitle">Importing existing AWS resources into Terraform management</p>
+
+  <div class="phase-header">📁 Working Directory: import_demo/</div>
+
+  <h3>The Scenario</h3>
+  <p>The bucket <code>handson-app-data-495331821583</code> already exists in AWS (created by <code>main/</code>). A brand new config has never managed it. We import it so Terraform can start tracking and managing it going forward.</p>
+
+  <h3>Import Workflow</h3>
+  <table>
+    <tr><th>Step</th><th>Action</th></tr>
+    <tr><td>1</td><td>Write resource blocks in config that describe the existing resource</td></tr>
+    <tr><td>2</td><td>Run <code>terraform import &lt;resource&gt; &lt;aws-id&gt;</code> for each resource</td></tr>
+    <tr><td>3</td><td>Run <code>terraform plan</code> — goal is 0 changes (config matches reality)</td></tr>
+  </table>
+
+  <h3>Step 1 — terraform init</h3>
+  <div class="output-box"><span class="ok">Terraform has been successfully initialized!</span></div>
+
+  <h3>Step 2 — Import All 4 Resources</h3>
+  <pre>terraform import aws_s3_bucket.imported handson-app-data-495331821583
+terraform import aws_s3_bucket_versioning.imported handson-app-data-495331821583
+terraform import aws_s3_bucket_server_side_encryption_configuration.imported handson-app-data-495331821583
+terraform import aws_s3_bucket_public_access_block.imported handson-app-data-495331821583</pre>
+
+  <div class="output-box">
+aws_s3_bucket.imported: Importing from ID "handson-app-data-495331821583"...
+aws_s3_bucket.imported: <span class="ok">Import successful!</span>
+
+aws_s3_bucket_versioning.imported: Importing from ID "handson-app-data-495331821583"...
+aws_s3_bucket_versioning.imported: <span class="ok">Import successful!</span>
+
+aws_s3_bucket_server_side_encryption_configuration.imported: Importing from ID "handson-app-data-495331821583"...
+aws_s3_bucket_server_side_encryption_configuration.imported: <span class="ok">Import successful!</span>
+
+aws_s3_bucket_public_access_block.imported: Importing from ID "handson-app-data-495331821583"...
+aws_s3_bucket_public_access_block.imported: <span class="ok">Import successful!</span>
+  </div>
+
+  <h3>Step 3 — terraform plan (Verification)</h3>
+  <div class="output-box">
+aws_s3_bucket.imported: Refreshing state... [id=handson-app-data-495331821583]
+aws_s3_bucket_public_access_block.imported: Refreshing state...
+aws_s3_bucket_versioning.imported: Refreshing state...
+aws_s3_bucket_server_side_encryption_configuration.imported: Refreshing state...
+
+<span class="ok">No changes. Your infrastructure matches the configuration.</span>
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+  </div>
+
+  <div class="callout success">
+    <strong>✅ Perfect import — zero drift</strong>
+    Terraform compared all 4 resources against AWS and found no differences. The config perfectly describes reality. The bucket is now fully managed by Terraform.
+  </div>
+</div>
+
+<!-- SECTION 12: AWS CONSOLE VERIFICATION -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">12</span> AWS Console Verification</h2>
+  <p class="section-subtitle">Where to verify each resource in the AWS Console</p>
+
+  <div class="callout warn">
+    <strong>⚠️ Region Note</strong>
+    All resources were created in <strong>us-east-1 (N. Virginia)</strong>. Make sure the region selector in the top-right of the AWS Console is set to <strong>US East (N. Virginia)</strong> before looking for resources.
+  </div>
+
+  <h3>1. S3 Buckets — Console → S3 → Buckets</h3>
+  <table>
+    <tr><th>Bucket</th><th>What to Verify</th></tr>
+    <tr><td>handson-terraform-state-495331821583</td><td>Properties → Versioning = Enabled, Encryption = SSE-S3, Permissions → Block public access = all ON</td></tr>
+    <tr><td>handson-app-data-495331821583</td><td>Same settings as above</td></tr>
+  </table>
+  <p>Inside <code>handson-terraform-state-495331821583</code> → Objects tab → navigate to <code>stage-03/project-3.4/main/</code> → verify <code>terraform.tfstate</code> exists.</p>
+
+  <h3>2. DynamoDB — Console → DynamoDB → Tables</h3>
+  <table>
+    <tr><th>Check</th><th>Expected Value</th></tr>
+    <tr><td>Table name</td><td>handson-terraform-locks</td></tr>
+    <tr><td>Partition key</td><td>LockID (String)</td></tr>
+    <tr><td>Billing mode</td><td>On-demand (PAY_PER_REQUEST)</td></tr>
+    <tr><td>Table status</td><td>Active</td></tr>
+    <tr><td>Items (Explore table items)</td><td>Empty — no active locks</td></tr>
+  </table>
+
+  <h3>3. SSM Parameter Store — Console → Systems Manager → Parameter Store</h3>
+  <table>
+    <tr><th>Field</th><th>Expected Value</th></tr>
+    <tr><td>Name</td><td>/handson/migration-demo/message</td></tr>
+    <tr><td>Type</td><td>String</td></tr>
+    <tr><td>Value</td><td>hello from local state</td></tr>
+  </table>
+
+  <h3>4. S3 Versioning History</h3>
+  <p>Navigate to <code>handson-terraform-state-495331821583</code> → <code>stage-03/project-3.4/main/terraform.tfstate</code> → click the file → <strong>Versions tab</strong>. You will see version history — every <code>terraform apply</code> added a new version. This is your rollback safety net.</p>
+
+  <h3>Console Verification Checklist</h3>
+  <table>
+    <tr><th>Item</th><th>Status</th></tr>
+    <tr><td>S3 bucket: handson-terraform-state-495331821583 exists</td><td class="status-ok">✅</td></tr>
+    <tr><td>S3 bucket: versioning + encryption + public blocked</td><td class="status-ok">✅</td></tr>
+    <tr><td>S3 bucket: handson-app-data-495331821583 exists</td><td class="status-ok">✅</td></tr>
+    <tr><td>State files visible under stage-03/project-3.4/</td><td class="status-ok">✅</td></tr>
+    <tr><td>DynamoDB: handson-terraform-locks table active</td><td class="status-ok">✅</td></tr>
+    <tr><td>DynamoDB: LockID partition key, items empty</td><td class="status-ok">✅</td></tr>
+    <tr><td>SSM: /handson/migration-demo/message exists</td><td class="status-ok">✅</td></tr>
+    <tr><td>S3 versioning: terraform.tfstate has version history</td><td class="status-ok">✅</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 13: CLEANUP -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">13</span> Cleanup &amp; Destroy</h2>
+  <p class="section-subtitle">Teardown order and steps</p>
+
+  <div class="callout warn">
+    <strong>⚠️ Order matters</strong>
+    Bootstrap must be destroyed LAST — it holds the S3 bucket that stores all other state files. Destroying it first would orphan all other state.
+  </div>
+
+  <h3>Destroy Order</h3>
+  <table>
+    <tr><th>Order</th><th>Directory</th><th>Resources</th><th>Notes</th></tr>
+    <tr><td>1</td><td>import_demo/</td><td>aws_s3_bucket (handson-app-data)</td><td>terraform destroy -auto-approve</td></tr>
+    <tr><td>2</td><td>migration_demo/</td><td>aws_ssm_parameter</td><td>terraform destroy -auto-approve</td></tr>
+    <tr><td>3</td><td>main/</td><td>app bucket (already gone)</td><td>Clears state only</td></tr>
+    <tr><td>4</td><td>bootstrap/</td><td>S3 state bucket + DynamoDB</td><td>Must empty bucket first</td></tr>
+  </table>
+
+  <h3>Special Step — Empty S3 Bucket Before Bootstrap Destroy</h3>
+  <p>Because S3 versioning was enabled, the bucket contains versioned state files. AWS requires all versions to be deleted before the bucket can be removed.</p>
+
+  <pre># Create delete_versions.json with all version IDs, then:
+aws s3api delete-objects --bucket handson-terraform-state-495331821583 \
+  --delete file://delete_versions.json
+
+# Then destroy bootstrap
+terraform destroy -auto-approve</pre>
+
+  <h3>Remove prevent_destroy Before Bootstrap Destroy</h3>
+  <p>The state bucket had <code>lifecycle { prevent_destroy = true }</code> — this must be removed from <code>bootstrap/main.tf</code> before running destroy, otherwise Terraform will refuse to delete it.</p>
+
+  <h3>Destroy Results</h3>
+  <table>
+    <tr><th>Directory</th><th>Result</th></tr>
+    <tr><td>import_demo/</td><td class="status-ok">4 resources destroyed ✅</td></tr>
+    <tr><td>migration_demo/</td><td class="status-ok">1 resource destroyed (SSM parameter) ✅</td></tr>
+    <tr><td>main/</td><td class="status-ok">0 resources (already gone) — state cleared ✅</td></tr>
+    <tr><td>bootstrap/</td><td class="status-ok">S3 bucket + DynamoDB destroyed ✅</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 14: KEY TAKEAWAYS -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">14</span> Key Takeaways</h2>
+  <p class="section-subtitle">Lessons learned from this hands-on</p>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <h4>🪣 Bootstrap is One-Time</h4>
+      <p>The S3 bucket and DynamoDB table are created once and kept permanently. Never destroy the state bucket — it holds all your infrastructure history. Use <code>prevent_destroy = true</code> in production.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🔒 Locking is Automatic</h4>
+      <p>DynamoDB locking happens on every plan and apply without any extra configuration. Every operation acquires and releases the lock automatically.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🔗 Cross-Config Sharing</h4>
+      <p><code>terraform_remote_state</code> lets teams share infrastructure outputs (VPC IDs, subnet IDs, bucket names) without coupling their code or giving access to each other's configs.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🚀 Migration is Simple</h4>
+      <p>Migrating from local to remote state is just: add backend block → <code>terraform init</code> → type yes. Terraform handles copying the state automatically.</p>
+    </div>
+    <div class="summary-card">
+      <h4>📥 Import Pattern</h4>
+      <p>To import existing resources: write a matching resource block → <code>terraform import</code> → verify with <code>terraform plan</code> showing 0 changes. Config must match reality exactly.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🗂️ State Key Strategy</h4>
+      <p>Use a consistent path convention for state keys: <code>stage/project/env/terraform.tfstate</code>. This keeps all state files organized in one bucket across all projects.</p>
+    </div>
+  </div>
+
+  <h3>Common Pitfalls</h3>
+  <table>
+    <tr><th>Pitfall</th><th>Solution</th></tr>
+    <tr><td>Two terraform blocks in same directory</td><td>Keep backend in backend.tf, required_providers in main.tf</td></tr>
+    <tr><td>Inline provider syntax missing separator</td><td>Use multi-line format with source and version on separate lines</td></tr>
+    <tr><td>Consumer referencing non-existent output</td><td>Always check what outputs the source config actually exports</td></tr>
+    <tr><td>State key mismatch between writer and reader</td><td>Copy-paste the exact key from backend.tf into the consumer config</td></tr>
+    <tr><td>S3 bucket not empty on destroy</td><td>Delete all versions and delete markers before terraform destroy</td></tr>
+    <tr><td>prevent_destroy blocks teardown</td><td>Remove lifecycle block before running destroy in dev/test environments</td></tr>
+    <tr><td>Wrong region in provider</td><td>Always confirm your AWS CLI default region before writing configs</td></tr>
+  </table>
+
+  <h3>Final Phase Summary</h3>
+  <table>
+    <tr><th>Phase</th><th>What Was Done</th><th>Status</th></tr>
+    <tr><td>1 — Bootstrap</td><td>Created S3 bucket + DynamoDB table</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>2 — Remote Backend</td><td>Connected main/ to S3, applied app bucket</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>3 — Verify State</td><td>Confirmed terraform.tfstate in S3 (6,559 bytes)</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>4 — DynamoDB Locking</td><td>Observed lock acquire/release on every operation</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>5 — Remote State Consumer</td><td>Read main/ outputs from S3 across configs</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>6 — State Migration</td><td>Migrated local → S3 live with terraform init</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>7 — Terraform Import</td><td>Imported existing bucket, 0 drift on plan</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>Cleanup</td><td>All resources destroyed</td><td class="status-ok">✅ Complete</td></tr>
+  </table>
+</div>
+
+<footer>
+  <p>Project 3.4 — Terraform Remote State &nbsp;|&nbsp; AWS Hands-On Series Stage 03 &nbsp;|&nbsp; Account: 495331821583 &nbsp;|&nbsp; May 15, 2026</p>
+  <p style="margin-top:6px;">Generated from hands-on session documentation</p>
+</footer>
+
+</body>
+</html>

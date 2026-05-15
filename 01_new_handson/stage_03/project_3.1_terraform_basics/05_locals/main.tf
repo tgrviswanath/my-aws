@@ -4,16 +4,16 @@
 
 terraform {
   required_providers {
-    aws = { source = "hashicorp/aws" version = "~> 5.0" }
+    aws = { source = "hashicorp/aws", version = "~> 5.0" }
   }
 }
 
 provider "aws" { region = var.region }
 
-variable "region"      { default = "us-east-1" }
+variable "region"      { default = "ap-south-1" }
 variable "project"     { default = "handson" }
 variable "environment" { default = "dev" }
-variable "owner"       { default = "yourname" }
+variable "owner"       { default = "vswnth1" }
 
 # ─── Locals ───────────────────────────────────────────────────────────────────
 

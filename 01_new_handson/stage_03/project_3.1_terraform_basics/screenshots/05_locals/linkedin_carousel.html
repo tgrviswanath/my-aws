@@ -1,0 +1,220 @@
+﻿<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Phase 5 Locals</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#e8e8e8;}
+.slide{width:1080px;height:1080px;margin:20px auto;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:55px 60px;page-break-after:always;position:relative;overflow:hidden;}
+.lf{position:absolute;bottom:26px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:600;color:#0A66C2;text-decoration:none;}
+.li{background:#0A66C2;color:white;border-radius:5px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;}
+.sn{position:absolute;top:28px;right:48px;font-size:15px;font-weight:600;color:#999;}
+.tag{color:white;font-weight:800;font-size:15px;padding:6px 18px;border-radius:6px;margin-bottom:22px;text-transform:uppercase;letter-spacing:1px;display:inline-block;}
+h2{font-size:44px;font-weight:900;line-height:1.15;margin-bottom:26px;color:#1e293b;}
+.s1{background:linear-gradient(145deg,#FAF5FF,#EDE9FE 60%,#EBF5FF);text-align:center;border-top:8px solid #A855F7;}
+.s1 .badge{background:#A855F7;color:white;border-radius:50px;padding:9px 28px;font-size:17px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:28px;}
+.s1 h1{font-size:62px;font-weight:900;line-height:1.1;margin-bottom:20px;color:#1e293b;}
+.s1 h1 span{color:#A855F7;}
+.s1 .sub{font-size:21px;color:#475569;margin-bottom:28px;font-weight:500;}
+.pills{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+.pill{background:white;border:1.5px solid #CBD5E1;border-radius:50px;padding:7px 16px;font-size:15px;font-weight:600;color:#334155;box-shadow:0 2px 5px rgba(0,0,0,0.06);}
+.sh{position:absolute;bottom:62px;font-size:17px;color:#64748B;font-weight:500;}
+.s2{background:#F8FAFC;align-items:flex-start;border-top:8px solid #A855F7;}
+.s2 h2 span{color:#A855F7;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px;width:100%;}
+.card{background:white;border:1.5px solid #E2E8F0;border-left:5px solid #A855F7;border-radius:10px;padding:15px 19px;box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+.card .lbl{font-size:12px;color:#A855F7;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;}
+.card .val{font-size:16px;font-weight:600;color:#334155;line-height:1.4;}
+.card code{font-family:'Courier New',monospace;font-size:14px;color:#0A66C2;background:#EFF6FF;padding:2px 5px;border-radius:3px;}
+.s3{background:#FFFBEB;align-items:flex-start;border-top:8px solid #FF9900;}
+.s3 h2 span{color:#FF9900;}
+.fblock{width:100%;background:white;border:1.5px solid #FDE68A;border-radius:11px;padding:18px 24px;margin-bottom:14px;box-shadow:0 2px 7px rgba(0,0,0,0.04);}
+.fblock .fn{font-size:15px;font-weight:800;color:#92400E;margin-bottom:10px;font-family:'Courier New',monospace;}
+.fblock pre{font-family:'Courier New',monospace;font-size:13px;color:#334155;line-height:1.7;white-space:pre-wrap;}
+.fblock pre .k{color:#A855F7;font-weight:700;}
+.fblock pre .v{color:#FF9900;}
+.fblock pre .c{color:#94A3B8;}
+.s4{background:#F8FAFC;align-items:flex-start;border-top:8px solid #0A66C2;}
+.s4 h2 span{color:#0A66C2;}
+.cmp{width:100%;display:flex;flex-direction:column;gap:13px;}
+.cmp-hdr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;width:100%;margin-bottom:4px;}
+.cmp-hdr div{font-size:14px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:1px;text-align:center;}
+.cmp-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;width:100%;}
+.cmp-cell{background:white;border-radius:9px;padding:12px 16px;font-size:15px;box-shadow:0 2px 4px rgba(0,0,0,0.05);}
+.cmp-cell.label{font-weight:700;color:#334155;border-left:4px solid #A855F7;}
+.cmp-cell.dev{font-family:'Courier New',monospace;color:#0A66C2;border-left:4px solid #3B82F6;}
+.cmp-cell.prod{font-family:'Courier New',monospace;color:#16A34A;border-left:4px solid #22C55E;}
+.s5{background:#0d1117;align-items:flex-start;border-top:8px solid #A855F7;}
+.s5 h2{color:white;}
+.s5 h2 span{color:#A855F7;}
+.term{width:100%;font-family:'Courier New',monospace;font-size:13.5px;line-height:1.8;}
+.term .tc{color:#64748B;font-size:12px;margin-bottom:10px;}
+.term .tk{color:#C4B5FD;}
+.term .tv{color:#86EFAC;}
+.term .ts{color:#FDE68A;}
+.term .td{color:#4ADE80;font-weight:700;font-size:15px;margin-top:10px;}
+.s6{background:#FAF5FF;align-items:flex-start;border-top:8px solid #A855F7;}
+.s6 h2 span{color:#A855F7;}
+.dry-demo{width:100%;display:flex;flex-direction:column;gap:14px;}
+.dry-row{background:white;border-radius:11px;padding:16px 22px;box-shadow:0 2px 5px rgba(0,0,0,0.05);}
+.dry-row .dt{font-size:16px;font-weight:800;margin-bottom:8px;}
+.dry-row.bad .dt{color:#DC2626;}
+.dry-row.good .dt{color:#16A34A;}
+.dry-row.bad{border-left:5px solid #EF4444;}
+.dry-row.good{border-left:5px solid #22C55E;}
+.dry-row pre{font-family:'Courier New',monospace;font-size:13px;color:#334155;line-height:1.6;}
+.dry-row .dn{font-size:14px;color:#64748B;margin-top:5px;}
+.s7{background:#F0F9FF;align-items:flex-start;border-top:8px solid #0A66C2;}
+.s7 h2 span{color:#0A66C2;}
+.learns{width:100%;display:flex;flex-direction:column;gap:13px;}
+.learn{display:flex;align-items:flex-start;gap:13px;font-size:18px;line-height:1.5;background:white;border-radius:9px;padding:13px 18px;border:1.5px solid #BAE6FD;box-shadow:0 2px 4px rgba(0,0,0,0.04);color:#334155;}
+.learn .b{font-size:20px;min-width:26px;margin-top:2px;}
+.learn strong{color:#0A66C2;}
+.s8{background:linear-gradient(145deg,#FAF5FF,#EDE9FE 50%,#EBF5FF);text-align:center;border-top:8px solid #A855F7;}
+.s8 .eb{font-size:70px;margin-bottom:18px;}
+.s8 h2{font-size:46px;font-weight:900;line-height:1.2;margin-bottom:18px;color:#1e293b;}
+.s8 h2 span{color:#A855F7;}
+.s8 .ri{font-size:18px;color:#475569;margin-bottom:20px;line-height:1.7;}
+.s8 .nu{background:white;border:2px solid #DDD6FE;border-radius:11px;padding:13px 26px;font-size:17px;color:#334155;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
+.s8 .nu strong{color:#A855F7;}
+.s8 .fc{font-size:22px;font-weight:800;color:#0A66C2;}
+.ht{position:absolute;bottom:62px;font-size:13px;color:#94A3B8;text-align:center;width:100%;padding:0 60px;}
+@media print{body{background:white;}.slide{margin:0;page-break-after:always;page-break-inside:avoid;}@page{size:1080px 1080px;margin:0;}}
+</style></head><body>
+
+<div class="slide s1">
+  <div class="badge">&#9729;&#65039; AWS Hands-on Series &middot; Day 5</div>
+  <h1>Terraform<br><span>Locals</span><br>Explained</h1>
+  <div class="sub">Project 3.1 &mdash; Phase 5 &middot; DRY Configs &amp; Computed Values</div>
+  <div class="pills">
+    <div class="pill">&#128100; Viswanath TGR</div>
+    <div class="pill">&#127759; ap-south-1 Mumbai</div>
+    <div class="pill">&#128295; Terraform v1.7.5</div>
+    <div class="pill">&#128181; Cost: $0.00</div>
+  </div>
+  <div class="sh">&#128073; Swipe to see DRY principle in action</div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s2">
+  <div class="sn">2 / 8</div>
+  <div class="tag" style="background:#A855F7;">What Are Locals?</div>
+  <h2>Computed Values.<br><span>Defined Once.</span></h2>
+  <div class="grid2">
+    <div class="card"><div class="lbl">name_prefix</div><div class="val"><code>"handson-dev"</code> &mdash; project + environment</div></div>
+    <div class="card"><div class="lbl">common_tags</div><div class="val">6 tags defined once, used in every resource</div></div>
+    <div class="card"><div class="lbl">is_production</div><div class="val"><code>var.environment == "prod"</code> &rarr; true/false</div></div>
+    <div class="card"><div class="lbl">bucket_name</div><div class="val">Built from 3 sources: project + env + account ID</div></div>
+    <div class="card"><div class="lbl">timestamp()</div><div class="val">Auto-adds <code>CreatedAt</code> tag on every apply</div></div>
+    <div class="card"><div class="lbl">merge()</div><div class="val">Combines common_tags + resource-specific tags</div></div>
+  </div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s3">
+  <div class="sn">3 / 8</div>
+  <div class="tag" style="background:#FF9900;">The locals block</div>
+  <h2>4 Locals in <span>main.tf</span></h2>
+  <div class="fblock">
+    <div class="fn">&#128196; locals { } block</div>
+    <pre><span class="k">name_prefix</span>   = <span class="v">"${var.project}-${var.environment}"</span>
+<span class="c"># Result: "handson-dev"</span>
+
+<span class="k">bucket_name</span>   = <span class="v">"${local.name_prefix}-data-${data.aws_caller_identity.current.account_id}"</span>
+<span class="c"># Result: "handson-dev-data-495331821583"</span>
+
+<span class="k">is_production</span> = <span class="v">var.environment == "prod"</span>
+<span class="c"># Result: false (dev) or true (prod)</span>
+
+<span class="k">common_tags</span>   = {
+  Project = var.project, Environment = var.environment
+  Owner = var.owner, ManagedBy = <span class="v">"terraform"</span>
+  CreatedAt = <span class="v">timestamp()</span>  <span class="c"># auto timestamp!</span>
+}</pre>
+  </div>
+  <div class="fblock">
+    <div class="fn">&#128196; Used in resources</div>
+    <pre>bucket = <span class="k">local.bucket_name</span>
+tags   = merge(<span class="k">local.common_tags</span>, { Name = <span class="v">"${local.name_prefix}-data"</span> })
+status = <span class="k">local.is_production</span> ? <span class="v">"Enabled"</span> : <span class="v">"Suspended"</span></pre>
+  </div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s4">
+  <div class="sn">4 / 8</div>
+  <h2>Dev vs Prod &mdash; <span>One Flag</span></h2>
+  <div class="cmp">
+    <div class="cmp-hdr"><div>Local</div><div>Dev (default)</div><div>Prod (-var="environment=prod")</div></div>
+    <div class="cmp-row"><div class="cmp-cell label">name_prefix</div><div class="cmp-cell dev">handson-dev</div><div class="cmp-cell prod">handson-prod</div></div>
+    <div class="cmp-row"><div class="cmp-cell label">bucket_name</div><div class="cmp-cell dev">handson-dev-data-...</div><div class="cmp-cell prod">handson-prod-data-...</div></div>
+    <div class="cmp-row"><div class="cmp-cell label">is_production</div><div class="cmp-cell dev">false</div><div class="cmp-cell prod">true</div></div>
+    <div class="cmp-row"><div class="cmp-cell label">Versioning</div><div class="cmp-cell dev">Suspended</div><div class="cmp-cell prod">Enabled</div></div>
+    <div class="cmp-row"><div class="cmp-cell label">Code changed?</div><div class="cmp-cell dev">NO</div><div class="cmp-cell prod">NO</div></div>
+  </div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s5">
+  <div class="sn">5 / 8</div>
+  <div class="tag" style="background:#A855F7;">terraform show</div>
+  <h2 style="color:white;">Tags with <span>Timestamp</span></h2>
+  <div class="term">
+    <div class="tc">$ terraform show  &mdash;  aws_s3_bucket.data tags</div>
+    tags = {<br>
+    &nbsp;&nbsp;<span class="ts">"CreatedAt"</span>   = <span class="tv">"2026-05-13T06:31:55Z"</span>  <span style="color:#64748B;">&larr; timestamp() worked!</span><br>
+    &nbsp;&nbsp;<span class="ts">"Environment"</span> = <span class="tv">"dev"</span><br>
+    &nbsp;&nbsp;<span class="ts">"ManagedBy"</span>   = <span class="tv">"terraform"</span><br>
+    &nbsp;&nbsp;<span class="ts">"Name"</span>        = <span class="tv">"handson-dev-data"</span>  <span style="color:#64748B;">&larr; from local.name_prefix</span><br>
+    &nbsp;&nbsp;<span class="ts">"Owner"</span>       = <span class="tv">"vswnth1"</span><br>
+    &nbsp;&nbsp;<span class="ts">"Project"</span>     = <span class="tv">"handson"</span><br>
+    }<br><br>
+    versioning_configuration {<br>
+    &nbsp;&nbsp;status = <span class="tv">"Suspended"</span>  <span style="color:#64748B;">&larr; is_production = false</span><br>
+    }
+    <div class="td">&#10003; Apply complete! Resources: 2 added, 0 changed, 0 destroyed.</div>
+  </div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s6">
+  <div class="sn">6 / 8</div>
+  <div class="tag" style="background:#A855F7;">DRY Principle</div>
+  <h2>Define Once,<br><span>Use Everywhere</span></h2>
+  <div class="dry-demo">
+    <div class="dry-row bad"><div class="dt">&#10060; Without locals &mdash; repeated in every resource</div><pre>resource "aws_s3_bucket" "data" {
+  tags = { Project="handson", Environment="dev", Owner="vswnth1" }
+}
+resource "aws_instance" "web" {
+  tags = { Project="handson", Environment="dev", Owner="vswnth1" }  # repeated!
+}</pre><div class="dn">Change owner? Update every resource manually. Error-prone.</div></div>
+    <div class="dry-row good"><div class="dt">&#10003; With locals &mdash; defined once, used everywhere</div><pre>locals { common_tags = { Project=var.project, Owner=var.owner ... } }
+resource "aws_s3_bucket" "data" { tags = local.common_tags }
+resource "aws_instance" "web"  { tags = local.common_tags }  # same!</pre><div class="dn">Change owner? Update ONE local. All resources updated automatically.</div></div>
+  </div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s7">
+  <div class="sn">7 / 8</div>
+  <div class="tag" style="background:#0A66C2;">Takeaways</div>
+  <h2>Key <span>Learnings</span></h2>
+  <div class="learns">
+    <div class="learn"><div class="b">&#128161;</div><div><strong>Locals compute values</strong> from variables, data sources, and other locals</div></div>
+    <div class="learn"><div class="b">&#128161;</div><div><strong>DRY principle</strong> &mdash; define common_tags once, use in every resource</div></div>
+    <div class="learn"><div class="b">&#128161;</div><div><strong>Boolean locals</strong> control behavior: is_production ? "Enabled" : "Suspended"</div></div>
+    <div class="learn"><div class="b">&#128161;</div><div><strong>timestamp()</strong> auto-adds CreatedAt tag on every apply</div></div>
+    <div class="learn"><div class="b">&#128161;</div><div><strong>merge()</strong> combines common_tags with resource-specific tags cleanly</div></div>
+    <div class="learn"><div class="b">&#128161;</div><div>One variable change &rarr; <strong>all locals recompute</strong> &rarr; everything updates</div></div>
+  </div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+<div class="slide s8">
+  <div class="eb">&#127881;</div>
+  <h2>Project 3.1 &mdash; <span>All 5 Phases</span><br>Complete!</h2>
+  <div class="ri">Phase 1: Hello Terraform &nbsp;&#10003;&nbsp; Phase 2: Variables &nbsp;&#10003;<br>Phase 3: Outputs &nbsp;&#10003;&nbsp; Phase 4: Data Sources &nbsp;&#10003;&nbsp; Phase 5: Locals &nbsp;&#10003;</div>
+  <div class="nu">&#128204; Next: <strong>Project 3.2 &mdash; Terraform AWS Infrastructure</strong><br>VPC + Subnets + EC2 + ALB + RDS &mdash; all via Terraform</div>
+  <div class="fc">Follow for daily AWS hands-on updates! &#128071;</div>
+  <div class="ht">#AWS #Terraform #TerraformLocals #InfrastructureAsCode #DRY #CloudEngineering #DevOps #LearningInPublic</div>
+  <a class="lf" href="https://www.linkedin.com/in/viswanath-tgr-328b11264/" target="_blank"><div class="li">in</div>linkedin.com/in/viswanath-tgr-328b11264</a>
+</div>
+
+</body></html>

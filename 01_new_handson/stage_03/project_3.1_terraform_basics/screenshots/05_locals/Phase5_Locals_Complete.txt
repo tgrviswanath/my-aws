@@ -1,0 +1,590 @@
+AWS Terraform Hands-on Series
+Project 3.1  Terraform Basics
+Phase 5: Locals
+
+IAM User      : vswnth1
+AWS Account   : 495331821583
+AWS Region    : ap-south-1 (Mumbai)
+Terraform     : v1.7.5
+AWS CLI       : v2.x
+Date          : May 2026
+LinkedIn      : linkedin.com/in/viswanath-tgr-328b11264
+
+Working Directory:
+  D:\1.projects\AI\my-aws\01_new_handson\stage_03\
+  project_3.1_terraform_basics\05_locals\
+
+
+PART A  TOOL THEORY: TERRAFORM LOCALS
+
+
+A1. What Are Locals?
+
+
+  Locals are computed values derived from other values.
+  They are like variables, but calculated  not passed in.
+
+  Variables  you pass values IN from outside
+  Locals     Terraform computes values FROM other values
+
+  locals {
+    name_prefix = "${var.project}-${var.environment}"
+  }
+
+  Once defined, use anywhere:
+    bucket = local.name_prefix
+    tags   = local.common_tags
+
+
+A2. Why Use Locals?
+
+
+  Problem: DRY (Don't Repeat Yourself)
+
+  Without locals  repeated everywhere:
+    resource "aws_s3_bucket" "data" {
+      bucket = "handson-dev-data-495331821583"   hardcoded!
+      tags = {
+        Project     = "handson"
+        Environment = "dev"
+        Owner       = "vswnth1"
+        ManagedBy   = "terraform"
+      }
+    }
+    resource "aws_instance" "web" {
+      tags = {
+        Project     = "handson"   repeated again!
+        Environment = "dev"       repeated again!
+        Owner       = "vswnth1"   repeated again!
+        ManagedBy   = "terraform" repeated again!
+      }
+    }
+
+  With locals  defined once, used everywhere:
+    locals {
+      common_tags = {
+        Project     = var.project
+        Environment = var.environment
+        Owner       = var.owner
+        ManagedBy   = "terraform"
+      }
+    }
+    resource "aws_s3_bucket" "data" {
+      tags = local.common_tags   one line!
+    }
+    resource "aws_instance" "web" {
+      tags = local.common_tags   same one line!
+    }
+
+
+A3. Locals Syntax
+
+
+  locals {
+    # Simple computed string
+    name_prefix = "${var.project}-${var.environment}"
+
+    # Map (tags)
+    common_tags = {
+      Project     = var.project
+      Environment = var.environment
+      ManagedBy   = "terraform"
+      CreatedAt   = timestamp()
+    }
+
+    # Boolean condition
+    is_production = var.environment == "prod"
+
+    # Complex expression using data source
+    bucket_name = "${local.name_prefix}-data-${data.aws_caller_identity.current.account_id}"
+  }
+
+  Rules:
+    Locals can reference variables: var.project
+    Locals can reference data sources: data.aws_caller_identity.current.account_id
+    Locals can reference other locals: local.name_prefix
+    Locals CANNOT reference resources (use outputs for that)
+
+
+A4. Locals vs Variables
+
+
+  Feature              Variables                    Locals
+  
+  Keyword              variable                     locals
+  Passed in?           YES (from outside)           NO (computed internally)
+  Can have default?    YES                          N/A (always computed)
+  Can be overridden?   YES (-var, .tfvars)          NO (always computed)
+  References others?   NO                           YES (vars, data, other locals)
+  Use case             Input parameters             Computed/derived values
+
+
+A5. Common Local Patterns
+
+
+  Pattern 1  Consistent naming:
+    name_prefix = "${var.project}-${var.environment}"
+    Use: bucket = "${local.name_prefix}-data"
+         sg_name = "${local.name_prefix}-sg"
+         ec2_name = "${local.name_prefix}-web"
+
+  Pattern 2  Common tags (apply to all resources):
+    common_tags = {
+      Project     = var.project
+      Environment = var.environment
+      ManagedBy   = "terraform"
+      CreatedAt   = timestamp()
+    }
+    Use: tags = merge(local.common_tags, { Name = "specific-name" })
+
+  Pattern 3  Environment-based conditions:
+    is_production = var.environment == "prod"
+    Use: status = local.is_production ? "Enabled" : "Suspended"
+         instance_type = local.is_production ? "t3.large" : "t3.micro"
+
+  Pattern 4  Account-specific names (globally unique):
+    bucket_name = "${local.name_prefix}-${data.aws_caller_identity.current.account_id}"
+
+
+A6. The timestamp() Function
+
+
+  timestamp() returns the current UTC time when terraform apply runs.
+  Format: 2026-05-13T06:31:55Z
+
+  Use case: Tag resources with when they were created.
+    CreatedAt = timestamp()
+
+  Important: timestamp() changes on every apply.
+  This causes Terraform to show a "change" on every plan.
+  For stable tags, use a fixed string instead.
+
+
+A7. Common Terraform Commands (Locals Context)
+
+
+  Command                          Purpose
+  
+  terraform init                   Download providers
+  terraform plan                   See computed local values in outputs
+  terraform plan -var="env=prod"   See how locals change for prod
+  terraform apply                  Create resources with local values
+  terraform show                   See actual tag values including timestamp
+  terraform destroy                Clean up resources
+
+
+PART B  PREREQUISITES
+
+
+  (Same as Phase 1  already completed)
+
+  AWS Account ID  : 495331821583
+  IAM User        : vswnth1
+  Region          : ap-south-1 (Mumbai)
+  Terraform       : v1.7.5
+  AWS CLI         : v2.x
+
+
+PART C  PHASE OBJECTIVE
+
+
+  Goal: Learn how locals compute values from other values.
+  Demonstrate DRY principle  define once, use everywhere.
+  Show environment-based conditions using bool locals.
+
+  What you will do:
+    Review main.tf with 4 locals
+    Run terraform init
+    Run terraform plan (dev)  see locals computed
+    Run terraform plan -var="environment=prod"  see locals change
+    Run terraform apply  create dev bucket
+    Run terraform show  see timestamp in tags
+    Verify in AWS Console (bucket, versioning, tags)
+    Run terraform destroy
+
+  Resources created:
+    1. aws_s3_bucket.data             handson-dev-data-495331821583
+    2. aws_s3_bucket_versioning.data  Suspended (dev) / Enabled (prod)
+
+  Cost: $0.00
+
+
+PART D  THE main.tf FILE
+
+
+  File location:
+    D:\1.projects\AI\my-aws\01_new_handson\stage_03\
+    project_3.1_terraform_basics\05_locals\main.tf
+
+  File contents:
+
+    terraform {
+      required_providers {
+        aws = { source = "hashicorp/aws", version = "~> 5.0" }
+      }
+    }
+
+    provider "aws" { region = var.region }
+
+    variable "region"      { default = "ap-south-1" }
+    variable "project"     { default = "handson" }
+    variable "environment" { default = "dev" }
+    variable "owner"       { default = "vswnth1" }
+
+    locals {
+      # Local 1: Consistent name prefix
+      name_prefix = "${var.project}-${var.environment}"
+
+      # Local 2: Common tags  defined once, used everywhere
+      common_tags = {
+        Project     = var.project
+        Environment = var.environment
+        Owner       = var.owner
+        ManagedBy   = "terraform"
+        CreatedAt   = timestamp()
+      }
+
+      # Local 3: Boolean condition
+      is_production = var.environment == "prod"
+
+      # Local 4: Complex name using data source
+      bucket_name = "${local.name_prefix}-data-${data.aws_caller_identity.current.account_id}"
+    }
+
+    data "aws_caller_identity" "current" {}
+
+    resource "aws_s3_bucket" "data" {
+      bucket = local.bucket_name
+      tags   = merge(local.common_tags, { Name = "${local.name_prefix}-data" })
+    }
+
+    resource "aws_s3_bucket_versioning" "data" {
+      bucket = aws_s3_bucket.data.id
+      versioning_configuration {
+        status = local.is_production ? "Enabled" : "Suspended"
+      }
+    }
+
+    output "name_prefix"   { value = local.name_prefix }
+    output "bucket_name"   { value = aws_s3_bucket.data.bucket }
+    output "is_production" { value = local.is_production }
+
+
+PART E  HANDS-ON STEPS
+
+
+STEP 1  terraform init
+
+
+  Command:
+    terraform init
+
+  Output received:
+    Initializing provider plugins...
+    - Installing hashicorp/aws v5.100.0...
+    Terraform has been successfully initialized!
+
+  What happened:
+    Downloaded AWS provider v5.100.0
+    NOTHING created in AWS
+
+[Screenshot Placeholder  01_terraform_init.png]
+  Take screenshot of terminal showing "Terraform has been successfully initialized!"
+
+
+STEP 2  terraform plan (dev environment)
+
+
+  Command:
+    terraform plan
+
+  Key output:
+    + bucket = "handson-dev-data-495331821583"
+    + versioning_configuration {
+        status = "Suspended"
+      }
+
+    Plan: 2 to add, 0 to change, 0 to destroy.
+
+    Changes to Outputs:
+    + bucket_name   = "handson-dev-data-495331821583"
+    + is_production = false
+    + name_prefix   = "handson-dev"
+
+  Locals computed:
+    name_prefix   = handson + - + dev = "handson-dev"
+    bucket_name   = handson-dev + -data- + 495331821583 = "handson-dev-data-495331821583"
+    is_production = "dev" == "prod" = false
+    Versioning    = false ? "Enabled" : "Suspended" = "Suspended"
+
+[Screenshot Placeholder  02_terraform_plan_dev.png]
+  Take screenshot showing bucket = "handson-dev-data-495331821583" and is_production = false
+
+
+STEP 3  terraform plan -var="environment=prod" (prod scenario)
+
+
+  Command:
+    terraform plan -var="environment=prod"
+
+  Key output:
+    + bucket = "handson-prod-data-495331821583"
+    + versioning_configuration {
+        status = "Enabled"
+      }
+
+    Changes to Outputs:
+    + bucket_name   = "handson-prod-data-495331821583"
+    + is_production = true
+    + name_prefix   = "handson-prod"
+
+  What changed with ONE flag:
+    Dev                              Prod
+    
+    name_prefix   = handson-dev      name_prefix   = handson-prod
+    bucket_name   = handson-dev-...  bucket_name   = handson-prod-...
+    is_production = false            is_production = true
+    Versioning    = Suspended        Versioning    = Enabled
+    Code changed  NO                 Code changed  NO
+
+[Screenshot Placeholder  03_terraform_plan_prod.png]
+  Take screenshot showing bucket = "handson-prod-data-495331821583" and is_production = true
+  and versioning status = "Enabled"
+
+
+STEP 4  terraform apply (create dev bucket)
+
+
+  Command:
+    terraform apply
+    (typed: yes when prompted)
+
+  Output received:
+    aws_s3_bucket.data: Creating...
+    aws_s3_bucket.data: Creation complete after 4s [id=handson-dev-data-495331821583]
+    aws_s3_bucket_versioning.data: Creating...
+    aws_s3_bucket_versioning.data: Creation complete after 1s [id=handson-dev-data-495331821583]
+
+    Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+
+    Outputs:
+    bucket_name   = "handson-dev-data-495331821583"
+    is_production = false
+    name_prefix   = "handson-dev"
+
+  What was created in AWS:
+    Resource                        Name                              Time
+    
+    S3 Bucket                       handson-dev-data-495331821583     4s
+    S3 Versioning                   Suspended (dev environment)       1s
+
+[Screenshot Placeholder  04_terraform_apply.png]
+  Take screenshot of terminal showing "Apply complete! Resources: 2 added"
+
+
+STEP 5  terraform show (verify tags with timestamp)
+
+
+  Command:
+    terraform show
+
+  Key output:
+    aws_s3_bucket.data:
+      bucket = "handson-dev-data-495331821583"
+      region = "ap-south-1"
+      tags = {
+        "CreatedAt"   = "2026-05-13T06:31:55Z"   timestamp() worked!
+        "Environment" = "dev"
+        "ManagedBy"   = "terraform"
+        "Name"        = "handson-dev-data"
+        "Owner"       = "vswnth1"
+        "Project"     = "handson"
+      }
+
+    aws_s3_bucket_versioning.data:
+      versioning_configuration {
+        status = "Suspended"
+      }
+
+  Key observations:
+    6 tags applied  common_tags (5) + Name (1 extra via merge)
+    CreatedAt = 2026-05-13T06:31:55Z  timestamp() function worked
+    Name = "handson-dev-data"  built from local.name_prefix
+    Versioning = Suspended  because is_production = false
+
+[Screenshot Placeholder  05_terraform_show.png]
+  Take screenshot of terraform show output showing tags with CreatedAt timestamp
+
+
+STEP 6  Verify in AWS Console
+
+
+  6a. S3 Bucket exists
+      AWS Console  S3  ap-south-1
+      Look for: handson-dev-data-495331821583
+
+[Screenshot Placeholder  06_s3_bucket_in_console.png]
+  Take screenshot of S3 bucket list showing "handson-dev-data-495331821583"
+
+
+  6b. Versioning is Suspended
+      Click bucket  Properties tab  Bucket Versioning
+      Should show: Suspended  (because is_production = false)
+
+[Screenshot Placeholder  07_s3_versioning_suspended.png]
+  Take screenshot of Properties tab showing Versioning: Suspended
+
+
+  6c. Tags with CreatedAt timestamp
+      Click bucket  Properties tab  Tags
+      Should show all 6 tags including:
+        CreatedAt   = 2026-05-13T06:31:55Z
+        Environment = dev
+        Owner       = vswnth1
+        Name        = handson-dev-data
+
+[Screenshot Placeholder  08_s3_tags_with_timestamp.png]
+  Take screenshot of Tags section showing all 6 tags including CreatedAt
+
+
+STEP 7  terraform destroy
+
+
+  Command:
+    terraform destroy
+    (typed: yes when prompted)
+
+  Output received:
+    aws_s3_bucket_versioning.data: Destroying... [id=handson-dev-data-495331821583]
+    aws_s3_bucket_versioning.data: Destruction complete after 0s
+    aws_s3_bucket.data: Destroying... [id=handson-dev-data-495331821583]
+    aws_s3_bucket.data: Destruction complete after 1s
+
+    Destroy complete! Resources: 2 destroyed.
+
+  Cost: $0.00
+
+[Screenshot Placeholder  09_terraform_destroy.png]
+  Take screenshot of terminal showing "Destroy complete! Resources: 2 destroyed"
+
+
+PART F  SUMMARY
+
+
+Locals Computed in This Phase
+
+
+  Local          Expression                                    Dev Result
+  
+  name_prefix    var.project + - + var.environment            handson-dev
+  bucket_name    name_prefix + -data- + account_id            handson-dev-data-495331821583
+  is_production  var.environment == "prod"                    false
+  common_tags    map of 5 tags including timestamp()          6 tags applied
+
+
+Dev vs Prod Comparison
+
+
+  Feature              Dev (default)                    Prod (-var="environment=prod")
+  
+  name_prefix          handson-dev                      handson-prod
+  bucket_name          handson-dev-data-495331821583    handson-prod-data-495331821583
+  is_production        false                            true
+  Versioning           Suspended                        Enabled
+  Code changed         NO                               NO
+
+
+Command Summary
+
+
+  Command                          Touches AWS?   Result
+  
+  terraform init                   NO             Downloaded AWS provider
+  terraform plan                   NO             Showed dev locals computed
+  terraform plan -var="env=prod"   NO             Showed prod locals computed
+  terraform apply                  YES            Created dev bucket
+  terraform show                   NO             Showed tags with timestamp
+  terraform destroy                YES            Deleted dev bucket
+
+
+Key Concepts Learned
+
+
+  Locals compute values FROM other values  not passed in from outside
+  DRY principle  define common_tags once, use in every resource
+  Boolean locals  is_production controls versioning on/off
+  timestamp() adds creation time to tags automatically
+  merge() combines common_tags with resource-specific tags
+  Locals can reference variables, data sources, and other locals
+  One variable change  all locals recompute  everything updates
+
+
+All 5 Phases Complete  Project 3.1 Summary
+
+
+  Phase 1  Hello Terraform    S3 bucket, full lifecycle, state
+  Phase 2  Variables          string, bool, map, validation, .tfvars
+  Phase 3  Outputs            string, sensitive, object, computed URL
+  Phase 4  Data Sources       AMI, VPC, subnets, AZs  zero cost
+  Phase 5  Locals             DRY, name_prefix, common_tags, conditions
+
+
+Cost
+
+
+  Resource                    Cost
+  
+  S3 bucket (empty, ~5 sec)   $0.00
+  Total                       $0.00
+
+
+PART G  PROGRESS TRACKER
+
+
+  Phase 1  Hello Terraform    COMPLETED
+  Phase 2  Variables          COMPLETED
+  Phase 3  Outputs            COMPLETED
+  Phase 4  Data Sources       COMPLETED
+  Phase 5  Locals             COMPLETED
+  Project 3.1                 FULLY COMPLETE!
+  Next     Project 3.2  Terraform AWS Infrastructure
+
+
+SCREENSHOTS CHECKLIST
+
+
+  [ ] 01_terraform_init.png
+      Terminal showing "Terraform has been successfully initialized!"
+
+  [ ] 02_terraform_plan_dev.png
+      Plan showing bucket = "handson-dev-data-495331821583" and is_production = false
+
+  [ ] 03_terraform_plan_prod.png
+      Plan showing bucket = "handson-prod-data-495331821583" and is_production = true
+
+  [ ] 04_terraform_apply.png
+      Terminal showing "Apply complete! Resources: 2 added"
+
+  [ ] 05_terraform_show.png
+      terraform show output showing tags with CreatedAt = 2026-05-13T06:31:55Z
+
+  [ ] 06_s3_bucket_in_console.png
+      AWS Console S3 showing "handson-dev-data-495331821583"
+
+  [ ] 07_s3_versioning_suspended.png
+      S3 Properties  Versioning: Suspended
+
+  [ ] 08_s3_tags_with_timestamp.png
+      S3 Properties  Tags showing all 6 tags including CreatedAt
+
+  [ ] 09_terraform_destroy.png
+      Terminal showing "Destroy complete! Resources: 2 destroyed"
+
+  Save screenshots to:
+  D:\1.projects\AI\my-aws\01_new_handson\stage_03\
+  project_3.1_terraform_basics\screenshots\05_locals\
+
+
+  Author  : Viswanath TGR
+  LinkedIn: linkedin.com/in/viswanath-tgr-328b11264
+  Series  : AWS Terraform Hands-on  62 Projects

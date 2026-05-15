@@ -1,5 +1,3 @@
-provider "aws" { region = var.region }
-
 # ─── VPC ──────────────────────────────────────────────────────────────────────
 
 resource "aws_vpc" "main" {

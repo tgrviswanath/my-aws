@@ -1,10 +1,13 @@
 terraform {
   required_providers {
-    aws = { source = "hashicorp/aws" version = "~> 5.0" }
+    aws = { 
+      source = "hashicorp/aws" 
+      version = "~> 5.0" 
+      }
   }
 }
 
-provider "aws" { region = "us-east-1" }
+provider "aws" { region = "ap-south-1" }
 
 locals {
   env         = "dev"
@@ -13,6 +16,7 @@ locals {
     Project     = "handson"
     Environment = local.env
     ManagedBy   = "terraform"
+    Stage       = "stage-03"
   }
 }
 
@@ -22,8 +26,26 @@ module "vpc" {
   source      = "../../modules/vpc"
   name_prefix = local.name_prefix
   vpc_cidr    = "10.0.0.0/16"
-  azs         = ["us-east-1a", "us-east-1b"]
+  azs         = ["ap-south-1a", "ap-south-1b"]
   common_tags = local.common_tags
+}
+
+# ─── EC2 Module (ALB + ASG) ───────────────────────────────────────────────────
+
+module "ec2" {
+  source             = "../../modules/ec2"
+  name_prefix        = local.name_prefix
+  vpc_id             = module.vpc.vpc_id
+  public_subnet_ids  = module.vpc.public_subnet_ids
+  app_subnet_ids     = module.vpc.private_app_subnet_ids
+  environment        = local.env
+  key_name           = var.key_name
+  my_ip              = var.my_ip
+  instance_type      = "t3.micro"   # small for dev
+  desired_capacity   = 1            # cost saving
+  min_size           = 1
+  max_size           = 2
+  common_tags        = local.common_tags
 }
 
 # ─── RDS Module ───────────────────────────────────────────────────────────────
@@ -33,23 +55,35 @@ module "rds" {
   name_prefix    = local.name_prefix
   vpc_id         = module.vpc.vpc_id
   subnet_ids     = module.vpc.private_db_subnet_ids
-  app_sg_id      = aws_security_group.app.id
+  app_sg_id      = module.ec2.app_sg_id
   db_password    = var.db_password
-  instance_class = "db.t3.micro"  # small for dev
+  instance_class = "db.t3.micro"  # free tier
   multi_az       = false          # no HA in dev
   common_tags    = local.common_tags
 }
 
-# App security group (simplified — full version in ec2 module)
-resource "aws_security_group" "app" {
-  name   = "${local.name_prefix}-app-sg"
-  vpc_id = module.vpc.vpc_id
-  ingress { from_port = 80 to_port = 80 protocol = "tcp" cidr_blocks = ["0.0.0.0/0"] }
-  egress  { from_port = 0  to_port = 0  protocol = "-1"  cidr_blocks = ["0.0.0.0/0"] }
-  tags = merge(local.common_tags, { Name = "${local.name_prefix}-app-sg" })
+# ─── Variables ────────────────────────────────────────────────────────────────
+
+variable "db_password" {
+  type      = string
+  sensitive = true
 }
 
-variable "db_password" { type = string sensitive = true }
+variable "key_name" {
+  type        = string
+  default     = "handson-key"
+  description = "EC2 key pair name"
+}
+
+variable "my_ip" {
+  type        = string
+  default     = "103.82.209.148/32"
+  description = "Your IP for SSH access"
+}
+
+# ─── Outputs ──────────────────────────────────────────────────────────────────
 
 output "vpc_id"       { value = module.vpc.vpc_id }
+output "alb_url"      { value = module.ec2.alb_url }
+output "alb_dns_name" { value = module.ec2.alb_dns_name }
 output "rds_endpoint" { value = module.rds.endpoint }

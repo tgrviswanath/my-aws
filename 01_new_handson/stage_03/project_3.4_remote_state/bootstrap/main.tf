@@ -5,7 +5,10 @@
 
 terraform {
   required_providers {
-    aws = { source = "hashicorp/aws" version = "~> 5.0" }
+    aws = { 
+      source = "hashicorp/aws" 
+      version = "~> 5.0" 
+      }
   }
 }
 
@@ -23,9 +26,6 @@ locals {
 
 resource "aws_s3_bucket" "state" {
   bucket = local.bucket_name
-
-  # Prevent accidental deletion
-  lifecycle { prevent_destroy = true }
 
   tags = { Name = "terraform-state", ManagedBy = "terraform", Purpose = "state" }
 }

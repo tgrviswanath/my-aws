@@ -1,19 +1,12 @@
-# Project 3.4 — Terraform Remote State (Consumer)
-# This is the "main" infrastructure that uses the remote state backend.
-# It reads outputs from other state files via terraform_remote_state.
+# Project 3.4 — Terraform Remote State
+# Main infrastructure config — uses the S3 remote backend defined in backend.tf.
 
 terraform {
   required_providers {
-    aws = { source = "hashicorp/aws" version = "~> 5.0" }
-  }
-
-  # Remote state backend — created by bootstrap/main.tf
-  backend "s3" {
-    bucket         = "handson-terraform-state-ACCOUNTID"
-    key            = "stage-03/project-3.4/main/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "handson-terraform-locks"
-    encrypt        = true
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
   }
 }
 
@@ -55,7 +48,7 @@ resource "aws_s3_bucket_public_access_block" "app_data" {
   restrict_public_buckets = true
 }
 
-# ─── Outputs (readable by other state files via terraform_remote_state) ───────
+# ─── Outputs (readable by other configs via terraform_remote_state) ───────────
 
 output "app_bucket_name" { value = aws_s3_bucket.app_data.bucket }
 output "app_bucket_arn"  { value = aws_s3_bucket.app_data.arn }
