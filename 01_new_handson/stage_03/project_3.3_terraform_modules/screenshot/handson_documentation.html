@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project 3.3 — Terraform Modules &amp; Environments Hands-On</title>
+  <style>
+    :root {
+      --primary:      #0e7490;
+      --primary-dark: #0c4a6e;
+      --primary-light:#ecfeff;
+      --primary-mid:  #a5f3fc;
+      --accent:       #06b6d4;
+      --bg-page:      #f0fdff;
+      --bg-section:   #ffffff;
+      --text-main:    #0c2d3a;
+      --text-muted:   #164e63;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: var(--text-main); background: var(--bg-page); }
+    .cover { background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 40%, #67e8f9 100%); color: #0c2d3a; padding: 80px 60px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; page-break-after: always; border-bottom: 4px solid var(--primary); }
+    .cover h1 { font-size: 38px; font-weight: 800; margin-bottom: 10px; color: #0c2d3a; }
+    .cover h2 { font-size: 20px; font-weight: 400; margin-bottom: 40px; color: #0e7490; }
+    .cover .meta { border-top: 1px solid #67e8f9; padding-top: 24px; margin-top: 40px; }
+    .cover .meta p { font-size: 13px; color: #0c4a6e; margin-bottom: 6px; }
+    .cover .badge { display: inline-block; background: rgba(14,116,144,0.1); border: 1px solid #67e8f9; border-radius: 20px; padding: 4px 14px; font-size: 12px; margin: 4px 4px 0 0; color: #0c4a6e; font-weight: 600; }
+    .toc { padding: 50px 60px; page-break-after: always; background: var(--bg-section); }
+    .toc h2 { font-size: 22px; color: var(--primary); border-bottom: 2px solid var(--primary-mid); padding-bottom: 10px; margin-bottom: 24px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { padding: 6px 0; font-size: 13px; color: #333; }
+    .toc li span { color: var(--primary); font-weight: 600; }
+    .toc .sub { padding-left: 20px; list-style: none; }
+    .toc .sub li { font-size: 12px; color: var(--text-muted); padding: 3px 0; }
+    .toc .sub li::before { content: "→ "; color: var(--accent); }
+    .section { padding: 40px 60px; background: var(--bg-section); }
+    .section + .section { border-top: 1px solid var(--primary-light); }
+    .page-break { page-break-after: always; }
+    h2.section-title { font-size: 20px; color: var(--primary); margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    h2.section-title .num { background: var(--primary); color: white; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+    .section-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; padding-left: 40px; }
+    h3 { font-size: 14px; color: var(--primary-dark); margin: 18px 0 8px; }
+    p { line-height: 1.7; color: #333; margin-bottom: 10px; }
+    pre { background: #ecfeff; color: #0c2d3a; padding: 16px 20px; border-radius: 8px; font-family: 'Consolas','Courier New',monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; margin: 12px 0; border: 1px solid var(--primary-mid); border-left: 4px solid var(--primary); }
+    code { background: var(--primary-light); color: var(--primary-dark); padding: 2px 6px; border-radius: 4px; font-family: 'Consolas',monospace; font-size: 11px; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px; border: 1px solid var(--primary-mid); overflow: hidden; }
+    th { background: var(--primary); color: white; padding: 9px 12px; text-align: left; font-weight: 600; }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--primary-light); }
+    tr:nth-child(even) td { background: #f0fdff; }
+    .status-ok { color: #16a34a; font-weight: 700; }
+    .status-warn { color: #b45309; font-weight: 700; }
+    .callout { border-left: 4px solid var(--primary); background: var(--primary-light); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 12px; }
+    .callout.warn { border-color: #d97706; background: #fffbeb; }
+    .callout.success { border-color: #16a34a; background: #f0fdf4; }
+    .callout.info { border-color: #0284c7; background: #f0f9ff; }
+    .callout strong { display: block; margin-bottom: 4px; color: var(--primary-dark); }
+    .output-box { background: #ecfeff; color: #0c2d3a; padding: 14px 18px; border-radius: 8px; font-family: 'Consolas',monospace; font-size: 11px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--primary-mid); }
+    .output-box .ok { color: #16a34a; font-weight: 600; }
+    .output-box .warn { color: #b45309; font-weight: 600; }
+    .output-box .err { color: #dc2626; font-weight: 600; }
+    .arch-box { background: #ecfeff; color: #0c2d3a; padding: 20px; border-radius: 8px; font-family: 'Consolas',monospace; font-size: 11px; line-height: 1.8; margin: 14px 0; border: 1px solid var(--primary-mid); }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+    .summary-card { border: 1px solid var(--primary-mid); border-radius: 8px; padding: 16px; background: #f0fdff; }
+    .summary-card h4 { color: var(--primary); font-size: 13px; margin-bottom: 8px; }
+    .summary-card p { font-size: 12px; color: #555; margin: 0; }
+    .phase-header { background: linear-gradient(90deg, var(--primary-light), #cffafe); color: var(--primary-dark); padding: 10px 16px; border-radius: 6px; margin-bottom: 14px; font-size: 13px; font-weight: 600; border-left: 4px solid var(--primary); }
+    footer { background: var(--primary); color: rgba(255,255,255,0.9); text-align: center; padding: 20px; font-size: 11px; margin-top: 40px; }
+  </style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div>
+    <p style="font-size:12px;color:#0c4a6e;margin-bottom:16px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">AWS Hands-On Series · Stage 03</p>
+    <h1>Project 3.3</h1>
+    <h2>Terraform Modules &amp; Environments</h2>
+    <p style="font-size:15px;color:#0c2d3a;max-width:520px;line-height:1.7;">
+      A complete hands-on walkthrough of refactoring flat Terraform infrastructure into
+      reusable modules, then deploying the same infrastructure to dev and qa environments
+      with completely separate state files and zero code duplication.
+    </p>
+    <div style="margin-top:30px;">
+      <span class="badge">Terraform Modules</span><span class="badge">VPC Module</span>
+      <span class="badge">EC2/ALB Module</span><span class="badge">RDS Module</span>
+      <span class="badge">Multi-Environment</span><span class="badge">DRY Principle</span>
+    </div>
+  </div>
+  <div class="meta">
+    <p><strong>Date:</strong> 2026-05-14 &nbsp;|&nbsp; <strong>Region:</strong> ap-south-1 (Mumbai)</p>
+    <p><strong>Account:</strong> 495331821583 &nbsp;|&nbsp; <strong>IAM User:</strong> vswnth1</p>
+    <p><strong>Terraform:</strong> v1.7.5 &nbsp;|&nbsp; <strong>AWS Provider:</strong> v5.100.0</p>
+  </div>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><span>Project Overview</span> — Objective, learning goals</li>
+    <li><span>Architecture</span> — Module boundaries and flow</li>
+    <li><span>Folder Structure</span> — Modules and environments layout</li>
+    <li><span>Module Design</span> — vpc, ec2, rds module inputs/outputs</li>
+    <li><span>Environment Configs</span> — dev vs qa vs prod differences</li>
+    <li><span>Hands-on Steps</span> — init, plan, apply for dev and qa</li>
+    <li><span>State Isolation</span> — Separate state per environment</li>
+    <li><span>terraform state list</span> — Module namespacing</li>
+    <li><span>Key Takeaways</span> — Flat vs Modular comparison</li>
+  </ol>
+</div>
+
+<!-- SECTION 1: OVERVIEW -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">1</span> Project Overview</h2>
+  <p class="section-subtitle">Refactor flat infrastructure into reusable modules</p>
+
+  <p>Refactor the flat multi-tier infrastructure from Project 3.2 into <strong>reusable Terraform modules</strong>, then deploy the same infrastructure to <strong>dev</strong> and <strong>qa</strong> environments using those modules — with completely separate state files, separate VPCs, and zero code duplication.</p>
+
+  <h3>Learning Objectives</h3>
+  <table>
+    <tr><th>#</th><th>Objective</th></tr>
+    <tr><td>1</td><td>Understand what a Terraform module is and why it exists</td></tr>
+    <tr><td>2</td><td>Create reusable modules for VPC, EC2/ALB/ASG, and RDS</td></tr>
+    <tr><td>3</td><td>Pass inputs into modules using variables and receive outputs</td></tr>
+    <tr><td>4</td><td>Wire modules together — use one module's output as another's input</td></tr>
+    <tr><td>5</td><td>Deploy the same modules to multiple environments with different configs</td></tr>
+    <tr><td>6</td><td>Understand state isolation — each environment has its own terraform.tfstate</td></tr>
+    <tr><td>7</td><td>Observe module namespacing in terraform state list (module.vpc.*, module.ec2.*)</td></tr>
+    <tr><td>8</td><td>Understand the difference between flat Terraform (3.2) and modular Terraform (3.3)</td></tr>
+  </table>
+
+  <h3>Prerequisites</h3>
+  <table>
+    <tr><th>Tool</th><th>Version</th><th>Purpose</th></tr>
+    <tr><td>Terraform</td><td>v1.7.5</td><td>Infrastructure provisioning</td></tr>
+    <tr><td>AWS CLI</td><td>v2.x</td><td>Authentication and verification</td></tr>
+    <tr><td>Key pair</td><td>handson-key</td><td>EC2 SSH access in ap-south-1</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 2: ARCHITECTURE -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">2</span> Architecture</h2>
+  <p class="section-subtitle">Module boundaries and infrastructure flow</p>
+
+  <div class="arch-box">
+Internet
+    │
+    ▼
+┌──────────────────────────────────────────────────────────┐
+│  VPC (10.0.0.0/16 for dev / 10.1.0.0/16 for qa)         │
+│                                                           │
+│  ┌─────────────┐    ┌─────────────┐                      │
+│  │ Public      │    │ Public      │  ← IGW               │
+│  │ Subnet AZ-a │    │ Subnet AZ-b │                      │
+│  └──────┬──────┘    └──────┬──────┘                      │
+│         │  ALB (internet-facing)                          │
+│         └──────────┬────────┘                            │
+│                    │ HTTP :80                             │
+│         ┌──────────▼────────┐                            │
+│         │ Private App Subnets│  ← NAT Gateway            │
+│         │ EC2 (ASG, nginx)  │                            │
+│         └──────────┬────────┘                            │
+│                    │ MySQL :3306                          │
+│         ┌──────────▼────────┐                            │
+│         │ Private DB Subnets │                            │
+│         │ RDS MySQL 8.0     │                            │
+│         └───────────────────┘                            │
+└──────────────────────────────────────────────────────────┘
+
+Module boundaries:
+  module.vpc  → VPC, subnets, IGW, NAT, EIP, route tables
+  module.ec2  → ALB SG, App SG, ALB, TG, Listener, Launch Template, ASG
+  module.rds  → RDS SG, DB Subnet Group, RDS MySQL instance</div>
+
+  <h3>Module Wiring — Outputs as Inputs</h3>
+  <div class="arch-box">
+module.vpc outputs:
+  vpc_id                 ──────────────► module.ec2.vpc_id
+  public_subnet_ids      ──────────────► module.ec2.public_subnet_ids
+  private_app_subnet_ids ──────────────► module.ec2.app_subnet_ids
+  private_db_subnet_ids  ──────────────► module.rds.subnet_ids
+  vpc_id                 ──────────────► module.rds.vpc_id
+
+module.ec2 outputs:
+  app_sg_id              ──────────────► module.rds.app_sg_id</div>
+</div>
+
+<!-- SECTION 3: FOLDER STRUCTURE -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">3</span> Folder Structure</h2>
+
+  <div class="arch-box">
+project_3.3_terraform_modules/
+├── modules/
+│   ├── vpc/
+│   │   └── main.tf   ← VPC, 6 subnets, IGW, NAT, EIP, 2 route tables, 6 associations
+│   ├── ec2/
+│   │   └── main.tf   ← ALB SG, App SG, ALB, TG, Listener, AMI data, Launch Template, ASG
+│   └── rds/
+│       └── main.tf   ← RDS SG, DB Subnet Group, RDS MySQL instance
+├── environments/
+│   ├── dev/
+│   │   └── main.tf   ← CIDR 10.0.0.0/16, t3.micro, capacity=1, multi_az=false
+│   ├── qa/
+│   │   └── main.tf   ← CIDR 10.1.0.0/16, t3.micro, capacity=1, multi_az=false
+│   └── prod/
+│       └── main.tf   ← CIDR 10.2.0.0/16, t3.small, multi_az=true
+├── code/
+│   └── env_switcher.py
+└── screenshot/
+    └── handson_log.md</div>
+
+  <div class="callout info"><strong>State isolation</strong> — each environment directory has its own <code>terraform.tfstate</code>. Dev and QA are completely independent — destroying dev does not affect qa.</div>
+</div>
+
+<!-- SECTION 4: MODULE DESIGN -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">4</span> Module Design</h2>
+  <p class="section-subtitle">Inputs, outputs, and resources for each module</p>
+
+  <h3>module.vpc — Inputs &amp; Outputs</h3>
+  <table>
+    <tr><th>Input Variable</th><th>Type</th><th>Description</th></tr>
+    <tr><td>name_prefix</td><td>string</td><td>e.g. "handson-dev" — prefixes all resource names</td></tr>
+    <tr><td>vpc_cidr</td><td>string</td><td>10.0.0.0/16 (dev) / 10.1.0.0/16 (qa)</td></tr>
+    <tr><td>azs</td><td>list(string)</td><td>["ap-south-1a", "ap-south-1b"]</td></tr>
+    <tr><td>common_tags</td><td>map(string)</td><td>Project, Environment, ManagedBy, Stage</td></tr>
+  </table>
+  <table>
+    <tr><th>Output</th><th>Used by</th></tr>
+    <tr><td>vpc_id</td><td>module.ec2, module.rds</td></tr>
+    <tr><td>public_subnet_ids</td><td>module.ec2 (ALB)</td></tr>
+    <tr><td>private_app_subnet_ids</td><td>module.ec2 (ASG)</td></tr>
+    <tr><td>private_db_subnet_ids</td><td>module.rds</td></tr>
+    <tr><td>nat_gateway_ip</td><td>environment output</td></tr>
+  </table>
+
+  <h3>module.ec2 — Key Resources</h3>
+  <pre>ALB SG    → allows HTTP/HTTPS from internet (0.0.0.0/0)
+App SG    → allows HTTP from ALB SG only, SSH from my_ip only
+ALB       → internet-facing, attached to public subnets
+TG        → HTTP:80, health check /health
+Listener  → HTTP:80 → forward to target group
+LT        → AL2023 AMI (data source), nginx user_data, app SG
+ASG       → desired=1, min=1, max=2, private app subnets, ELB health check</pre>
+
+  <h3>module.rds — Key Resources</h3>
+  <pre>RDS SG         → allows MySQL :3306 from app_sg_id only
+DB Subnet Group → spans private_db subnets
+RDS MySQL 8.0  → db.t3.micro, 20GB gp2, backup_retention=0 (free tier)</pre>
+</div>
+
+<!-- SECTION 5: ENVIRONMENT CONFIGS -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">5</span> Environment Configs</h2>
+  <p class="section-subtitle">Dev vs QA vs Prod — same modules, different parameters</p>
+
+  <table>
+    <tr><th>Parameter</th><th>dev</th><th>qa</th><th>prod</th></tr>
+    <tr><td>vpc_cidr</td><td>10.0.0.0/16</td><td>10.1.0.0/16</td><td>10.2.0.0/16</td></tr>
+    <tr><td>instance_type</td><td>t3.micro</td><td>t3.micro</td><td>t3.small</td></tr>
+    <tr><td>desired_capacity</td><td>1</td><td>1</td><td>2</td></tr>
+    <tr><td>instance_class</td><td>db.t3.micro</td><td>db.t3.micro</td><td>db.t3.small</td></tr>
+    <tr><td>multi_az</td><td>false</td><td>false</td><td>true</td></tr>
+    <tr><td>State file</td><td>dev/terraform.tfstate</td><td>qa/terraform.tfstate</td><td>prod/terraform.tfstate</td></tr>
+    <tr><td>Code duplication</td><td colspan="3" style="text-align:center;">❌ Zero — same 3 modules reused</td></tr>
+  </table>
+
+  <h3>Dev Environment main.tf (key section)</h3>
+  <pre>module "vpc" {
+  source      = "../../modules/vpc"
+  name_prefix = local.name_prefix    # "handson-dev"
+  vpc_cidr    = "10.0.0.0/16"
+  azs         = ["ap-south-1a", "ap-south-1b"]
+  common_tags = local.common_tags
+}
+
+module "ec2" {
+  source            = "../../modules/ec2"
+  vpc_id            = module.vpc.vpc_id          # ← wired from vpc output
+  public_subnet_ids = module.vpc.public_subnet_ids
+  app_subnet_ids    = module.vpc.private_app_subnet_ids
+  instance_type     = "t3.micro"
+  desired_capacity  = 1
+}
+
+module "rds" {
+  source      = "../../modules/rds"
+  vpc_id      = module.vpc.vpc_id
+  subnet_ids  = module.vpc.private_db_subnet_ids
+  app_sg_id   = module.ec2.app_sg_id             # ← wired from ec2 output
+  multi_az    = false
+}</pre>
+</div>
+
+<!-- SECTION 6: HANDS-ON STEPS -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">6</span> Hands-on Steps</h2>
+
+  <div class="phase-header">📁 Dev Environment — environments/dev/</div>
+
+  <h3>Step 1 — terraform init (dev)</h3>
+  <div class="output-box">
+cd environments/dev
+terraform init
+
+Initializing modules...
+- vpc in ../../modules/vpc
+- ec2 in ../../modules/ec2
+- rds in ../../modules/rds
+
+<span class="ok">Terraform has been successfully initialized!</span>
+  </div>
+  <div class="callout info"><strong>Module initialization</strong> — Terraform downloads/links all 3 modules. The "Initializing modules..." section is new compared to Project 3.2's flat config.</div>
+
+  <h3>Step 2 — terraform plan (dev)</h3>
+  <div class="output-box">
+module.vpc.aws_vpc.main: will be created
+module.vpc.aws_subnet.public[0]: will be created
+module.vpc.aws_subnet.public[1]: will be created
+module.ec2.aws_lb.app: will be created
+module.rds.aws_db_instance.mysql: will be created
+...
+
+<span class="ok">Plan: 28 to add, 0 to change, 0 to destroy.</span>
+
+Changes to Outputs:
++ vpc_id       = (known after apply)
++ alb_url      = (known after apply)
++ rds_endpoint = (known after apply)
+  </div>
+  <div class="callout"><strong>Module namespacing in plan</strong> — resources show as <code>module.vpc.aws_vpc.main</code> instead of just <code>aws_vpc.main</code>. This makes it clear which module owns each resource.</div>
+
+  <h3>Step 3 — terraform apply (dev)</h3>
+  <div class="output-box">
+module.vpc.aws_vpc.main: <span class="ok">Creation complete after 2s</span>
+module.ec2.aws_lb.app: <span class="ok">Creation complete after 45s</span>
+module.rds.aws_db_instance.mysql: <span class="ok">Creation complete after 4m21s</span>
+
+<span class="ok">Apply complete! Resources: 28 added, 0 changed, 0 destroyed.</span>
+
+vpc_id       = "vpc-0abc123..."
+alb_url      = "http://handson-dev-alb-xxxxxxxx.ap-south-1.elb.amazonaws.com"
+rds_endpoint = "handson-dev-mysql.xxxxxxxx.ap-south-1.rds.amazonaws.com:3306"
+  </div>
+
+  <div class="phase-header">📁 QA Environment — environments/qa/</div>
+
+  <h3>Step 4 — terraform init + apply (qa)</h3>
+  <div class="output-box">
+cd ../qa
+terraform init
+terraform apply -var="db_password=Handson2026Pass!"
+
+module.vpc.aws_vpc.main: Creation complete  [CIDR: 10.1.0.0/16]
+module.ec2.aws_lb.app: Creation complete
+module.rds.aws_db_instance.mysql: Creation complete
+
+<span class="ok">Apply complete! Resources: 28 added, 0 changed, 0 destroyed.</span>
+
+vpc_id       = "vpc-0def456..."   ← different VPC from dev!
+alb_url      = "http://handson-qa-alb-xxxxxxxx.ap-south-1.elb.amazonaws.com"
+  </div>
+  <div class="callout success"><strong>Two completely independent environments</strong> — dev (10.0.0.0/16) and qa (10.1.0.0/16) each have their own VPC, ALB, EC2, RDS, and state file. Zero interference.</div>
+</div>
+
+<!-- SECTION 7: STATE ISOLATION -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">7</span> State Isolation</h2>
+  <p class="section-subtitle">Each environment has its own terraform.tfstate</p>
+
+  <div class="arch-box">
+environments/
+├── dev/
+│   └── terraform.tfstate   ← tracks dev VPC, dev ALB, dev RDS
+├── qa/
+│   └── terraform.tfstate   ← tracks qa VPC, qa ALB, qa RDS
+└── prod/
+    └── terraform.tfstate   ← tracks prod resources (if deployed)</div>
+
+  <div class="callout warn"><strong>State isolation is critical</strong> — if both environments shared one state file, destroying dev would also destroy qa. Separate directories = separate state = safe independent operations.</div>
+
+  <h3>terraform state list — Module Namespacing</h3>
+  <div class="output-box">
+# In environments/dev/
+terraform state list
+
+module.ec2.aws_autoscaling_group.app
+module.ec2.aws_launch_template.app
+module.ec2.aws_lb.app
+module.ec2.aws_lb_listener.http
+module.ec2.aws_lb_target_group.app
+module.ec2.aws_security_group.alb
+module.ec2.aws_security_group.app
+module.rds.aws_db_instance.mysql
+module.rds.aws_db_subnet_group.main
+module.rds.aws_security_group.rds
+module.vpc.aws_eip.nat
+module.vpc.aws_internet_gateway.main
+module.vpc.aws_nat_gateway.main
+module.vpc.aws_route_table.private
+module.vpc.aws_route_table.public
+module.vpc.aws_subnet.private_app[0]
+module.vpc.aws_subnet.private_app[1]
+module.vpc.aws_subnet.private_db[0]
+module.vpc.aws_subnet.private_db[1]
+module.vpc.aws_subnet.public[0]
+module.vpc.aws_subnet.public[1]
+module.vpc.aws_vpc.main
+  </div>
+  <div class="callout info"><strong>module.vpc.*, module.ec2.*, module.rds.*</strong> — every resource is namespaced by its module. Compare to Project 3.2 where resources were flat: aws_vpc.main, aws_lb.app, etc.</div>
+</div>
+
+<!-- SECTION 8: KEY TAKEAWAYS -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">8</span> Key Takeaways</h2>
+
+  <h3>Flat (Project 3.2) vs Modular (Project 3.3)</h3>
+  <table>
+    <tr><th>Aspect</th><th>Flat (3.2)</th><th>Modular (3.3)</th></tr>
+    <tr><td>Code for 2 environments</td><td>2x all files duplicated</td><td>3 modules + 2 small env files</td></tr>
+    <tr><td>State list format</td><td>aws_vpc.main</td><td>module.vpc.aws_vpc.main</td></tr>
+    <tr><td>Change VPC logic</td><td>Update in every env</td><td>Update once in modules/vpc/</td></tr>
+    <tr><td>Add new environment</td><td>Copy all files, edit</td><td>New folder + call modules</td></tr>
+    <tr><td>State isolation</td><td>Manual (separate dirs)</td><td>Natural (separate dirs)</td></tr>
+    <tr><td>DRY principle</td><td>❌ Violated</td><td class="status-ok">✅ Enforced</td></tr>
+  </table>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <h4>📦 Modules = Reusable Blueprints</h4>
+      <p>Write VPC logic once in modules/vpc/. Call it from dev, qa, prod with different parameters. Change once, update everywhere.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🔗 Module Wiring</h4>
+      <p>module.vpc.vpc_id → module.ec2.vpc_id. One module's output becomes another's input. Terraform resolves the dependency graph automatically.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🗂️ State Isolation</h4>
+      <p>Each environment directory has its own terraform.tfstate. Destroying dev never affects qa. This is the foundation of safe multi-environment IaC.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🏷️ Module Namespacing</h4>
+      <p>Resources appear as module.vpc.aws_vpc.main in state list. Makes it immediately clear which module owns each resource — essential for debugging.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🔢 cidrsubnet() Function</h4>
+      <p>Subnets calculated automatically: cidrsubnet("10.0.0.0/16", 8, 1) = 10.0.1.0/24. No manual CIDR math — just change the VPC CIDR and all subnets update.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🌍 Multi-Environment Pattern</h4>
+      <p>Same 3 modules deployed to dev (10.0.x.x), qa (10.1.x.x), prod (10.2.x.x). This is the industry-standard pattern for managing multiple environments.</p>
+    </div>
+  </div>
+
+  <h3>Project Progression</h3>
+  <table>
+    <tr><th>Project</th><th>Pattern</th><th>Key Addition</th></tr>
+    <tr><td>3.1</td><td>Single resource</td><td>Terraform basics: variables, outputs, data sources, locals</td></tr>
+    <tr><td>3.2</td><td>Flat multi-file</td><td>28 resources, real production stack, security group chaining</td></tr>
+    <tr><td>3.3</td><td>Modular multi-env</td><td>Reusable modules, state isolation, DRY principle</td></tr>
+    <tr><td>3.4</td><td>Remote state</td><td>S3 backend, DynamoDB locking, cross-config state sharing</td></tr>
+    <tr><td>3.5</td><td>CI/CD pipeline</td><td>GitHub Actions, OIDC, plan on PR, apply on merge</td></tr>
+  </table>
+</div>
+
+<footer>
+  <p>Project 3.3 — Terraform Modules &amp; Environments &nbsp;|&nbsp; AWS Hands-On Series Stage 03 &nbsp;|&nbsp; Account: 495331821583 &nbsp;|&nbsp; 2026-05-14</p>
+  <p style="margin-top:6px;">Author: Viswanath TGR &nbsp;|&nbsp; linkedin.com/in/viswanath-tgr-328b11264</p>
+</footer>
+</body>
+</html>

@@ -10,8 +10,9 @@ permissions:
   contents: read
 
 env:
-  TF_VERSION: "1.7.0"
-  WORKING_DIR: stage_03/project_3.5_terraform_cicd/terraform
+  TF_VERSION:  "1.7.5"
+  WORKING_DIR: terraform
+  AWS_REGION:  ap-south-1
 
 jobs:
   drift-detection:
@@ -26,12 +27,13 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: us-east-1
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false   # Must be false to get real exit codes
 
       - name: Terraform Init
         run: terraform init
@@ -40,8 +42,12 @@ jobs:
       - name: Terraform Plan (Drift Check)
         id: plan
         run: |
+          set +e
           terraform plan -detailed-exitcode -no-color 2>&1 | tee plan_output.txt
-          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+          TF_EXIT=${PIPESTATUS[0]}
+          echo "exit_code=${TF_EXIT}" >> $GITHUB_OUTPUT
+          echo "Terraform exit code: ${TF_EXIT}"
+          exit 0
         working-directory: ${{ env.WORKING_DIR }}
         continue-on-error: true
 
@@ -50,9 +56,11 @@ jobs:
           EXIT_CODE=${{ steps.plan.outputs.exit_code }}
           if [ "$EXIT_CODE" = "0" ]; then
             echo "✅ No drift detected — infrastructure matches Terraform state"
+            echo "## ✅ No Drift Detected" >> $GITHUB_STEP_SUMMARY
           elif [ "$EXIT_CODE" = "2" ]; then
             echo "⚠️ DRIFT DETECTED — infrastructure has changed outside Terraform!"
-            cat plan_output.txt
+            echo "## ⚠️ Drift Detected" >> $GITHUB_STEP_SUMMARY
+            cat plan_output.txt >> $GITHUB_STEP_SUMMARY
             exit 1
           else
             echo "❌ Terraform plan failed"

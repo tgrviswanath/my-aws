@@ -4,15 +4,16 @@ on:
   push:
     branches: [main]
     paths:
-      - 'stage_03/project_3.5_terraform_cicd/terraform/**'
+      - 'terraform/**'
 
 permissions:
   id-token: write
   contents: read
 
 env:
-  TF_VERSION: "1.7.0"
-  WORKING_DIR: stage_03/project_3.5_terraform_cicd/terraform
+  TF_VERSION:  "1.7.5"
+  WORKING_DIR: terraform
+  AWS_REGION:  ap-south-1
 
 jobs:
   terraform-apply:
@@ -28,7 +29,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: us-east-1
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

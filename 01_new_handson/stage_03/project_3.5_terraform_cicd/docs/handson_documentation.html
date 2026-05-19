@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project 3.5 — Terraform CI/CD Pipeline Hands-On</title>
+  <style>
+    /* ── Light Green / Mint Theme ── */
+    :root {
+      --primary:      #2d8653;   /* medium green — headings, borders */
+      --primary-dark: #1e6b40;   /* darker green — hover, footer */
+      --primary-light:#e6f4ed;   /* very light green — backgrounds */
+      --primary-mid:  #b2d8c4;   /* mid green — borders, dividers */
+      --accent:       #43a876;   /* bright mint — badges, highlights */
+      --bg-page:      #f7fbf9;   /* near-white with green tint — page bg */
+      --bg-section:   #ffffff;   /* pure white — section bg */
+      --text-main:    #1c2b24;   /* dark green-black — body text */
+      --text-muted:   #4a6358;   /* muted green — subtitles */
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: var(--text-main); background: var(--bg-page); }
+
+    /* Cover — light gradient */
+    .cover { background: linear-gradient(135deg, #d4eddf 0%, #b8dfc9 40%, #9dd4b8 100%); color: #1c3a2a; padding: 80px 60px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; page-break-after: always; border-bottom: 4px solid var(--primary); }
+    .cover h1 { font-size: 38px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.5px; color: #1a3d2b; }
+    .cover h2 { font-size: 20px; font-weight: 400; margin-bottom: 40px; color: #2d5c40; }
+    .cover p { color: #2a4d38; }
+    .cover .meta { border-top: 1px solid #8ec9a8; padding-top: 24px; margin-top: 40px; }
+    .cover .meta p { font-size: 13px; color: #2d5c40; margin-bottom: 6px; }
+    .cover .badge { display: inline-block; background: rgba(45,134,83,0.12); border: 1px solid #7bbf9a; border-radius: 20px; padding: 4px 14px; font-size: 12px; margin: 4px 4px 0 0; color: #1e6b40; font-weight: 600; }
+
+    /* TOC */
+    .toc { padding: 50px 60px; page-break-after: always; background: var(--bg-section); }
+    .toc h2 { font-size: 22px; color: var(--primary); border-bottom: 2px solid var(--primary-mid); padding-bottom: 10px; margin-bottom: 24px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { padding: 6px 0; font-size: 13px; color: #333; }
+    .toc li span { color: var(--primary); font-weight: 600; }
+    .toc .sub { padding-left: 20px; list-style: none; }
+    .toc .sub li { font-size: 12px; color: var(--text-muted); padding: 3px 0; }
+    .toc .sub li::before { content: "→ "; color: var(--accent); }
+
+    /* Sections */
+    .section { padding: 40px 60px; background: var(--bg-section); }
+    .section + .section { border-top: 1px solid var(--primary-light); }
+    .page-break { page-break-after: always; }
+
+    /* Headings */
+    h2.section-title { font-size: 20px; color: var(--primary); margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    h2.section-title .num { background: var(--primary); color: white; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+    .section-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; padding-left: 40px; }
+    h3 { font-size: 14px; color: var(--primary-dark); margin: 18px 0 8px; }
+    p { line-height: 1.7; color: #333; margin-bottom: 10px; }
+
+    /* Code blocks — light style */
+    pre { background: #f0faf4; color: #1c3a2a; padding: 16px 20px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; margin: 12px 0; border-left: 4px solid var(--primary); border: 1px solid var(--primary-mid); border-left: 4px solid var(--primary); }
+    code { background: var(--primary-light); color: var(--primary-dark); padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 11px; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px; border: 1px solid var(--primary-mid); border-radius: 8px; overflow: hidden; }
+    th { background: var(--primary); color: white; padding: 9px 12px; text-align: left; font-weight: 600; }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--primary-light); }
+    tr:nth-child(even) td { background: #f4fbf7; }
+    .status-ok { color: #1e6b40; font-weight: 700; }
+    .status-warn { color: #b45309; font-weight: 700; }
+
+    /* Callouts */
+    .callout { border-left: 4px solid var(--primary); background: var(--primary-light); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 12px; color: var(--text-main); }
+    .callout.warn { border-color: #d97706; background: #fffbeb; }
+    .callout.success { border-color: #16a34a; background: #f0fdf4; }
+    .callout.info { border-color: #0284c7; background: #f0f9ff; }
+    .callout strong { display: block; margin-bottom: 4px; color: var(--primary-dark); }
+
+    /* Output boxes — light terminal style */
+    .output-box { background: #f0faf4; color: #1c3a2a; padding: 14px 18px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 11px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--primary-mid); }
+    .output-box .ok { color: #16a34a; font-weight: 600; }
+    .output-box .warn { color: #b45309; font-weight: 600; }
+    .output-box .err { color: #dc2626; font-weight: 600; }
+
+    /* Architecture boxes — light style */
+    .arch-box { background: #f0faf4; color: #1c3a2a; padding: 20px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 11px; line-height: 1.8; margin: 14px 0; border: 1px solid var(--primary-mid); }
+
+    /* Summary cards */
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+    .summary-card { border: 1px solid var(--primary-mid); border-radius: 8px; padding: 16px; background: #f7fbf9; }
+    .summary-card h4 { color: var(--primary); font-size: 13px; margin-bottom: 8px; }
+    .summary-card p { font-size: 12px; color: #555; margin: 0; }
+
+    /* Phase header */
+    .phase-header { background: linear-gradient(90deg, var(--primary-light), #d4eddf); color: var(--primary-dark); padding: 10px 16px; border-radius: 6px; margin-bottom: 14px; font-size: 13px; font-weight: 600; border-left: 4px solid var(--primary); }
+
+    /* Fix badges */
+    .fix-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+    .fix-badge { background: #dc2626; color: white; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+    .fix-badge.ok { background: #16a34a; }
+
+    /* Workflow steps */
+    .workflow-step { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
+    .step-num { background: var(--primary); color: white; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+
+    /* Footer */
+    footer { background: var(--primary); color: rgba(255,255,255,0.9); text-align: center; padding: 20px; font-size: 11px; margin-top: 40px; }
+  </style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <div>
+    <p style="font-size:12px; color:#2d5c40; margin-bottom:16px; letter-spacing:2px; text-transform:uppercase; font-weight:600;">AWS Hands-On Series · Stage 03</p>
+    <h1>Project 3.5</h1>
+    <h2>Terraform CI/CD Pipeline</h2>
+    <p style="font-size:15px; opacity:0.9; max-width:520px; line-height:1.7;">
+      A complete hands-on walkthrough of automating Terraform plan and apply using
+      GitHub Actions with OIDC authentication — no stored AWS credentials.
+      Pull requests show the plan; merges to main trigger apply; daily drift detection
+      catches manual changes.
+    </p>
+    <div style="margin-top:30px;">
+      <span class="badge">Terraform</span>
+      <span class="badge">GitHub Actions</span>
+      <span class="badge">OIDC</span>
+      <span class="badge">AWS IAM</span>
+      <span class="badge">S3</span>
+      <span class="badge">SNS</span>
+      <span class="badge">CI/CD</span>
+    </div>
+  </div>
+  <div class="meta">
+    <p><strong>GitHub Repo:</strong> tgrviswanath/terraform-cicd-aws</p>
+    <p><strong>Account ID:</strong> 495331821583</p>
+    <p><strong>Region:</strong> ap-south-1 (Mumbai)</p>
+    <p><strong>Date:</strong> May 17, 2026</p>
+    <p><strong>Terraform Version:</strong> 1.7.5 &nbsp;|&nbsp; AWS Provider: 5.100.0</p>
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><span>Project Overview</span> — What this project does and key concepts</li>
+    <li><span>Architecture</span> — Full pipeline flow and OIDC authentication flow</li>
+    <li><span>Project Structure</span> — Folder layout and file descriptions</li>
+    <li><span>Code Review &amp; Fixes</span> — Issues found and corrected before execution</li>
+    <li><span>Pre-requisites</span> — OIDC provider, IAM role, GitHub repo setup
+      <ul class="sub">
+        <li>OIDC provider (already existed)</li>
+        <li>IAM role with trust policy</li>
+        <li>GitHub secret: AWS_ROLE_ARN</li>
+      </ul>
+    </li>
+    <li><span>Phase 1 — Bootstrap Remote State</span> — S3 + DynamoDB in ap-south-1</li>
+    <li><span>Phase 2 — Push to GitHub</span> — Initial commit and repo setup</li>
+    <li><span>Phase 3 — PR Pipeline (terraform-pr.yml)</span> — Plan on pull request
+      <ul class="sub">
+        <li>fmt check failure and fix</li>
+        <li>Plan posted as PR comment</li>
+      </ul>
+    </li>
+    <li><span>Phase 4 — Merge &amp; Apply (terraform-apply.yml)</span> — Apply on merge to main</li>
+    <li><span>Phase 5 — Apply Summary</span> — Outputs posted to workflow summary</li>
+    <li><span>Phase 6 — Drift Detection (terraform-drift.yml)</span> — Scheduled drift detection
+      <ul class="sub">
+        <li>Exit code fix (terraform_wrapper)</li>
+        <li>Drift detected: SNS deleted + manual tag</li>
+      </ul>
+    </li>
+    <li><span>AWS Console Verification</span> — Where to verify each resource</li>
+    <li><span>Key Takeaways</span> — Lessons learned and common pitfalls</li>
+  </ol>
+</div>
+
+<!-- SECTION 1: OVERVIEW -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">1</span> Project Overview</h2>
+  <p class="section-subtitle">What this project does and key concepts</p>
+
+  <p>This project automates Terraform infrastructure management using <strong>GitHub Actions CI/CD</strong> with <strong>OIDC authentication</strong> — the industry-standard approach where no AWS credentials are ever stored in GitHub. Every infrastructure change goes through a reviewed pull request, and drift from manual console changes is detected daily.</p>
+
+  <h3>CI/CD Workflow</h3>
+  <div class="arch-box">
+Developer opens PR
+  → GitHub Actions: terraform fmt + validate + plan
+  → Plan output posted as PR comment
+  → Reviewer approves PR
+  → Merge to main
+  → GitHub Actions: terraform apply (exact saved plan)
+  → Infrastructure updated in AWS automatically
+  → Daily: drift detection catches manual changes</div>
+
+  <h3>Key Concepts</h3>
+  <table>
+    <tr><th>Concept</th><th>Description</th></tr>
+    <tr><td>OIDC</td><td>Passwordless auth — GitHub gets temporary AWS credentials (1 hour), no stored secrets</td></tr>
+    <tr><td>IAM Role</td><td>GitHub Actions assumes this role via OIDC — scoped to specific repo only</td></tr>
+    <tr><td>Plan on PR</td><td>Reviewers see exactly what will change in AWS before approving the merge</td></tr>
+    <tr><td>Apply on merge</td><td>Infrastructure changes only go in via reviewed, approved PRs</td></tr>
+    <tr><td>Drift detection</td><td>Scheduled plan detects manual console changes before they cause problems</td></tr>
+    <tr><td>terraform_wrapper: false</td><td>Required to capture real Terraform exit codes (especially exit code 2 for drift)</td></tr>
+  </table>
+
+  <h3>Resources Created</h3>
+  <table>
+    <tr><th>Resource</th><th>Name</th><th>Region</th></tr>
+    <tr><td>S3 Bucket (app)</td><td>handson-cicd-demo-dev-495331821583</td><td>ap-south-1</td></tr>
+    <tr><td>SNS Topic</td><td>handson-pipeline-alerts</td><td>ap-south-1</td></tr>
+    <tr><td>S3 Bucket (state)</td><td>handson-terraform-state-495331821583</td><td>ap-south-1</td></tr>
+    <tr><td>DynamoDB Table</td><td>handson-terraform-locks</td><td>ap-south-1</td></tr>
+    <tr><td>IAM Role</td><td>github-actions-terraform</td><td>Global</td></tr>
+    <tr><td>OIDC Provider</td><td>token.actions.githubusercontent.com</td><td>Global</td></tr>
+  </table>
+
+  <h3>Cost Estimate</h3>
+  <table>
+    <tr><th>Resource</th><th>Monthly Cost</th></tr>
+    <tr><td>GitHub Actions (2,000 min/month free)</td><td>$0</td></tr>
+    <tr><td>IAM OIDC provider + role</td><td>$0</td></tr>
+    <tr><td>S3 state bucket (~$0.02 from project 3.4)</td><td>~$0.02</td></tr>
+    <tr><td>Demo S3 bucket + SNS topic</td><td>$0 (free tier)</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>~$0.02/month</strong></td></tr>
+  </table>
+</div>
+
+<!-- SECTION 2: ARCHITECTURE -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">2</span> Architecture</h2>
+  <p class="section-subtitle">Full pipeline flow and OIDC authentication</p>
+
+  <h3>Full Pipeline Flow</h3>
+  <div class="arch-box">
+Developer
+    │
+    │ git push feature/my-change
+    ▼
+GitHub Repository (tgrviswanath/terraform-cicd-aws)
+    │
+    │ Pull Request opened → targets main
+    ▼
+┌──────────────────────────────────────────────────────┐
+│           terraform-pr.yml (on: pull_request)         │
+│                                                        │
+│  1. terraform fmt -check    ← fail if not formatted   │
+│  2. terraform validate      ← fail if syntax error    │
+│  3. terraform plan -out=plan.tfplan                   │
+│  4. Post plan as PR comment ← reviewer sees the diff  │
+└──────────────────────────────────────────────────────┘
+    │
+    │ PR reviewed, approved, merged to main
+    ▼
+┌──────────────────────────────────────────────────────┐
+│          terraform-apply.yml (on: push to main)       │
+│                                                        │
+│  1. terraform init                                    │
+│  2. terraform plan -out=plan.tfplan                   │
+│  3. terraform apply plan.tfplan  ← exact saved plan   │
+│  4. Post outputs to workflow summary                  │
+└──────────────────────────────────────────────────────┘
+    │
+    │ Daily at 8am UTC (also manual trigger)
+    ▼
+┌──────────────────────────────────────────────────────┐
+│       terraform-drift.yml (on: schedule + dispatch)   │
+│                                                        │
+│  terraform plan -detailed-exitcode                    │
+│    exit 0 = no changes (no drift) ✅                  │
+│    exit 2 = changes detected (DRIFT!) ⚠️              │
+│    exit 1 = plan error ❌                             │
+└──────────────────────────────────────────────────────┘</div>
+
+  <h3>OIDC Authentication Flow</h3>
+  <div class="arch-box">
+GitHub Actions Job starts
+    │
+    │ Requests JWT from GitHub OIDC provider
+    ▼
+token.actions.githubusercontent.com
+    │
+    │ Issues JWT: "repo:tgrviswanath/terraform-cicd-aws:ref:refs/heads/main"
+    ▼
+AWS STS AssumeRoleWithWebIdentity
+    │
+    │ Validates JWT against OIDC provider
+    │ Checks trust policy: repo must match tgrviswanath/terraform-cicd-aws:*
+    │ Issues temporary credentials (1 hour TTL)
+    ▼
+GitHub Actions uses temporary credentials
+    │
+    │ No long-lived access keys stored anywhere
+    ▼
+AWS API calls succeed (S3, DynamoDB, SNS, etc.)</div>
+
+  <h3>OIDC vs Access Keys</h3>
+  <table>
+    <tr><th>Access Keys</th><th>OIDC</th></tr>
+    <tr><td>Long-lived (never expire)</td><td>Short-lived (1 hour TTL)</td></tr>
+    <tr><td>Stored as GitHub secrets</td><td>No secrets stored anywhere</td></tr>
+    <tr><td>Risk if leaked — usable forever</td><td>Useless if intercepted — expired</td></tr>
+    <tr><td>Manual rotation needed</td><td>Automatic — new token per job</td></tr>
+    <tr><td>Can be used from anywhere</td><td>Tied to specific repo/branch only</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 3: PROJECT STRUCTURE -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">3</span> Project Structure</h2>
+  <p class="section-subtitle">Folder layout and file descriptions</p>
+
+  <div class="arch-box">
+project_3.5_terraform_cicd/
+├── .github/
+│   └── workflows/
+│       ├── terraform-pr.yml      ← Plan on pull request (fmt + validate + plan + comment)
+│       ├── terraform-apply.yml   ← Apply on merge to main
+│       └── terraform-drift.yml   ← Daily drift detection (scheduled + manual)
+├── terraform/
+│   ├── backend.tf                ← S3 remote state backend config
+│   └── main.tf                   ← App S3 bucket + SNS topic + outputs
+├── code/
+│   └── pipeline_trigger.py       ← Python helper to trigger and monitor workflows
+├── docs/
+│   └── handson_documentation.html
+├── github-trust-policy.json      ← IAM trust policy for OIDC role
+├── README.md
+├── steps.md
+└── cost_estimate.md</div>
+
+  <table>
+    <tr><th>File</th><th>Description</th></tr>
+    <tr><td><code>terraform-pr.yml</code></td><td>Triggers on PR to main. Runs fmt check, validate, plan. Posts plan as PR comment. Fails if plan fails.</td></tr>
+    <tr><td><code>terraform-apply.yml</code></td><td>Triggers on push to main. Runs plan + apply with saved plan file. Posts outputs to summary.</td></tr>
+    <tr><td><code>terraform-drift.yml</code></td><td>Runs daily at 8am UTC + manual trigger. Uses -detailed-exitcode. Fails workflow if drift detected.</td></tr>
+    <tr><td><code>terraform/backend.tf</code></td><td>S3 backend only — no required_providers (kept separate from main.tf).</td></tr>
+    <tr><td><code>terraform/main.tf</code></td><td>App S3 bucket (versioning + encryption + public block) + SNS topic. Exports 5 outputs.</td></tr>
+    <tr><td><code>github-trust-policy.json</code></td><td>IAM trust policy scoped to repo tgrviswanath/terraform-cicd-aws:*</td></tr>
+    <tr><td><code>pipeline_trigger.py</code></td><td>Python CLI to trigger workflow_dispatch and poll until completion.</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 4: CODE REVIEW -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">4</span> Code Review &amp; Fixes</h2>
+  <p class="section-subtitle">Issues found and corrected before and during execution</p>
+
+  <div class="fix-item">
+    <span class="fix-badge">FIX 1</span>
+    <div>
+      <strong>Duplicate backend block — terraform/main.tf + terraform/backend.tf</strong>
+      <p>Both files had a <code>terraform { backend "s3" {} }</code> block causing a conflict. Same issue as project 3.4.</p>
+      <p><strong>Fix:</strong> Removed backend block from <code>main.tf</code>, kept only in <code>backend.tf</code>.</p>
+    </div>
+  </div>
+
+  <div class="fix-item">
+    <span class="fix-badge">FIX 2</span>
+    <div>
+      <strong>Inline provider syntax — missing attribute separator</strong>
+      <p><code>aws = { source = "hashicorp/aws" version = "~> 5.0" }</code> — missing newline/comma between attributes.</p>
+      <p><strong>Fix:</strong> Expanded to multi-line format with <code>source</code> and <code>version</code> on separate lines.</p>
+    </div>
+  </div>
+
+  <div class="fix-item">
+    <span class="fix-badge">FIX 3</span>
+    <div>
+      <strong>Wrong region — us-east-1 instead of ap-south-1</strong>
+      <p>All configs hardcoded <code>us-east-1</code>. User's configured region is <code>ap-south-1</code> (Mumbai).</p>
+      <p><strong>Fix:</strong> Updated all provider and backend configs to <code>ap-south-1</code>.</p>
+    </div>
+  </div>
+
+  <div class="fix-item">
+    <span class="fix-badge">FIX 4</span>
+    <div>
+      <strong>Invalid quoted comment appended to main.tf</strong>
+      <p>A test comment was appended as <code>"# pipeline test"</code> — treated as a quoted HCL argument, causing parse error.</p>
+      <p><strong>Fix:</strong> Removed the quoted string, kept only a valid HCL comment <code># pipeline test trigger</code>.</p>
+    </div>
+  </div>
+
+  <div class="fix-item">
+    <span class="fix-badge">FIX 5</span>
+    <div>
+      <strong>terraform fmt failure — formatting not standard</strong>
+      <p>Pipeline reported <code>terraform fmt: failure</code> on first PR run. File had inconsistent indentation.</p>
+      <p><strong>Fix:</strong> Ran <code>terraform fmt terraform/</code> locally, committed and pushed the formatted file.</p>
+    </div>
+  </div>
+
+  <div class="fix-item">
+    <span class="fix-badge">FIX 6</span>
+    <div>
+      <strong>Drift detection always reporting exit code 0</strong>
+      <p><code>hashicorp/setup-terraform@v3</code> uses <code>terraform_wrapper: true</code> by default, which wraps the Terraform binary and swallows the real exit code. <code>PIPESTATUS[0]</code> always returned <code>0</code> instead of <code>2</code>.</p>
+      <p><strong>Fix:</strong> Added <code>terraform_wrapper: false</code> to the Setup Terraform step in <code>terraform-drift.yml</code>.</p>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>✅ Workflow files, OIDC trust policy, and backend config were all correct</strong>
+    The three GitHub Actions workflows had correct OIDC permissions, proper path filters, and correct working directory references.
+  </div>
+</div>
+
+<!-- SECTION 5: PRE-REQUISITES -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">5</span> Pre-requisites</h2>
+  <p class="section-subtitle">OIDC provider, IAM role, GitHub repo and secret setup</p>
+
+  <h3>GitHub Repository</h3>
+  <p>Created a new public GitHub repository:</p>
+  <div class="output-box">
+Repository: <span class="ok">tgrviswanath/terraform-cicd-aws</span>
+URL:        https://github.com/tgrviswanath/terraform-cicd-aws
+Visibility: Public
+  </div>
+
+  <h3>Step 1 — OIDC Provider (Already Existed)</h3>
+  <pre>aws iam create-open-id-connect-provider \
+  --url https://token.actions.githubusercontent.com \
+  --client-id-list sts.amazonaws.com \
+  --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1</pre>
+  <div class="output-box">
+<span class="warn">aws: [ERROR]: EntityAlreadyExists — Provider already exists</span>
+<span class="ok">→ Skipped. OIDC provider already configured from a previous session.</span>
+  </div>
+
+  <h3>Step 2 — IAM Role (Already Existed)</h3>
+  <pre>aws iam create-role \
+  --role-name github-actions-terraform \
+  --assume-role-policy-document file://github-trust-policy.json</pre>
+  <div class="output-box">
+<span class="warn">aws: [ERROR]: EntityAlreadyExists — Role already exists</span>
+<span class="ok">→ Verified existing role trust policy matches new repo.</span>
+  </div>
+
+  <h3>Trust Policy Verification</h3>
+  <p>Verified the existing role's trust policy was already scoped to the correct repo:</p>
+  <pre>aws iam get-role --role-name github-actions-terraform \
+  --query "Role.AssumeRolePolicyDocument" --output json</pre>
+  <div class="output-box">
+{
+  "Condition": {
+    "StringLike": {
+      "token.actions.githubusercontent.com:sub":
+        <span class="ok">"repo:tgrviswanath/terraform-cicd-aws:*"</span>  ← exact match ✅
+    }
+  }
+}
+
+Role ARN: <span class="ok">arn:aws:iam::495331821583:role/github-actions-terraform</span>
+  </div>
+
+  <h3>Step 3 — GitHub Repository Secret</h3>
+  <table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td>Navigation</td><td>GitHub repo → Settings → Secrets and variables → Actions → New secret</td></tr>
+    <tr><td>Secret Name</td><td>AWS_ROLE_ARN</td></tr>
+    <tr><td>Secret Value</td><td>arn:aws:iam::495331821583:role/github-actions-terraform</td></tr>
+  </table>
+
+  <div class="callout success">
+    <strong>✅ OIDC setup complete — no AWS access keys stored anywhere</strong>
+    GitHub Actions will request temporary credentials from AWS STS on every job run. Credentials expire after 1 hour automatically.
+  </div>
+</div>
+
+<!-- SECTION 6: PHASE 1 BOOTSTRAP -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">6</span> Phase 1 — Bootstrap Remote State</h2>
+  <p class="section-subtitle">Creating S3 bucket and DynamoDB table in ap-south-1</p>
+
+  <div class="phase-header">📁 Working Directory: project_3.4_remote_state/bootstrap/</div>
+
+  <div class="callout info">
+    <strong>Dependency on Project 3.4</strong>
+    Project 3.5 reuses the S3 state bucket and DynamoDB lock table created by project 3.4's bootstrap. Since those resources were destroyed after 3.4, they needed to be recreated in the correct region (ap-south-1).
+  </div>
+
+  <h3>Bootstrap Apply</h3>
+  <pre>cd project_3.4_remote_state/bootstrap
+terraform init
+terraform apply -auto-approve</pre>
+
+  <div class="output-box">
+aws_s3_bucket.state: <span class="ok">Creation complete after 2s</span> [id=handson-terraform-state-495331821583]
+aws_s3_bucket_public_access_block.state: <span class="ok">Creation complete after 1s</span>
+aws_s3_bucket_server_side_encryption_configuration.state: <span class="ok">Creation complete after 1s</span>
+aws_s3_bucket_versioning.state: <span class="ok">Creation complete after 2s</span>
+aws_dynamodb_table.locks: <span class="ok">Creation complete after 7s</span> [id=handson-terraform-locks]
+
+<span class="ok">Apply complete! Resources: 5 added, 0 changed, 0 destroyed.</span>
+
+Outputs:
+state_bucket_name = "handson-terraform-state-495331821583"
+lock_table_name   = "handson-terraform-locks"
+region            = "ap-south-1"
+  </div>
+
+  <h3>backend.tf Updated</h3>
+  <pre>terraform {
+  backend "s3" {
+    bucket         = "handson-terraform-state-495331821583"
+    key            = "stage-03/project-3.5/terraform.tfstate"
+    region         = "ap-south-1"
+    dynamodb_table = "handson-terraform-locks"
+    encrypt        = true
+  }
+}</pre>
+</div>
+
+<!-- SECTION 7: PHASE 2 PUSH TO GITHUB -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">7</span> Phase 2 — Push to GitHub</h2>
+  <p class="section-subtitle">Initial commit and repository setup</p>
+
+  <div class="phase-header">📁 Working Directory: project_3.5_terraform_cicd/</div>
+
+  <pre>git init
+git remote add origin https://github.com/tgrviswanath/terraform-cicd-aws.git
+git add terraform/ .github/
+git commit -m "feat: initial terraform cicd setup with OIDC and S3 backend"
+git branch -M main
+git push -u origin main</pre>
+
+  <div class="output-box">
+[master (root-commit) 06ba186] feat: initial terraform cicd setup with OIDC and S3 backend
+ 5 files changed, 301 insertions(+)
+ create mode 100644 .github/workflows/terraform-apply.yml
+ create mode 100644 .github/workflows/terraform-drift.yml
+ create mode 100644 .github/workflows/terraform-pr.yml
+ create mode 100644 terraform/backend.tf
+ create mode 100644 terraform/main.tf
+
+To https://github.com/tgrviswanath/terraform-cicd-aws.git
+<span class="ok"> * [new branch]      main -> main</span>
+branch 'main' set up to track 'origin/main'.
+  </div>
+
+  <div class="callout success">
+    <strong>✅ Code live on GitHub</strong>
+    All 3 workflow files and Terraform configs pushed to main. GitHub Actions will now trigger automatically on PR and push events.
+  </div>
+</div>
+
+<!-- SECTION 8: PHASE 3 PR PIPELINE -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">8</span> Phase 3 — PR Pipeline</h2>
+  <p class="section-subtitle">terraform-pr.yml — Plan on pull request</p>
+
+  <div class="phase-header">🔀 Trigger: Pull Request → main branch</div>
+
+  <h3>Feature Branch Created</h3>
+  <pre>git checkout -b feature/test-pipeline
+# Add test comment to terraform/main.tf
+git add terraform/main.tf
+git commit -m "test: trigger PR pipeline"
+git push origin feature/test-pipeline</pre>
+
+  <p>PR opened at: <code>https://github.com/tgrviswanath/terraform-cicd-aws/compare/main...feature/test-pipeline</code></p>
+
+  <h3>First Run — fmt Failure (Fixed)</h3>
+  <div class="output-box">
+<span class="ok">✅ OIDC Auth</span>     Authenticated as assumedRoleId AROAXGVATZAHZRRR54MV4:GitHubActions
+<span class="err">❌ terraform fmt</span>  main.tf — exit code 3 (formatting issues)
+<span class="ok">✅ terraform init</span>  Successfully configured the backend "s3"
+<span class="ok">✅ terraform validate</span>  Success! The configuration is valid.
+<span class="ok">✅ terraform plan</span>  No changes. Your infrastructure matches the configuration.
+  </div>
+
+  <div class="callout warn">
+    <strong>fmt failure — exit code 3</strong>
+    Terraform fmt -check returns exit code 3 when files need formatting. The workflow used <code>continue-on-error: true</code> so the pipeline continued, but the fmt step was marked as failed in the PR comment.
+  </div>
+
+  <h3>Fix — Run terraform fmt Locally</h3>
+  <pre>terraform fmt terraform/
+git add terraform/main.tf
+git commit -m "style: terraform fmt fix"
+git push origin feature/test-pipeline</pre>
+
+  <h3>Second Run — All Green</h3>
+  <div class="output-box">
+<span class="ok">✅ OIDC Auth</span>      Authenticated as GitHubActions via OIDC
+<span class="ok">✅ terraform fmt</span>   success
+<span class="ok">✅ terraform init</span>  Successfully configured the backend "s3"
+<span class="ok">✅ terraform validate</span>  Success! The configuration is valid.
+<span class="ok">✅ terraform plan</span>  No changes. Your infrastructure matches the configuration.
+<span class="ok">✅ PR Comment</span>     Plan output posted to pull request
+  </div>
+
+  <h3>PR Comment Posted</h3>
+  <p>The workflow automatically posted the plan output as a PR comment showing:</p>
+  <table>
+    <tr><th>Check</th><th>Result</th></tr>
+    <tr><td>Terraform Format 🖌</td><td class="status-ok">success</td></tr>
+    <tr><td>Terraform Init ⚙️</td><td class="status-ok">success</td></tr>
+    <tr><td>Terraform Validate 🤖</td><td class="status-ok">success</td></tr>
+    <tr><td>Terraform Plan 📖</td><td class="status-ok">success — No changes</td></tr>
+  </table>
+
+  <div class="callout success">
+    <strong>✅ Plan on PR working</strong>
+    Reviewers can see the exact Terraform plan before approving any merge. No surprises in production.
+  </div>
+</div>
+
+<!-- SECTION 9: PHASE 4 MERGE AND APPLY -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">9</span> Phase 4 — Merge &amp; Apply</h2>
+  <p class="section-subtitle">terraform-apply.yml — Apply on merge to main</p>
+
+  <div class="phase-header">🚀 Trigger: Push to main (PR merged)</div>
+
+  <p>After PR review, the PR was merged to main. This triggered <code>terraform-apply.yml</code> automatically.</p>
+
+  <h3>Apply Workflow Steps</h3>
+  <div class="workflow-step">
+    <span class="step-num">1</span>
+    <div><strong>Checkout</strong> — fetches latest main branch code</div>
+  </div>
+  <div class="workflow-step">
+    <span class="step-num">2</span>
+    <div><strong>OIDC Auth</strong> — assumes <code>github-actions-terraform</code> role via STS</div>
+  </div>
+  <div class="workflow-step">
+    <span class="step-num">3</span>
+    <div><strong>terraform init</strong> — connects to S3 backend in ap-south-1</div>
+  </div>
+  <div class="workflow-step">
+    <span class="step-num">4</span>
+    <div><strong>terraform plan -out=plan.tfplan</strong> — saves exact plan to file</div>
+  </div>
+  <div class="workflow-step">
+    <span class="step-num">5</span>
+    <div><strong>terraform apply plan.tfplan</strong> — applies the exact saved plan (no surprises)</div>
+  </div>
+  <div class="workflow-step">
+    <span class="step-num">6</span>
+    <div><strong>Post summary</strong> — outputs written to GitHub workflow summary</div>
+  </div>
+
+  <h3>Apply Output</h3>
+  <div class="output-box">
+<span class="warn">Acquiring state lock. This may take a few moments...</span>
+data.aws_caller_identity.current: Read complete after 1s [id=495331821583]
+aws_sns_topic.pipeline_alerts: Refreshing state...
+aws_s3_bucket.app: Refreshing state... [id=handson-cicd-demo-dev-495331821583]
+
+<span class="ok">No changes. Your infrastructure matches the configuration.</span>
+<span class="warn">Releasing state lock. This may take a few moments...</span>
+  </div>
+</div>
+
+<!-- SECTION 10: PHASE 5 APPLY SUMMARY -->
+<div class="section">
+  <h2 class="section-title"><span class="num">10</span> Phase 5 — Apply Summary</h2>
+  <p class="section-subtitle">Outputs posted to GitHub workflow summary</p>
+
+  <div class="callout success">
+    <strong>Terraform Apply Complete ✅</strong>
+    Applied by: tgrviswanath &nbsp;|&nbsp; Commit: 30740a2071584ff4f385c5942d741cf4f4853937
+  </div>
+
+  <table>
+    <tr><th>Output</th><th>Value</th></tr>
+    <tr><td>account_id</td><td>495331821583</td></tr>
+    <tr><td>bucket_arn</td><td>arn:aws:s3:::handson-cicd-demo-dev-495331821583</td></tr>
+    <tr><td>bucket_name</td><td>handson-cicd-demo-dev-495331821583</td></tr>
+    <tr><td>environment</td><td>dev</td></tr>
+    <tr><td>sns_topic_arn</td><td>arn:aws:sns:ap-south-1:495331821583:handson-pipeline-alerts</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 11: PHASE 6 DRIFT DETECTION -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">11</span> Phase 6 — Drift Detection</h2>
+  <p class="section-subtitle">terraform-drift.yml — Detecting manual infrastructure changes</p>
+
+  <div class="phase-header">⏰ Trigger: Daily 8am UTC + Manual workflow_dispatch</div>
+
+  <h3>Drift Simulation</h3>
+  <p>Two manual changes were made outside Terraform to simulate real-world drift:</p>
+  <table>
+    <tr><th>Change</th><th>How</th><th>Effect</th></tr>
+    <tr><td>SNS topic deleted</td><td>AWS Console → SNS → handson-pipeline-alerts → Delete</td><td>Terraform state says it exists, AWS says it doesn't</td></tr>
+    <tr><td>Manual tag added to S3 bucket</td><td>AWS Console → S3 → bucket → Tags → Add ManualChange=true</td><td>Terraform config doesn't have this tag</td></tr>
+  </table>
+
+  <h3>First Run — Exit Code Bug</h3>
+  <div class="output-box">
+Terraform plan detected drift:
+  # aws_sns_topic.pipeline_alerts has been deleted
+  # aws_s3_bucket.app — ManualChange tag added
+
+<span class="warn">Terraform exit code: 0</span>  ← BUG: should be 2
+<span class="warn">✅ No drift detected</span>   ← WRONG result
+  </div>
+
+  <div class="callout warn">
+    <strong>Root Cause: terraform_wrapper: true</strong>
+    The <code>hashicorp/setup-terraform@v3</code> action wraps the Terraform binary by default (<code>terraform_wrapper: true</code>). This wrapper intercepts stdout/stderr for output capture but also swallows the real exit code — always returning 0 to the shell. <code>PIPESTATUS[0]</code> captured the wrapper's exit code (0) instead of Terraform's real exit code (2).
+  </div>
+
+  <h3>Fix — Disable terraform_wrapper</h3>
+  <pre>- name: Setup Terraform
+  uses: hashicorp/setup-terraform@v3
+  with:
+    terraform_version: ${{ env.TF_VERSION }}
+    terraform_wrapper: false   # Must be false to get real exit codes</pre>
+
+  <h3>Second Run — Drift Correctly Detected</h3>
+  <div class="output-box">
+<span class="warn">Acquiring state lock. This may take a few moments...</span>
+
+Note: Objects have changed outside of Terraform
+
+  # aws_sns_topic.pipeline_alerts <span class="err">has been deleted</span>
+  # aws_s3_bucket.app will be updated in-place
+    ~ tags = {
+        - "ManualChange" = "true" -> null
+      }
+
+Plan: 1 to add, 1 to change, 0 to destroy.
+
+<span class="warn">Releasing state lock. This may take a few moments...</span>
+
+Terraform exit code: <span class="ok">2</span>
+<span class="err">⚠️ DRIFT DETECTED — infrastructure has changed outside Terraform!</span>
+<span class="err">Error: Process completed with exit code 1</span>  ← workflow fails as designed
+  </div>
+
+  <div class="callout success">
+    <strong>✅ Drift detection working correctly</strong>
+    Exit code 2 captured. Workflow failed with exit 1 to alert the team. Both drift items detected:
+    SNS topic deleted + ManualChange tag added to S3 bucket.
+  </div>
+
+  <h3>Terraform -detailed-exitcode Values</h3>
+  <table>
+    <tr><th>Exit Code</th><th>Meaning</th><th>Workflow Action</th></tr>
+    <tr><td>0</td><td>No changes — infrastructure matches config</td><td class="status-ok">✅ Pass</td></tr>
+    <tr><td>1</td><td>Terraform error (plan failed)</td><td class="status-warn">❌ Fail</td></tr>
+    <tr><td>2</td><td>Changes detected — drift exists</td><td class="status-warn">⚠️ Fail (alert team)</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 12: AWS CONSOLE VERIFICATION -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">12</span> AWS Console Verification</h2>
+  <p class="section-subtitle">Where to verify each resource in the AWS Console</p>
+
+  <div class="callout warn">
+    <strong>⚠️ Region: ap-south-1 (Mumbai)</strong>
+    All resources are in ap-south-1. Make sure the region selector in the top-right of the AWS Console is set to Asia Pacific (Mumbai) before looking for resources.
+  </div>
+
+  <h3>1. S3 Buckets — Console → S3 → Buckets</h3>
+  <table>
+    <tr><th>Bucket</th><th>What to Verify</th></tr>
+    <tr><td>handson-cicd-demo-dev-495331821583</td><td>Properties → Versioning = Enabled, Encryption = SSE-S3, Permissions → Block public access = all ON, Tags = Project/Environment/Stage/ManagedBy/Pipeline</td></tr>
+    <tr><td>handson-terraform-state-495331821583</td><td>State files under stage-03/project-3.5/terraform.tfstate</td></tr>
+  </table>
+
+  <h3>2. SNS Topics — Console → SNS → Topics</h3>
+  <table>
+    <tr><th>Field</th><th>Expected</th></tr>
+    <tr><td>Topic name</td><td>handson-pipeline-alerts</td></tr>
+    <tr><td>Region</td><td>ap-south-1</td></tr>
+    <tr><td>Tags</td><td>ManagedBy=terraform-cicd, Pipeline=github-actions</td></tr>
+  </table>
+
+  <h3>3. IAM — Console → IAM → Roles</h3>
+  <table>
+    <tr><th>Field</th><th>Expected</th></tr>
+    <tr><td>Role name</td><td>github-actions-terraform</td></tr>
+    <tr><td>Trust relationship</td><td>token.actions.githubusercontent.com (OIDC)</td></tr>
+    <tr><td>Condition</td><td>repo:tgrviswanath/terraform-cicd-aws:*</td></tr>
+    <tr><td>Permissions</td><td>PowerUserAccess policy attached</td></tr>
+  </table>
+
+  <h3>4. GitHub Actions — Verify Workflows</h3>
+  <table>
+    <tr><th>Workflow</th><th>URL</th><th>Status</th></tr>
+    <tr><td>terraform-pr.yml</td><td>github.com/tgrviswanath/terraform-cicd-aws/actions</td><td class="status-ok">✅ Passed</td></tr>
+    <tr><td>terraform-apply.yml</td><td>github.com/tgrviswanath/terraform-cicd-aws/actions</td><td class="status-ok">✅ Passed</td></tr>
+    <tr><td>terraform-drift.yml</td><td>github.com/tgrviswanath/terraform-cicd-aws/actions</td><td class="status-warn">⚠️ Failed (drift detected — correct)</td></tr>
+  </table>
+
+  <h3>Console Verification Checklist</h3>
+  <table>
+    <tr><th>Item</th><th>Status</th></tr>
+    <tr><td>S3 bucket: handson-cicd-demo-dev-495331821583 in ap-south-1</td><td class="status-ok">✅</td></tr>
+    <tr><td>S3 bucket: versioning + encryption + public blocked</td><td class="status-ok">✅</td></tr>
+    <tr><td>SNS topic: handson-pipeline-alerts in ap-south-1</td><td class="status-ok">✅</td></tr>
+    <tr><td>IAM role: github-actions-terraform with OIDC trust</td><td class="status-ok">✅</td></tr>
+    <tr><td>GitHub Actions: PR workflow posts plan as comment</td><td class="status-ok">✅</td></tr>
+    <tr><td>GitHub Actions: Apply workflow posts outputs to summary</td><td class="status-ok">✅</td></tr>
+    <tr><td>GitHub Actions: Drift workflow detects manual changes</td><td class="status-ok">✅</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 13: KEY TAKEAWAYS -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">13</span> Key Takeaways</h2>
+  <p class="section-subtitle">Lessons learned and common pitfalls</p>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <h4>🔐 OIDC is the Right Way</h4>
+      <p>Never store AWS access keys in GitHub secrets. OIDC gives GitHub temporary 1-hour credentials scoped to a specific repo. If intercepted, they're useless — already expired.</p>
+    </div>
+    <div class="summary-card">
+      <h4>📋 Plan on PR = No Surprises</h4>
+      <p>Posting the Terraform plan as a PR comment means reviewers see exactly what will change in AWS before approving. This prevents accidental deletions or unexpected resource changes.</p>
+    </div>
+    <div class="summary-card">
+      <h4>💾 Saved Plan = Exact Apply</h4>
+      <p><code>terraform plan -out=plan.tfplan</code> saves the exact plan. <code>terraform apply plan.tfplan</code> applies that exact plan — not a new plan. This prevents drift between plan and apply.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🔧 terraform_wrapper: false</h4>
+      <p>The setup-terraform action wraps Terraform by default and swallows exit codes. Always set <code>terraform_wrapper: false</code> in drift detection workflows to capture exit code 2.</p>
+    </div>
+    <div class="summary-card">
+      <h4>⚠️ Exit Code 2 = Drift</h4>
+      <p>Terraform's <code>-detailed-exitcode</code> flag returns exit 0 (no changes), exit 1 (error), or exit 2 (changes exist). Drift detection relies on catching exit code 2 specifically.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🌍 Always Check Your Region</h4>
+      <p>Hardcoding <code>us-east-1</code> when your AWS CLI is configured for <code>ap-south-1</code> creates resources in the wrong region. Always verify with <code>aws configure get region</code> first.</p>
+    </div>
+  </div>
+
+  <h3>Common Pitfalls</h3>
+  <table>
+    <tr><th>Pitfall</th><th>Solution</th></tr>
+    <tr><td>terraform fmt fails in CI</td><td>Always run <code>terraform fmt</code> locally before pushing. Add a pre-commit hook.</td></tr>
+    <tr><td>Drift detection always shows exit 0</td><td>Set <code>terraform_wrapper: false</code> in setup-terraform step.</td></tr>
+    <tr><td>OIDC auth fails</td><td>Check trust policy condition matches exact repo name. Check <code>id-token: write</code> permission is set.</td></tr>
+    <tr><td>Plan differs between PR and apply</td><td>Use <code>-out=plan.tfplan</code> and apply the saved plan file.</td></tr>
+    <tr><td>Workflow not triggering on PR</td><td>Check <code>paths:</code> filter in workflow — must match actual file locations in repo.</td></tr>
+    <tr><td>Wrong region resources</td><td>Verify <code>aws configure get region</code> before writing any Terraform configs.</td></tr>
+  </table>
+
+  <h3>Final Phase Summary</h3>
+  <table>
+    <tr><th>Phase</th><th>What Was Done</th><th>Status</th></tr>
+    <tr><td>Pre-req — OIDC</td><td>OIDC provider + IAM role verified for new repo</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>Pre-req — Secret</td><td>AWS_ROLE_ARN added to GitHub repo secrets</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>1 — Bootstrap</td><td>S3 + DynamoDB recreated in ap-south-1</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>2 — Push to GitHub</td><td>Code pushed to tgrviswanath/terraform-cicd-aws</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>3 — PR Pipeline</td><td>fmt + validate + plan + PR comment working</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>4 — Merge &amp; Apply</td><td>terraform apply triggered on merge to main</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>5 — Apply Summary</td><td>Outputs posted to GitHub workflow summary</td><td class="status-ok">✅ Complete</td></tr>
+    <tr><td>6 — Drift Detection</td><td>SNS deletion + manual tag detected as drift</td><td class="status-ok">✅ Complete</td></tr>
+  </table>
+</div>
+
+<footer>
+  <p>Project 3.5 — Terraform CI/CD Pipeline &nbsp;|&nbsp; AWS Hands-On Series Stage 03 &nbsp;|&nbsp; Account: 495331821583 &nbsp;|&nbsp; May 17, 2026</p>
+  <p style="margin-top:6px;">GitHub: tgrviswanath/terraform-cicd-aws &nbsp;|&nbsp; Region: ap-south-1 (Mumbai)</p>
+</footer>
+
+</body>
+</html>

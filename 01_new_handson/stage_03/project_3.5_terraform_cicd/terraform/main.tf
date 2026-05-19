@@ -1,25 +1,21 @@
 # Project 3.5 — Terraform CI/CD Pipeline
 # Infrastructure managed by GitHub Actions CI/CD.
 # This file is applied automatically on merge to main.
+# Backend is configured in backend.tf
 
 terraform {
   required_providers {
-    aws = { source = "hashicorp/aws" version = "~> 5.0" }
-  }
-
-  backend "s3" {
-    bucket         = "handson-terraform-state-ACCOUNTID"
-    key            = "stage-03/project-3.5/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "handson-terraform-locks"
-    encrypt        = true
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
   }
 }
 
 provider "aws" { region = var.region }
 
-variable "region"      { default = "us-east-1" }
-variable "project"     { default = "handson" }
+variable "region" { default = "ap-south-1" }
+variable "project" { default = "handson" }
 variable "environment" { default = "dev" }
 
 locals {
@@ -70,8 +66,10 @@ resource "aws_sns_topic" "pipeline_alerts" {
 
 # ─── Outputs ──────────────────────────────────────────────────────────────────
 
-output "bucket_name"    { value = aws_s3_bucket.app.bucket }
-output "bucket_arn"     { value = aws_s3_bucket.app.arn }
-output "account_id"     { value = data.aws_caller_identity.current.account_id }
-output "sns_topic_arn"  { value = aws_sns_topic.pipeline_alerts.arn }
-output "environment"    { value = var.environment }
+output "bucket_name" { value = aws_s3_bucket.app.bucket }
+output "bucket_arn" { value = aws_s3_bucket.app.arn }
+output "account_id" { value = data.aws_caller_identity.current.account_id }
+output "sns_topic_arn" { value = aws_sns_topic.pipeline_alerts.arn }
+output "environment" { value = var.environment }
+
+# pipeline test trigger — feature/test-pipeline branch

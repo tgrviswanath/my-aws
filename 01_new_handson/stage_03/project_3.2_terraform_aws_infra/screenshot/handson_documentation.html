@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project 3.2 — Terraform AWS Infrastructure Hands-On</title>
+  <style>
+    :root {
+      --primary:      #7c3aed;
+      --primary-dark: #6d28d9;
+      --primary-light:#f5f3ff;
+      --primary-mid:  #ddd6fe;
+      --accent:       #8b5cf6;
+      --bg-page:      #faf9ff;
+      --bg-section:   #ffffff;
+      --text-main:    #1e1b4b;
+      --text-muted:   #4c4a6e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: var(--text-main); background: var(--bg-page); }
+    .cover { background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 40%, #c4b5fd 100%); color: #2e1065; padding: 80px 60px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; page-break-after: always; border-bottom: 4px solid var(--primary); }
+    .cover h1 { font-size: 38px; font-weight: 800; margin-bottom: 10px; color: #2e1065; }
+    .cover h2 { font-size: 20px; font-weight: 400; margin-bottom: 40px; color: #7c3aed; }
+    .cover .meta { border-top: 1px solid #c4b5fd; padding-top: 24px; margin-top: 40px; }
+    .cover .meta p { font-size: 13px; color: #4c1d95; margin-bottom: 6px; }
+    .cover .badge { display: inline-block; background: rgba(124,58,237,0.1); border: 1px solid #c4b5fd; border-radius: 20px; padding: 4px 14px; font-size: 12px; margin: 4px 4px 0 0; color: #6d28d9; font-weight: 600; }
+    .toc { padding: 50px 60px; page-break-after: always; background: var(--bg-section); }
+    .toc h2 { font-size: 22px; color: var(--primary); border-bottom: 2px solid var(--primary-mid); padding-bottom: 10px; margin-bottom: 24px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { padding: 6px 0; font-size: 13px; color: #333; }
+    .toc li span { color: var(--primary); font-weight: 600; }
+    .toc .sub { padding-left: 20px; list-style: none; }
+    .toc .sub li { font-size: 12px; color: var(--text-muted); padding: 3px 0; }
+    .toc .sub li::before { content: "→ "; color: var(--accent); }
+    .section { padding: 40px 60px; background: var(--bg-section); }
+    .section + .section { border-top: 1px solid var(--primary-light); }
+    .page-break { page-break-after: always; }
+    h2.section-title { font-size: 20px; color: var(--primary); margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    h2.section-title .num { background: var(--primary); color: white; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+    .section-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; padding-left: 40px; }
+    h3 { font-size: 14px; color: var(--primary-dark); margin: 18px 0 8px; }
+    p { line-height: 1.7; color: #333; margin-bottom: 10px; }
+    pre { background: #faf5ff; color: #2e1065; padding: 16px 20px; border-radius: 8px; font-family: 'Consolas','Courier New',monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; margin: 12px 0; border: 1px solid var(--primary-mid); border-left: 4px solid var(--primary); }
+    code { background: var(--primary-light); color: var(--primary-dark); padding: 2px 6px; border-radius: 4px; font-family: 'Consolas',monospace; font-size: 11px; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px; border: 1px solid var(--primary-mid); overflow: hidden; }
+    th { background: var(--primary); color: white; padding: 9px 12px; text-align: left; font-weight: 600; }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--primary-light); }
+    tr:nth-child(even) td { background: #faf5ff; }
+    .status-ok { color: #16a34a; font-weight: 700; }
+    .status-warn { color: #b45309; font-weight: 700; }
+    .callout { border-left: 4px solid var(--primary); background: var(--primary-light); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 12px; }
+    .callout.warn { border-color: #d97706; background: #fffbeb; }
+    .callout.success { border-color: #16a34a; background: #f0fdf4; }
+    .callout.info { border-color: #0284c7; background: #f0f9ff; }
+    .callout strong { display: block; margin-bottom: 4px; color: var(--primary-dark); }
+    .output-box { background: #faf5ff; color: #2e1065; padding: 14px 18px; border-radius: 8px; font-family: 'Consolas',monospace; font-size: 11px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--primary-mid); }
+    .output-box .ok { color: #16a34a; font-weight: 600; }
+    .output-box .warn { color: #b45309; font-weight: 600; }
+    .output-box .err { color: #dc2626; font-weight: 600; }
+    .arch-box { background: #faf5ff; color: #2e1065; padding: 20px; border-radius: 8px; font-family: 'Consolas',monospace; font-size: 11px; line-height: 1.8; margin: 14px 0; border: 1px solid var(--primary-mid); }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+    .summary-card { border: 1px solid var(--primary-mid); border-radius: 8px; padding: 16px; background: #faf9ff; }
+    .summary-card h4 { color: var(--primary); font-size: 13px; margin-bottom: 8px; }
+    .summary-card p { font-size: 12px; color: #555; margin: 0; }
+    .phase-header { background: linear-gradient(90deg, var(--primary-light), #ede9fe); color: var(--primary-dark); padding: 10px 16px; border-radius: 6px; margin-bottom: 14px; font-size: 13px; font-weight: 600; border-left: 4px solid var(--primary); }
+    .fix-item { display: flex; gap: 10px; margin-bottom: 12px; align-items: flex-start; }
+    .fix-badge { background: #dc2626; color: white; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+    footer { background: var(--primary); color: rgba(255,255,255,0.9); text-align: center; padding: 20px; font-size: 11px; margin-top: 40px; }
+  </style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div>
+    <p style="font-size:12px;color:#4c1d95;margin-bottom:16px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">AWS Hands-On Series · Stage 03</p>
+    <h1>Project 3.2</h1>
+    <h2>Terraform AWS Infrastructure</h2>
+    <p style="font-size:15px;color:#2e1065;max-width:520px;line-height:1.7;">
+      A complete hands-on walkthrough of building production-grade multi-tier AWS infrastructure
+      using Terraform — VPC, ALB, Auto Scaling Group, and RDS MySQL. 28 resources, zero console clicks.
+    </p>
+    <div style="margin-top:30px;">
+      <span class="badge">VPC</span><span class="badge">ALB</span><span class="badge">Auto Scaling</span>
+      <span class="badge">RDS MySQL</span><span class="badge">NAT Gateway</span><span class="badge">Security Groups</span>
+    </div>
+  </div>
+  <div class="meta">
+    <p><strong>Date:</strong> 2026-05-14 &nbsp;|&nbsp; <strong>Region:</strong> ap-south-1 (Mumbai)</p>
+    <p><strong>Account:</strong> 495331821583 &nbsp;|&nbsp; <strong>IAM User:</strong> vswnth1</p>
+    <p><strong>Terraform:</strong> v1.7.5 &nbsp;|&nbsp; <strong>AWS Provider:</strong> v5.100.0</p>
+    <p><strong>Total Resources:</strong> 28 &nbsp;|&nbsp; <strong>Estimated Cost:</strong> ~$1.80/day while running</p>
+  </div>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><span>Project Overview</span> — Architecture, resources, cost</li>
+    <li><span>File Structure</span> — Terraform file layout</li>
+    <li><span>Pre-requisites</span> — AWS CLI, public IP, key pair, tfvars</li>
+    <li><span>Bugs Fixed</span> — 4 issues resolved before/during apply
+      <ul class="sub"><li>Duplicate resources across files</li><li>Single-line block syntax</li><li>RDS free tier backup limit</li><li>RDS password invalid character</li></ul>
+    </li>
+    <li><span>Hands-on Steps</span> — init → plan → apply (3 attempts) → test → verify → destroy</li>
+    <li><span>Application Testing</span> — ALB URL, health endpoint</li>
+    <li><span>AWS Console Verification</span> — VPC, subnets, EC2, ALB, RDS, security groups</li>
+    <li><span>terraform destroy</span> — Destruction order and timing</li>
+    <li><span>Key Takeaways</span> — Lessons learned</li>
+  </ol>
+</div>
+
+<!-- SECTION 1: OVERVIEW -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">1</span> Project Overview</h2>
+  <p class="section-subtitle">Production-grade multi-tier AWS infrastructure</p>
+
+  <p>This project builds a complete production-grade multi-tier AWS infrastructure using Terraform only — no console clicks. It combines everything from Project 3.1 to create a real application stack.</p>
+
+  <h3>Architecture</h3>
+  <div class="arch-box">
+Internet
+    | HTTP port 80
+    ▼
+Application Load Balancer (handson-dev-alb)
+    | in 2 Public Subnets (ap-south-1a, ap-south-1b)
+    ▼
+Auto Scaling Group (1 EC2 t3.micro running Nginx)
+    | in 2 Private App Subnets
+    | user_data installs Nginx + creates /health endpoint
+    ▼
+RDS MySQL 8.0 (db.t3.micro)
+    | in 2 Private DB Subnets
+    | NOT publicly accessible
+    ▼
+NAT Gateway
+    | allows EC2 to reach internet for yum updates
+    | in Public Subnet with Elastic IP</div>
+
+  <h3>Resources Created (28 Total)</h3>
+  <table>
+    <tr><th>Category</th><th>Resources</th><th>Count</th></tr>
+    <tr><td>Network</td><td>VPC, 6 subnets, IGW, EIP, NAT GW, 2 route tables, 6 RT associations</td><td>18</td></tr>
+    <tr><td>Security</td><td>ALB SG, App SG, RDS SG</td><td>3</td></tr>
+    <tr><td>Compute</td><td>Launch Template, Auto Scaling Group</td><td>2</td></tr>
+    <tr><td>Load Balancer</td><td>ALB, Target Group, Listener</td><td>3</td></tr>
+    <tr><td>Database</td><td>DB Subnet Group, RDS MySQL</td><td>2</td></tr>
+    <tr><td><strong>Total</strong></td><td></td><td><strong>28</strong></td></tr>
+  </table>
+
+  <h3>Cost While Running</h3>
+  <table>
+    <tr><th>Resource</th><th>Daily Cost</th></tr>
+    <tr><td>NAT Gateway</td><td>~$1.08/day (biggest cost)</td></tr>
+    <tr><td>RDS db.t3.micro</td><td>~$0.41/day</td></tr>
+    <tr><td>ALB</td><td>~$0.19/day</td></tr>
+    <tr><td>EC2 t3.micro</td><td>~$0.12/day</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>~$1.80/day</strong></td></tr>
+  </table>
+  <div class="callout warn"><strong>Actual hands-on cost: ~$0.015</strong> — resources ran for ~10 minutes then destroyed.</div>
+</div>
+
+<!-- SECTION 2: FILE STRUCTURE -->
+<div class="section">
+  <h2 class="section-title"><span class="num">2</span> File Structure</h2>
+  <div class="arch-box">
+terraform/
+├── versions.tf      ← Terraform version + provider requirements
+├── variables.tf     ← All input variables
+├── locals.tf        ← name_prefix, common_tags
+├── main.tf          ← Provider configuration ONLY (after bug fix)
+├── vpc.tf           ← VPC, subnets, IGW, NAT, route tables
+├── ec2.tf           ← Security groups, ALB, launch template, ASG
+├── rds.tf           ← RDS MySQL
+├── outputs.tf       ← All outputs
+└── terraform.tfvars ← Your actual values</div>
+</div>
+
+<!-- SECTION 3: PRE-REQUISITES -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">3</span> Pre-requisites</h2>
+
+  <h3>Pre-req 1 — AWS CLI Authentication</h3>
+  <div class="output-box">
+aws sts get-caller-identity
+{
+  "UserId":  "AIDAXGVATZAHVJ3RFFKKR",
+  "Account": <span class="ok">"495331821583"</span>,
+  "Arn":     "arn:aws:iam::495331821583:user/vswnth1"
+}
+  </div>
+
+  <h3>Pre-req 2 — Get Public IP (for SSH security group)</h3>
+  <div class="output-box">
+(Invoke-WebRequest -Uri "https://checkip.amazonaws.com").Content.Trim()
+→ <span class="ok">103.82.209.148</span>
+  </div>
+  <div class="callout info"><strong>SSH locked to 103.82.209.148/32</strong> — only your machine can SSH to EC2. Never open SSH to 0.0.0.0/0.</div>
+
+  <h3>Pre-req 3 — EC2 Key Pair</h3>
+  <p>AWS Console → EC2 → Key Pairs → Create key pair → Name: <code>handson-key</code> → RSA → .pem → Downloaded.</p>
+
+  <h3>Pre-req 4 — terraform.tfvars</h3>
+  <pre>region           = "ap-south-1"
+project          = "handson"
+environment      = "dev"
+key_name         = "handson-key"
+my_ip            = "103.82.209.148/32"
+azs              = ["ap-south-1a", "ap-south-1b"]
+desired_capacity = 1
+# db_password passed via -var flag (never committed to git)</pre>
+</div>
+
+<!-- SECTION 4: BUGS FIXED -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">4</span> Bugs Fixed</h2>
+  <p class="section-subtitle">4 issues resolved before and during apply</p>
+
+  <div class="fix-item">
+    <span class="fix-badge">BUG 1</span>
+    <div>
+      <strong>Duplicate resources across files</strong>
+      <p>main.tf contained ALL resources AND separate files (vpc.tf, ec2.tf, rds.tf) also had the same resources. Terraform reads all .tf files together — duplicates not allowed.</p>
+      <p><strong>Fix:</strong> Cleared main.tf to contain ONLY the provider block. All resources stay in dedicated files.</p>
+      <div class="output-box"><span class="err">Error: Duplicate resource "aws_security_group" configuration</span>
+  on main.tf line 123: resource "aws_security_group" "alb"
+  A aws_security_group resource named "alb" was already declared at ec2.tf:3</div>
+    </div>
+  </div>
+
+  <div class="fix-item">
+    <span class="fix-badge">BUG 2</span>
+    <div>
+      <strong>Single-line block syntax error</strong>
+      <p>HCL single-line blocks can only have ONE argument. Multiple arguments require multi-line format.</p>
+      <div class="output-box"><span class="err">Error: Invalid single-argument block definition</span>
+ingress { from_port = 80  to_port = 80  protocol = "tcp" cidr_blocks = ["0.0.0.0/0"] }
+<span class="ok">Fix: expanded to multi-line format with each argument on its own line</span></div>
+    </div>
+  </div>
+
+  <div class="fix-item">
+    <span class="fix-badge">BUG 3</span>
+    <div>
+      <strong>RDS free tier backup retention limit</strong>
+      <p>Free tier AWS accounts cannot set backup_retention_period > 0 on RDS.</p>
+      <div class="output-box"><span class="err">Error: FreeTierRestrictionError: The specified backup retention period
+exceeds the maximum available to free tier customers.</span>
+<span class="ok">Fix: backup_retention_period = 0  (disables automated backups)</span></div>
+    </div>
+  </div>
+
+  <div class="fix-item">
+    <span class="fix-badge">BUG 4</span>
+    <div>
+      <strong>RDS password contains invalid character '@'</strong>
+      <p>RDS passwords cannot contain '/', '@', '"', or spaces.</p>
+      <div class="output-box"><span class="err">Error: InvalidParameterValue: The parameter MasterUserPassword is not a valid password.
+Only printable ASCII characters besides '/', '@', '"', ' ' may be used.</span>
+<span class="ok">Fix: Changed "Handson@2026!" → "Handson2026Pass!" (removed @)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5: HANDS-ON STEPS -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">5</span> Hands-on Steps</h2>
+
+  <h3>Step 1 — terraform init</h3>
+  <div class="output-box">
+- Installing hashicorp/aws v5.100.0... <span class="ok">✅</span>
+<span class="ok">Terraform has been successfully initialized!</span>
+  </div>
+
+  <h3>Step 2 — terraform plan</h3>
+  <pre>terraform plan -var-file="terraform.tfvars" -var="db_password=Handson2026Pass!"</pre>
+  <div class="output-box">
+data.aws_ami.amazon_linux: Read complete after 1s [id=ami-0999036d4c4235ceb]
+
+<span class="ok">Plan: 28 to add, 0 to change, 0 to destroy.</span>
+
+Changes to Outputs:
++ alb_dns_name = (known after apply)
++ rds_endpoint = (known after apply)
++ vpc_id       = (known after apply)
+  </div>
+
+  <h3>Step 3 — terraform apply (1st attempt — RDS backup error)</h3>
+  <div class="output-box">
+27 of 28 resources created successfully...
+<span class="err">Error: FreeTierRestrictionError: backup_retention_period = 7</span>
+→ Fixed: changed to backup_retention_period = 0
+  </div>
+
+  <h3>Step 4 — terraform apply (2nd attempt — password error)</h3>
+  <div class="output-box">
+<span class="err">Error: InvalidParameterValue: MasterUserPassword contains '@'</span>
+→ Fixed: changed password to "Handson2026Pass!"
+  </div>
+
+  <h3>Step 5 — terraform apply (3rd attempt — SUCCESS)</h3>
+  <pre>terraform apply -var-file="terraform.tfvars" -var="db_password=Handson2026Pass!"</pre>
+  <div class="output-box">
+aws_db_instance.mysql: Still creating... [4m33s elapsed]
+aws_db_instance.mysql: <span class="ok">Creation complete after 4m33s</span>
+
+<span class="ok">Apply complete! Resources: 1 added, 0 changed, 0 destroyed.</span>
+
+alb_dns_name           = "handson-dev-alb-66391407.ap-south-1.elb.amazonaws.com"
+alb_url                = "http://handson-dev-alb-66391407.ap-south-1.elb.amazonaws.com"
+app_sg_id              = "sg-0d4cdc3be1fb345e7"
+nat_gateway_ip         = "3.7.192.253"
+private_app_subnet_ids = ["subnet-0ebb6ccf04efd9ae0", "subnet-0626f1b6d9b71c8b6"]
+private_db_subnet_ids  = ["subnet-065f8001f575628ec", "subnet-0e6643693bf41216a"]
+public_subnet_ids      = ["subnet-06b9c76cb41c6ceba", "subnet-0653b835e4b7de436"]
+rds_endpoint           = "handson-dev-mysql.chew84266ne7.ap-south-1.rds.amazonaws.com:3306"
+vpc_id                 = "vpc-005a59b1a48818658"
+  </div>
+  <div class="callout success"><strong>Terraform idempotency in action</strong> — only RDS was created on the 3rd attempt. The 27 already-created resources were NOT recreated. Terraform refreshed state and only created what was missing.</div>
+</div>
+
+<!-- SECTION 6: APPLICATION TESTING -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">6</span> Application Testing</h2>
+
+  <h3>ALB URL — Browser Test</h3>
+  <pre>http://handson-dev-alb-66391407.ap-south-1.elb.amazonaws.com</pre>
+  <div class="output-box">
+Response: ip-10-0-4-121.ap-south-1.compute.internal
+          AZ: | Env: dev
+  </div>
+  <table>
+    <tr><th>What This Confirms</th><th>Detail</th></tr>
+    <tr><td>EC2 running and serving traffic</td><td class="status-ok">✅</td></tr>
+    <tr><td>Private IP 10.0.4.121</td><td>In subnet 10.0.4.0/24 (private-app-b in ap-south-1b)</td></tr>
+    <tr><td>Nginx installed via user_data</td><td class="status-ok">✅</td></tr>
+    <tr><td>ALB health check passing</td><td class="status-ok">✅</td></tr>
+    <tr><td>EC2 in PRIVATE subnet</td><td>Not directly accessible from internet</td></tr>
+  </table>
+
+  <h3>Health Endpoint</h3>
+  <pre>http://handson-dev-alb-66391407.ap-south-1.elb.amazonaws.com/health</pre>
+  <div class="output-box">Response: <span class="ok">OK</span></div>
+</div>
+
+<!-- SECTION 7: CONSOLE VERIFICATION -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">7</span> AWS Console Verification</h2>
+
+  <h3>VPC</h3>
+  <div class="output-box">handson-dev-vpc: <span class="ok">vpc-005a59b1a48818658</span> (10.0.0.0/16) - available</div>
+
+  <h3>6 Subnets</h3>
+  <table>
+    <tr><th>Name</th><th>CIDR</th><th>AZ</th><th>Public IP</th></tr>
+    <tr><td>handson-dev-public-a</td><td>10.0.1.0/24</td><td>ap-south-1a</td><td>true</td></tr>
+    <tr><td>handson-dev-public-b</td><td>10.0.2.0/24</td><td>ap-south-1b</td><td>true</td></tr>
+    <tr><td>handson-dev-private-app-a</td><td>10.0.3.0/24</td><td>ap-south-1a</td><td>false</td></tr>
+    <tr><td>handson-dev-private-app-b</td><td>10.0.4.0/24</td><td>ap-south-1b</td><td>false</td></tr>
+    <tr><td>handson-dev-private-db-a</td><td>10.0.5.0/24</td><td>ap-south-1a</td><td>false</td></tr>
+    <tr><td>handson-dev-private-db-b</td><td>10.0.6.0/24</td><td>ap-south-1b</td><td>false</td></tr>
+  </table>
+
+  <h3>Security Groups — Chain Verification</h3>
+  <div class="arch-box">
+handson-dev-alb-sg:
+  Inbound:  80 from 0.0.0.0/0, 443 from 0.0.0.0/0
+  Outbound: all
+
+handson-dev-app-sg:
+  Inbound:  80 from sg-0a28421ce4d708e41 (ALB SG only!)
+            22 from 103.82.209.148/32 (your IP only!)
+  Outbound: all
+
+handson-dev-rds-sg:
+  Inbound:  3306 from sg-0d4cdc3be1fb345e7 (App SG only!)
+  Outbound: all</div>
+  <div class="callout success"><strong>Defense in depth — security groups are CHAINED</strong><br>
+  ALB → EC2 → RDS. Each layer only trusts the layer above it. RDS is completely unreachable from the internet.</div>
+
+  <h3>RDS Database</h3>
+  <table>
+    <tr><th>Field</th><th>Value</th></tr>
+    <tr><td>Status</td><td class="status-ok">available</td></tr>
+    <tr><td>Engine</td><td>MySQL 8.0.45</td></tr>
+    <tr><td>Instance class</td><td>db.t3.micro</td></tr>
+    <tr><td>Endpoint</td><td>handson-dev-mysql.chew84266ne7.ap-south-1.rds.amazonaws.com:3306</td></tr>
+    <tr><td>Publicly accessible</td><td>No</td></tr>
+    <tr><td>Multi-AZ</td><td>No (dev)</td></tr>
+  </table>
+</div>
+
+<!-- SECTION 8: DESTROY -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">8</span> terraform destroy</h2>
+  <pre>terraform destroy -var-file="terraform.tfvars" -var="db_password=Handson2026Pass!"</pre>
+
+  <h3>Destruction Order (Terraform handles automatically)</h3>
+  <table>
+    <tr><th>Order</th><th>Resource</th><th>Time</th></tr>
+    <tr><td>1</td><td>Route table associations</td><td>instant</td></tr>
+    <tr><td>2</td><td>DB instance</td><td>1m52s</td></tr>
+    <tr><td>3</td><td>ALB listener</td><td>instant</td></tr>
+    <tr><td>4</td><td>ALB</td><td>26s</td></tr>
+    <tr><td>5</td><td>NAT Gateway</td><td>1m1s</td></tr>
+    <tr><td>6</td><td>Auto Scaling Group</td><td>5m42s (waits for EC2 termination)</td></tr>
+    <tr><td>7</td><td>EIP, IGW, subnets</td><td>instant</td></tr>
+    <tr><td>8</td><td>Security groups, launch template</td><td>instant</td></tr>
+    <tr><td>9</td><td>VPC (last)</td><td>instant</td></tr>
+  </table>
+  <div class="output-box"><span class="ok">Destroy complete! Resources: 28 destroyed.</span></div>
+  <div class="callout info"><strong>ASG took 5m42s</strong> — it waits for EC2 instances to terminate gracefully. VPC is always last — it cannot be deleted while resources exist inside it.</div>
+</div>
+
+<!-- SECTION 9: KEY TAKEAWAYS -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">9</span> Key Takeaways</h2>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <h4>🔄 Terraform is Idempotent</h4>
+      <p>Re-running apply only creates what is missing. The 27 already-created resources were not recreated on the 3rd attempt.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🆓 Free Tier Restrictions</h4>
+      <p>backup_retention_period must be 0 for RDS on free tier. RDS passwords cannot contain @, /, ", or spaces.</p>
+    </div>
+    <div class="summary-card">
+      <h4>📁 One Resource Per File</h4>
+      <p>Terraform reads all .tf files together. Duplicate resources across files cause init failure. main.tf should contain only the provider block.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🔒 Security Group Chaining</h4>
+      <p>ALB → EC2 → RDS. Each layer only trusts the layer above. RDS is completely unreachable from the internet.</p>
+    </div>
+    <div class="summary-card">
+      <h4>⏱️ Slowest Resources</h4>
+      <p>RDS: 4m33s to create. ASG: 5m42s to destroy (waits for EC2). NAT Gateway: ~2min to create.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🔍 Data Source for AMI</h4>
+      <p>ami-0999036d4c4235ceb resolved automatically — no hardcoded AMI ID. Always use data source for AMIs.</p>
+    </div>
+  </div>
+
+  <h3>Command Summary</h3>
+  <table>
+    <tr><th>Command</th><th>Touched AWS?</th><th>Result</th></tr>
+    <tr><td>terraform init</td><td>No</td><td>Downloaded AWS provider v5.100.0</td></tr>
+    <tr><td>terraform plan</td><td>No (read-only)</td><td>Showed 28 resources to create</td></tr>
+    <tr><td>terraform apply (1st)</td><td>Yes</td><td>27 created, RDS failed (backup error)</td></tr>
+    <tr><td>terraform apply (2nd)</td><td>Yes</td><td>RDS failed (password error)</td></tr>
+    <tr><td>terraform apply (3rd)</td><td>Yes</td><td>RDS created — all 28 done</td></tr>
+    <tr><td>terraform destroy</td><td>Yes</td><td>All 28 resources deleted</td></tr>
+  </table>
+</div>
+
+<footer>
+  <p>Project 3.2 — Terraform AWS Infrastructure &nbsp;|&nbsp; AWS Hands-On Series Stage 03 &nbsp;|&nbsp; Account: 495331821583 &nbsp;|&nbsp; 2026-05-14</p>
+  <p style="margin-top:6px;">Author: Viswanath TGR &nbsp;|&nbsp; linkedin.com/in/viswanath-tgr-328b11264</p>
+</footer>
+</body>
+</html>

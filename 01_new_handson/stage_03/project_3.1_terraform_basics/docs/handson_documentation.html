@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project 3.1 — Terraform Basics Hands-On</title>
+  <style>
+    :root {
+      --primary:      #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-light:#eff6ff;
+      --primary-mid:  #bfdbfe;
+      --accent:       #3b82f6;
+      --bg-page:      #f8faff;
+      --bg-section:   #ffffff;
+      --text-main:    #1e293b;
+      --text-muted:   #475569;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: var(--text-main); background: var(--bg-page); }
+    .cover { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 40%, #93c5fd 100%); color: #1e3a5f; padding: 80px 60px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; page-break-after: always; border-bottom: 4px solid var(--primary); }
+    .cover h1 { font-size: 38px; font-weight: 800; margin-bottom: 10px; color: #1e3a5f; }
+    .cover h2 { font-size: 20px; font-weight: 400; margin-bottom: 40px; color: #2563eb; }
+    .cover .meta { border-top: 1px solid #93c5fd; padding-top: 24px; margin-top: 40px; }
+    .cover .meta p { font-size: 13px; color: #1e40af; margin-bottom: 6px; }
+    .cover .badge { display: inline-block; background: rgba(37,99,235,0.1); border: 1px solid #93c5fd; border-radius: 20px; padding: 4px 14px; font-size: 12px; margin: 4px 4px 0 0; color: #1d4ed8; font-weight: 600; }
+    .toc { padding: 50px 60px; page-break-after: always; background: var(--bg-section); }
+    .toc h2 { font-size: 22px; color: var(--primary); border-bottom: 2px solid var(--primary-mid); padding-bottom: 10px; margin-bottom: 24px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { padding: 6px 0; font-size: 13px; color: #333; }
+    .toc li span { color: var(--primary); font-weight: 600; }
+    .toc .sub { padding-left: 20px; list-style: none; }
+    .toc .sub li { font-size: 12px; color: var(--text-muted); padding: 3px 0; }
+    .toc .sub li::before { content: "→ "; color: var(--accent); }
+    .section { padding: 40px 60px; background: var(--bg-section); }
+    .section + .section { border-top: 1px solid var(--primary-light); }
+    .page-break { page-break-after: always; }
+    h2.section-title { font-size: 20px; color: var(--primary); margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    h2.section-title .num { background: var(--primary); color: white; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+    .section-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; padding-left: 40px; }
+    h3 { font-size: 14px; color: var(--primary-dark); margin: 18px 0 8px; }
+    p { line-height: 1.7; color: #333; margin-bottom: 10px; }
+    pre { background: #f0f7ff; color: #1e3a5f; padding: 16px 20px; border-radius: 8px; font-family: 'Consolas','Courier New',monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; margin: 12px 0; border: 1px solid var(--primary-mid); border-left: 4px solid var(--primary); }
+    code { background: var(--primary-light); color: var(--primary-dark); padding: 2px 6px; border-radius: 4px; font-family: 'Consolas',monospace; font-size: 11px; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px; border: 1px solid var(--primary-mid); border-radius: 8px; overflow: hidden; }
+    th { background: var(--primary); color: white; padding: 9px 12px; text-align: left; font-weight: 600; }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--primary-light); }
+    tr:nth-child(even) td { background: #f5f9ff; }
+    .status-ok { color: #16a34a; font-weight: 700; }
+    .status-warn { color: #b45309; font-weight: 700; }
+    .callout { border-left: 4px solid var(--primary); background: var(--primary-light); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 12px; }
+    .callout.warn { border-color: #d97706; background: #fffbeb; }
+    .callout.success { border-color: #16a34a; background: #f0fdf4; }
+    .callout.info { border-color: #0284c7; background: #f0f9ff; }
+    .callout strong { display: block; margin-bottom: 4px; color: var(--primary-dark); }
+    .output-box { background: #f0f7ff; color: #1e3a5f; padding: 14px 18px; border-radius: 8px; font-family: 'Consolas',monospace; font-size: 11px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--primary-mid); }
+    .output-box .ok { color: #16a34a; font-weight: 600; }
+    .output-box .warn { color: #b45309; font-weight: 600; }
+    .output-box .err { color: #dc2626; font-weight: 600; }
+    .arch-box { background: #f0f7ff; color: #1e3a5f; padding: 20px; border-radius: 8px; font-family: 'Consolas',monospace; font-size: 11px; line-height: 1.8; margin: 14px 0; border: 1px solid var(--primary-mid); }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+    .summary-card { border: 1px solid var(--primary-mid); border-radius: 8px; padding: 16px; background: #f8faff; }
+    .summary-card h4 { color: var(--primary); font-size: 13px; margin-bottom: 8px; }
+    .summary-card p { font-size: 12px; color: #555; margin: 0; }
+    .phase-header { background: linear-gradient(90deg, var(--primary-light), #dbeafe); color: var(--primary-dark); padding: 10px 16px; border-radius: 6px; margin-bottom: 14px; font-size: 13px; font-weight: 600; border-left: 4px solid var(--primary); }
+    .phase-divider { background: var(--primary); color: white; padding: 14px 60px; font-size: 16px; font-weight: 700; margin: 0 -60px; letter-spacing: 0.5px; }
+    .fix-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+    .fix-badge { background: #dc2626; color: white; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+    .fix-badge.ok { background: #16a34a; }
+    footer { background: var(--primary); color: rgba(255,255,255,0.9); text-align: center; padding: 20px; font-size: 11px; margin-top: 40px; }
+  </style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div>
+    <p style="font-size:12px;color:#1e40af;margin-bottom:16px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">AWS Hands-On Series · Stage 03</p>
+    <h1>Project 3.1</h1>
+    <h2>Terraform Basics — 5 Phases</h2>
+    <p style="font-size:15px;color:#1e3a5f;max-width:520px;line-height:1.7;">
+      A complete hands-on walkthrough of Terraform fundamentals — from the first S3 bucket
+      to variables, outputs, data sources, and locals. Five progressive phases building
+      real AWS infrastructure with zero console clicks.
+    </p>
+    <div style="margin-top:30px;">
+      <span class="badge">Terraform v1.7.5</span>
+      <span class="badge">AWS S3</span>
+      <span class="badge">SSM Parameter Store</span>
+      <span class="badge">Variables</span>
+      <span class="badge">Outputs</span>
+      <span class="badge">Data Sources</span>
+      <span class="badge">Locals</span>
+    </div>
+  </div>
+  <div class="meta">
+    <p><strong>AWS Account:</strong> 495331821583 &nbsp;|&nbsp; <strong>IAM User:</strong> vswnth1</p>
+    <p><strong>Region:</strong> ap-south-1 (Mumbai)</p>
+    <p><strong>Date:</strong> May 12–13, 2026</p>
+    <p><strong>Terraform:</strong> v1.7.5 &nbsp;|&nbsp; <strong>AWS Provider:</strong> v5.100.0</p>
+  </div>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><span>Phase 1 — Hello Terraform</span> — First S3 bucket, full lifecycle
+      <ul class="sub"><li>init → plan → apply → state list → show → destroy</li><li>Bug: missing random provider</li></ul>
+    </li>
+    <li><span>Phase 2 — Variables</span> — Reusable configs with .tfvars
+      <ul class="sub"><li>5 variable types, 3 ways to pass values</li><li>Validation blocks, environment override</li></ul>
+    </li>
+    <li><span>Phase 3 — Outputs</span> — Export values from Terraform
+      <ul class="sub"><li>4 output types: string, sensitive, object, computed URL</li><li>-raw, -json flags</li></ul>
+    </li>
+    <li><span>Phase 4 — Data Sources</span> — Read AWS without creating anything
+      <ul class="sub"><li>AMI, account identity, VPC, subnets, AZs</li><li>Resources: 0 added</li></ul>
+    </li>
+    <li><span>Phase 5 — Locals</span> — DRY principle, computed values
+      <ul class="sub"><li>name_prefix, common_tags, is_production, timestamp()</li><li>Dev vs Prod comparison</li></ul>
+    </li>
+    <li><span>Key Takeaways</span> — All 5 phases summary</li>
+  </ol>
+</div>
+
+<!-- PHASE 1 -->
+<div class="phase-divider">Phase 1 — Hello Terraform</div>
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">1</span> Phase 1 — Hello Terraform</h2>
+  <p class="section-subtitle">First S3 bucket · Full Terraform lifecycle · Date: 2026-05-12</p>
+
+  <p>The complete Terraform lifecycle — from zero to a live AWS resource and back to zero. First <code>.tf</code> file, all core commands, and understanding what each one does.</p>
+
+  <h3>Resources Created</h3>
+  <table>
+    <tr><th>Resource</th><th>Name</th><th>Cost</th></tr>
+    <tr><td>random_id.suffix</td><td>hex = 9273bec5</td><td>$0</td></tr>
+    <tr><td>aws_s3_bucket.hello</td><td>hello-terraform-9273bec5</td><td>$0</td></tr>
+    <tr><td>aws_s3_bucket_versioning.hello</td><td>Enabled</td><td>$0</td></tr>
+  </table>
+
+  <h3>Bug Fixed — Missing random Provider</h3>
+  <div class="fix-item">
+    <span class="fix-badge">BUG</span>
+    <div><strong>terraform init failed — random provider not declared</strong><br>
+    Added <code>random = { source = "hashicorp/random" version = "~> 3.0" }</code> to required_providers.</div>
+  </div>
+
+  <h3>Step 1 — terraform init</h3>
+  <div class="output-box">
+- Installing hashicorp/aws v5.100.0... <span class="ok">✅</span>
+- Installing hashicorp/random v3.8.1... <span class="ok">✅</span>
+<span class="ok">Terraform has been successfully initialized!</span>
+  </div>
+  <div class="callout"><strong>Local only — never touches AWS.</strong> Downloads plugins to .terraform/providers/. Creates .terraform.lock.hcl to lock versions.</div>
+
+  <h3>Step 2 — terraform plan</h3>
+  <div class="output-box">
++ aws_s3_bucket.hello            will be created
++ aws_s3_bucket_versioning.hello will be created
++ random_id.suffix               will be created
+
+<span class="ok">Plan: 3 to add, 0 to change, 0 to destroy.</span>
+  </div>
+
+  <h3>Step 3 — terraform apply</h3>
+  <div class="output-box">
+random_id.suffix: Creation complete after 0s
+aws_s3_bucket.hello: <span class="ok">Creation complete after 3s</span> [id=hello-terraform-9273bec5]
+aws_s3_bucket_versioning.hello: <span class="ok">Creation complete after 2s</span>
+
+<span class="ok">Apply complete! Resources: 3 added, 0 changed, 0 destroyed.</span>
+bucket_arn  = "arn:aws:s3:::hello-terraform-9273bec5"
+bucket_name = "hello-terraform-9273bec5"
+  </div>
+
+  <h3>Step 4 — terraform show (important discovery)</h3>
+  <div class="output-box">
+server_side_encryption_configuration {
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = <span class="ok">"AES256"</span>   ← AWS auto-added this!
+    }
+  }
+}
+  </div>
+  <div class="callout info"><strong>AWS auto-applies AES256 encryption</strong> to all new S3 buckets since January 2023 — even if you didn't configure it in Terraform.</div>
+
+  <h3>Step 5 — terraform destroy</h3>
+  <div class="output-box">
+aws_s3_bucket_versioning.hello: Destruction complete after 0s
+aws_s3_bucket.hello: Destruction complete after 1s
+random_id.suffix: Destruction complete after 0s
+<span class="ok">Destroy complete! Resources: 3 destroyed.</span>
+  </div>
+
+  <h3>Command Reference</h3>
+  <table>
+    <tr><th>Command</th><th>Touches AWS?</th><th>What it does</th></tr>
+    <tr><td>terraform init</td><td>❌ No</td><td>Downloads provider plugins locally</td></tr>
+    <tr><td>terraform plan</td><td>❌ Read-only</td><td>Previews what will change</td></tr>
+    <tr><td>terraform apply</td><td>✅ Yes</td><td>Creates/modifies resources in AWS</td></tr>
+    <tr><td>terraform state list</td><td>❌ No</td><td>Lists tracked resources</td></tr>
+    <tr><td>terraform show</td><td>❌ No</td><td>Shows full resource details from state</td></tr>
+    <tr><td>terraform destroy</td><td>✅ Yes</td><td>Deletes all managed resources</td></tr>
+  </table>
+</div>
+
+<!-- PHASE 2 -->
+<div class="phase-divider">Phase 2 — Variables</div>
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">2</span> Phase 2 — Variables</h2>
+  <p class="section-subtitle">Reusable configs with .tfvars · Date: 2026-05-12</p>
+
+  <p>Phase 1 hardcoded all values. This phase solves that with Terraform variables — one <code>main.tf</code> + different <code>.tfvars</code> files = all environments covered.</p>
+
+  <h3>Resources Created</h3>
+  <table>
+    <tr><th>Resource</th><th>Name</th><th>Cost</th></tr>
+    <tr><td>aws_s3_bucket.main</td><td>dev-my-app-data-495331821583</td><td>$0</td></tr>
+    <tr><td>aws_s3_bucket_versioning.main</td><td>Enabled (from bool variable)</td><td>$0</td></tr>
+  </table>
+
+  <h3>Bug Fixed — Missing attribute separator</h3>
+  <div class="fix-item">
+    <span class="fix-badge">BUG</span>
+    <div><strong>Missing comma between source and version on same line</strong><br>
+    <code>aws = { source = "hashicorp/aws" version = "~> 5.0" }</code> → added comma after source value.</div>
+  </div>
+
+  <h3>5 Variable Types Demonstrated</h3>
+  <table>
+    <tr><th>Type</th><th>Example</th><th>Key Learning</th></tr>
+    <tr><td>string</td><td>region = "ap-south-1"</td><td>Basic text value</td></tr>
+    <tr><td>bool</td><td>enable_versioning = true</td><td>Controls behavior on/off</td></tr>
+    <tr><td>map(string)</td><td>tags = { Owner = "vswnth1" }</td><td>Key-value pairs</td></tr>
+    <tr><td>validation</td><td>contains(["dev","qa","prod"])</td><td>Rejects invalid values before AWS</td></tr>
+    <tr><td>no default</td><td>bucket_name (required)</td><td>Forces caller to provide value</td></tr>
+  </table>
+
+  <h3>3 Ways to Pass Variables</h3>
+  <table>
+    <tr><th>Way</th><th>Command</th><th>Owner tag?</th><th>When to use</th></tr>
+    <tr><td>.tfvars file</td><td>-var-file="dev.tfvars"</td><td class="status-ok">✅ Yes</td><td>Standard — all real projects</td></tr>
+    <tr><td>Runtime override</td><td>-var="environment=qa"</td><td class="status-ok">✅ Yes (from tfvars)</td><td>Quick one-off change</td></tr>
+    <tr><td>Interactive prompt</td><td>no flags</td><td class="status-warn">❌ Missing</td><td>Testing only — never CI/CD</td></tr>
+  </table>
+
+  <h3>Environment Override Demo</h3>
+  <div class="output-box">
+# With dev.tfvars
+terraform plan -var-file="dev.tfvars"
+→ bucket = <span class="ok">"dev-my-app-data-495331821583"</span>
+
+# Override to qa with ONE flag — zero code changes
+terraform plan -var-file="dev.tfvars" -var="environment=qa"
+→ bucket = <span class="ok">"qa-my-app-data-495331821583"</span>
+  </div>
+
+  <h3>Validation Block — Rejected Invalid Value</h3>
+  <div class="output-box">
+terraform plan -var-file="dev.tfvars" -var="environment=staging"
+
+<span class="err">│ Error: Invalid value for variable</span>
+<span class="err">│ Environment must be dev, qa, or prod.</span>
+  </div>
+  <div class="callout success"><strong>Validation caught the error before touching AWS</strong> — no resources created, no cost incurred. This is the guardrail pattern for team environments.</div>
+</div>
+
+<!-- PHASE 3 -->
+<div class="phase-divider">Phase 3 — Outputs</div>
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">3</span> Phase 3 — Outputs</h2>
+  <p class="section-subtitle">Export values from Terraform · Date: 2026-05-12</p>
+
+  <p>Outputs export resource values to humans, scripts, and CI/CD pipelines. Without outputs, you'd manually look up resource IDs in the AWS Console after every apply.</p>
+
+  <h3>Resources Created</h3>
+  <table>
+    <tr><th>Resource</th><th>Name</th><th>Cost</th></tr>
+    <tr><td>random_id.suffix</td><td>hex = e63a1b07</td><td>$0</td></tr>
+    <tr><td>aws_s3_bucket.app</td><td>outputs-demo-e63a1b07</td><td>$0</td></tr>
+    <tr><td>aws_ssm_parameter.db_password</td><td>/handson/db/password (SecureString)</td><td>$0</td></tr>
+  </table>
+
+  <h3>4 Output Types</h3>
+  <table>
+    <tr><th>Type</th><th>Code</th><th>Result</th><th>Use case</th></tr>
+    <tr><td>Simple string</td><td>value = resource.attr</td><td>"outputs-demo-e63a1b07"</td><td>Single value</td></tr>
+    <tr><td>Sensitive</td><td>sensitive = true</td><td>&lt;sensitive&gt;</td><td>Passwords, keys</td></tr>
+    <tr><td>Object</td><td>value = { key = val }</td><td>{ name, arn, region }</td><td>Group related values</td></tr>
+    <tr><td>Computed URL</td><td>value = "https://.../${attr}"</td><td>Full clickable URL</td><td>Direct links</td></tr>
+  </table>
+
+  <h3>terraform apply Output</h3>
+  <div class="output-box">
+<span class="ok">Apply complete! Resources: 3 added, 0 changed, 0 destroyed.</span>
+
+bucket_console_url = "https://s3.console.aws.amazon.com/s3/buckets/outputs-demo-e63a1b07"
+bucket_info = {
+  "arn"    = "arn:aws:s3:::outputs-demo-e63a1b07"
+  "name"   = "outputs-demo-e63a1b07"
+  "region" = "ap-south-1"
+}
+bucket_name = "outputs-demo-e63a1b07"
+db_password = <span class="warn">&lt;sensitive&gt;</span>
+  </div>
+
+  <h3>Output Commands Comparison</h3>
+  <table>
+    <tr><th>Command</th><th>Shows sensitive?</th><th>Use case</th></tr>
+    <tr><td>terraform output</td><td class="status-warn">❌ &lt;sensitive&gt;</td><td>View all outputs</td></tr>
+    <tr><td>terraform output -raw &lt;name&gt;</td><td class="status-warn">❌ Blocked</td><td>Shell scripts — no quotes</td></tr>
+    <tr><td>terraform output -json &lt;name&gt;</td><td class="status-ok">✅ Revealed</td><td>Only way to see sensitive value</td></tr>
+  </table>
+
+  <div class="callout warn"><strong>sensitive = true hides value everywhere</strong> — plan, apply, output, and CI/CD logs. Use -json only when absolutely necessary. Never store real passwords in Terraform code — use AWS Secrets Manager.</div>
+</div>
+
+<!-- PHASE 4 -->
+<div class="phase-divider">Phase 4 — Data Sources</div>
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">4</span> Phase 4 — Data Sources</h2>
+  <p class="section-subtitle">Read AWS without creating anything · Date: 2026-05-13</p>
+
+  <p>Data sources read existing AWS resources without creating anything. They solve the problem of hardcoded values that break over time — AMI IDs change, VPC IDs differ per account.</p>
+
+  <h3>Resources Created: ZERO</h3>
+  <div class="callout success"><strong>Apply complete! Resources: 0 added, 0 changed, 0 destroyed.</strong> This is the only Terraform apply that creates nothing in AWS. Data sources only read.</div>
+
+  <h3>5 Data Sources Used</h3>
+  <table>
+    <tr><th>Data Source</th><th>Value Discovered</th></tr>
+    <tr><td>aws_ami (latest AL2023)</td><td>ami-0627662924eb1b8c6</td></tr>
+    <tr><td>aws_caller_identity</td><td>Account: 495331821583</td></tr>
+    <tr><td>aws_region</td><td>ap-south-1</td></tr>
+    <tr><td>aws_vpc (default)</td><td>vpc-037f017eee3062491 (172.31.0.0/16)</td></tr>
+    <tr><td>aws_subnets (default VPC)</td><td>3 subnets across ap-south-1a/b/c</td></tr>
+    <tr><td>aws_availability_zones</td><td>ap-south-1a, ap-south-1b, ap-south-1c</td></tr>
+  </table>
+
+  <h3>terraform plan Output</h3>
+  <div class="output-box">
+data.aws_ami.amazon_linux: <span class="ok">Reading...</span>   ← NOT "Creating..."
+data.aws_vpc.default: <span class="ok">Reading...</span>
+data.aws_ami.amazon_linux: Read complete after 1s [id=ami-0627662924eb1b8c6]
+
+Changes to Outputs:
++ ami_id             = "ami-0627662924eb1b8c6"
++ ami_name           = "al2023-ami-minimal-2023.11.20260509.0-kernel-6.18-x86_64"
++ availability_zones = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
++ default_vpc_id     = "vpc-037f017eee3062491"
++ useful_for_ec2     = "ami = ami-0627662924eb1b8c6 | subnet_id = subnet-0b4de952205c30013"
+
+You can apply this plan to save these new output values to the Terraform state,
+<span class="ok">without changing any real infrastructure.</span>
+  </div>
+
+  <div class="callout info"><strong>Data sources show "Reading..." not "Creating..."</strong> — the key visual difference. AMI name shows exact version — if hardcoded 6 months ago, it might be deprecated now.</div>
+
+  <h3>Where to Find Each Value in AWS Console</h3>
+  <table>
+    <tr><th>Value</th><th>AWS Console Path</th></tr>
+    <tr><td>Account ID</td><td>Top right → username dropdown</td></tr>
+    <tr><td>AMI ID</td><td>EC2 → Images → AMIs → Public images</td></tr>
+    <tr><td>Default VPC</td><td>VPC → Your VPCs → Default VPC = Yes</td></tr>
+    <tr><td>Subnets</td><td>VPC → Subnets → filter by VPC ID</td></tr>
+    <tr><td>AZs</td><td>EC2 → Launch Instance → Subnet dropdown</td></tr>
+  </table>
+</div>
+
+<!-- PHASE 5 -->
+<div class="phase-divider">Phase 5 — Locals</div>
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">5</span> Phase 5 — Locals</h2>
+  <p class="section-subtitle">DRY principle · Computed values · Conditions · Date: 2026-05-13</p>
+
+  <p>Locals are computed values derived from other values. They implement the DRY (Don't Repeat Yourself) principle — define <code>common_tags</code> once, use in every resource.</p>
+
+  <h3>Resources Created</h3>
+  <table>
+    <tr><th>Resource</th><th>Name</th><th>Cost</th></tr>
+    <tr><td>aws_s3_bucket.data</td><td>handson-dev-data-495331821583</td><td>$0</td></tr>
+    <tr><td>aws_s3_bucket_versioning.data</td><td>Suspended (dev) / Enabled (prod)</td><td>$0</td></tr>
+  </table>
+
+  <h3>4 Locals Defined</h3>
+  <pre>locals {
+  name_prefix   = "${var.project}-${var.environment}"          # "handson-dev"
+  common_tags   = { Project, Environment, Owner, ManagedBy, CreatedAt = timestamp() }
+  is_production = var.environment == "prod"                    # false for dev
+  bucket_name   = "${local.name_prefix}-data-${account_id}"   # globally unique
+}</pre>
+
+  <h3>Dev vs Prod — One Flag Changes Everything</h3>
+  <table>
+    <tr><th>Local</th><th>Dev (default)</th><th>Prod (-var="environment=prod")</th></tr>
+    <tr><td>name_prefix</td><td>handson-dev</td><td>handson-prod</td></tr>
+    <tr><td>bucket_name</td><td>handson-dev-data-495331821583</td><td>handson-prod-data-495331821583</td></tr>
+    <tr><td>is_production</td><td>false</td><td>true</td></tr>
+    <tr><td>Versioning</td><td>Suspended (saves cost)</td><td><strong>Enabled</strong> (compliance)</td></tr>
+    <tr><td>Code changed?</td><td colspan="2" style="text-align:center;">❌ No — zero code changes</td></tr>
+  </table>
+
+  <h3>terraform show — Tags with Timestamp</h3>
+  <div class="output-box">
+tags = {
+  "CreatedAt"   = <span class="ok">"2026-05-13T06:31:55Z"</span>   ← timestamp() worked!
+  "Environment" = "dev"
+  "ManagedBy"   = "terraform"
+  "Name"        = "handson-dev-data"   ← from local.name_prefix
+  "Owner"       = "vswnth1"
+  "Project"     = "handson"
+}
+versioning_configuration {
+  status = "Suspended"   ← is_production = false
+}
+  </div>
+  <div class="callout success"><strong>6 tags applied via merge()</strong> — common_tags (5) + resource-specific Name tag (1). timestamp() captured exact apply time for auditing.</div>
+</div>
+
+<!-- KEY TAKEAWAYS -->
+<div class="section page-break">
+  <h2 class="section-title"><span class="num">6</span> Key Takeaways — All 5 Phases</h2>
+  <p class="section-subtitle">Lessons learned across the complete Project 3.1</p>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <h4>🔄 Full Lifecycle</h4>
+      <p>init → plan → apply → destroy. Only apply and destroy touch AWS. Always run plan before apply — it's always safe.</p>
+    </div>
+    <div class="summary-card">
+      <h4>📦 Variables = Reusability</h4>
+      <p>One main.tf + different .tfvars = all environments. Validation blocks catch errors before AWS. -var flag overrides .tfvars.</p>
+    </div>
+    <div class="summary-card">
+      <h4>📤 Outputs = Communication</h4>
+      <p>sensitive=true hides values everywhere. -json is the only way to reveal sensitive outputs. -raw removes quotes for scripts.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🔍 Data Sources = No Hardcoding</h4>
+      <p>AMI IDs change — always use data source. Apply with only data sources = 0 resources created. No destroy needed.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🧹 Locals = DRY Principle</h4>
+      <p>Define common_tags once, use everywhere via merge(). Boolean locals control environment behavior. timestamp() auto-tags creation time.</p>
+    </div>
+    <div class="summary-card">
+      <h4>🔒 AWS Security Defaults</h4>
+      <p>AWS auto-applies AES256 encryption to all new S3 buckets since 2023 — even without Terraform config. Always check terraform show.</p>
+    </div>
+  </div>
+
+  <h3>All 5 Phases Summary</h3>
+  <table>
+    <tr><th>Phase</th><th>Topic</th><th>Key Concept</th><th>Resources</th><th>Cost</th></tr>
+    <tr><td>1</td><td>Hello Terraform</td><td>Full lifecycle: init → plan → apply → destroy</td><td>3 (S3 + random)</td><td>$0</td></tr>
+    <tr><td>2</td><td>Variables</td><td>Reusable configs, .tfvars, validation</td><td>2 (S3)</td><td>$0</td></tr>
+    <tr><td>3</td><td>Outputs</td><td>sensitive, object, computed URL, -raw/-json</td><td>3 (S3 + SSM)</td><td>$0</td></tr>
+    <tr><td>4</td><td>Data Sources</td><td>Read AWS without creating — 0 resources</td><td>0</td><td>$0</td></tr>
+    <tr><td>5</td><td>Locals</td><td>DRY, computed values, boolean conditions</td><td>2 (S3)</td><td>$0</td></tr>
+    <tr><td colspan="4"><strong>Total</strong></td><td><strong>$0.00</strong></td></tr>
+  </table>
+</div>
+
+<footer>
+  <p>Project 3.1 — Terraform Basics (5 Phases) &nbsp;|&nbsp; AWS Hands-On Series Stage 03 &nbsp;|&nbsp; Account: 495331821583 &nbsp;|&nbsp; May 12–13, 2026</p>
+  <p style="margin-top:6px;">Author: Viswanath TGR &nbsp;|&nbsp; linkedin.com/in/viswanath-tgr-328b11264</p>
+</footer>
+</body>
+</html>
