@@ -41,6 +41,16 @@ terraform output api_url
 - Short code collision: use random 6-char alphanumeric + check-before-insert pattern
 - API Gateway can return 3xx redirects directly from Lambda response
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Deploy, shorten URL, test redirect, verify DynamoDB TTL and click counter |
+| `verify.md` | Console verification, CLI redirect/stats tests, TTL check, atomic counter test, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — API Gateway, Lambda, DynamoDB with TTL |
+| `src/handler.py` | URL shortener Lambda (shorten, redirect, stats) |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `src/shortener.py` — URL shortener Lambda handler

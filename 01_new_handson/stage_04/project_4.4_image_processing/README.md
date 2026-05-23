@@ -43,6 +43,16 @@ terraform output source_bucket
 - Lambda memory affects CPU — more memory = faster image processing
 - Use S3 presigned URLs to give temporary upload access without exposing credentials
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Deploy, upload test image, verify resize outputs, DynamoDB metadata check |
+| `verify.md` | Console verification, CLI upload/output checks, DynamoDB metadata, trigger test, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — S3 buckets, Lambda, S3 event notification, DynamoDB, IAM |
+| `src/handler.py` | Image resize Lambda using Pillow |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `src/processor.py` — S3-triggered image resize Lambda

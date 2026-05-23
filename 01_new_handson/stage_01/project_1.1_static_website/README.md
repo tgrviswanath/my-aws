@@ -36,6 +36,17 @@ terraform apply -var-file="terraform.tfvars"
 - S3 bucket names must be globally unique
 - Use OAC (Origin Access Control) not OAI — OAI is legacy
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Console, CLI, Terraform implementation + screenshots checklist |
+| `verify.md` | Console verification table, CLI checks, Terraform state, OAC test, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — S3, CloudFront, ACM, Route53 |
+| `code/deploy_website.sh` | Shell script — sync to S3 + CloudFront cache invalidation |
+| `code/index.html` | Sample static site HTML |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `code/deploy_website.sh` — Deploy static site to S3 + CloudFront

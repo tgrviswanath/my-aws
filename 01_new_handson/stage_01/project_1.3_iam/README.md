@@ -41,6 +41,16 @@ python code/iam_setup.py             # apply
 - Use `aws:RequestedRegion` condition to restrict to specific regions
 - IAM is global — not region-specific
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Console, CLI, Terraform implementation + permission boundary tests |
+| `verify.md` | Console verification table, CLI checks, permission denied tests, Terraform state, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — users, groups, roles, policies, instance profile |
+| `code/iam_setup.py` | Python script — creates users, groups, roles via boto3 |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `code/iam_setup.py` — Automate IAM users, groups, and roles

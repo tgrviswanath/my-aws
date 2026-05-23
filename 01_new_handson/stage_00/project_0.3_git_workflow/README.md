@@ -61,6 +61,16 @@ git push -u origin feature/my-feature
 - One branch per project keeps history clean
 - Conventional commits make the log readable at a glance
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Phase-by-phase Git workflow: init, .gitignore, branches, GitHub, Actions |
+| `verify.md` | Git config check, .gitignore effectiveness, branch/merge verification, GitHub Actions check |
+| `cost_estimate.md` | Per-resource cost breakdown (Git/GitHub = free) |
+| `code/git_workflow_demo.sh` | Shell script — demonstrates full feature branch workflow |
+| `.gitignore` | Ignores Terraform state, AWS credentials, Python artifacts |
+| `docs/architecture.md` | Workflow diagrams and notes |
+
 ## Code
 
 ### `code/git_workflow_demo.sh` — Git feature branch workflow

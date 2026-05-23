@@ -1,0 +1,118 @@
+Yes, absolutely! That's exactly Option 1 — AWS Console. Just follow these steps:
+
+Step 1 — Create VPC
+Go to console.aws.amazon.com
+
+Search VPC in the top search bar → click VPC
+
+Click Your VPCs → Create VPC
+
+Fill in:
+
+Name: handson-vpc
+
+IPv4 CIDR: 10.0.0.0/16
+
+Tenancy: Default
+
+Click Create VPC
+
+Step 2 — Create 6 Subnets
+Left menu → Subnets → Create subnet
+
+Select VPC: handson-vpc
+
+Create these one by one:
+
+Name	CIDR	Availability Zone
+public-subnet-a	10.0.1.0/24	us-east-1a
+public-subnet-b	10.0.2.0/24	us-east-1b
+private-app-a	10.0.3.0/24	us-east-1a
+private-app-b	10.0.4.0/24	us-east-1b
+private-db-a	10.0.5.0/24	us-east-1a
+private-db-b	10.0.6.0/24	us-east-1b
+Step 3 — Create Internet Gateway
+Left menu → Internet Gateways → Create internet gateway
+
+Name: handson-igw → Create
+
+Select it → Actions → Attach to VPC → select handson-vpc → Attach
+
+Step 4 — Create NAT Gateway
+Left menu → NAT Gateways → Create NAT gateway
+
+Fill in:
+
+Name: handson-nat
+
+Subnet: public-subnet-a
+
+Connectivity: Public
+
+Click Allocate Elastic IP → Create NAT gateway
+
+⏳ Wait ~1 min until status shows Available
+
+Step 5 — Create Route Tables
+Public Route Table:
+
+Left menu → Route Tables → Create route table
+
+Name: public-rt, VPC: handson-vpc → Create
+
+Select public-rt → Routes tab → Edit routes → Add route
+
+Destination: 0.0.0.0/0
+
+Target: Internet Gateway → handson-igw
+
+Subnet associations tab → Edit subnet associations → select public-subnet-a and public-subnet-b
+
+Private Route Table:
+
+Create another route table: private-rt, VPC: handson-vpc
+
+Routes → Add route:
+
+Destination: 0.0.0.0/0
+
+Target: NAT Gateway → handson-nat
+
+Subnet associations → select all 4 private subnets
+
+Step 6 — Verify
+Left menu → Your VPCs → click handson-vpc → you should see all resources attached
+
+Left menu → Subnets → filter by handson-vpc → should see all 6 subnets
+
+Left menu → Route Tables → check public-rt and private-rt routes
+
+That's it! Go ahead and start from Step 1 — let me know if you get stuck anywhere on any screen.
+
+
+------
+There are 3 ways to work with AWS:
+
+Method	What it is	Best for
+AWS Console (UI)	Visual, click-through web interface at console.aws.amazon.com	Learning, exploring, one-time tasks
+AWS CLI	Command line tool, type commands in terminal	Automation, scripting, quick tasks
+Terraform / IaC	Code-based infrastructure (.tf files)	Production, repeatable, team environments
+Simple analogy:
+
+Console UI → like using a TV remote with buttons
+
+AWS CLI → like typing commands to control the TV
+
+Terraform → like writing a script that sets up the TV automatically every time
+
+For learning, the best order is:
+
+✅ Console first — understand what you're building visually
+
+✅ CLI second — understand the commands behind the clicks
+
+✅ Terraform third — automate everything as code
+
+Since you're in stage_02, Console + CLI is perfect. Terraform comes in your stage_03 which you've already done! So you're following the right path. 👍
+
+Want to go ahead and start the VPC project from the Console UI?

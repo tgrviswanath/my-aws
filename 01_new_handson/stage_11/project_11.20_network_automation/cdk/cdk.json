@@ -1,0 +1,10 @@
+{
+  "app": "python3 app.py",
+  "context": {
+    "environment": "dev",
+    "region": "us-east-1",
+    "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
+    "@aws-cdk/core:checkSecretUsage": true,
+    "@aws-cdk/aws-ec2:restrictDefaultSecurityGroup": true
+  }
+}

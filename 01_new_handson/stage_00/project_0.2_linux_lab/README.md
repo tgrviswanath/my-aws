@@ -47,6 +47,15 @@ project_0.2_linux_lab/
 - Nginx config lives in `/etc/nginx/sites-available/`
 - Logs are your best debugging tool — always check them first
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Phase-by-phase Linux lab: filesystem, users, Nginx, processes, logs, cron, SSH |
+| `verify.md` | Container check, permissions verification, Nginx health, log analysis, cron, SSH key test |
+| `cost_estimate.md` | Per-resource cost breakdown (Docker only = free) |
+| `scripts/setup.sh` | Automated setup script for the full lab |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `scripts/setup.sh` — Linux lab setup script

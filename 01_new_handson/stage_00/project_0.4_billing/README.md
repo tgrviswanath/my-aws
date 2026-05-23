@@ -42,6 +42,16 @@ terraform apply -var="alert_email=your@email.com"
 - Tag every resource with `Project`, `Stage`, `Owner` from day one
 - Cost Explorer takes 24 hours to activate after first use
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Phase-by-phase billing setup: alerts, SNS, CloudWatch alarm, Budget, Cost Explorer, Terraform |
+| `verify.md` | Console verification table, CLI checks for SNS/alarm/budget, Terraform state, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform configuration for SNS, CloudWatch alarm, and Budget |
+| `code/billing_monitor.py` | Python script — fetches MTD costs, forecasts, and budget status |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `code/billing_monitor.py` — Monitor AWS costs and budgets

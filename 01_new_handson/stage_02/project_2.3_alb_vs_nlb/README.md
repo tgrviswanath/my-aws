@@ -38,6 +38,16 @@ terraform apply -var-file="terraform.tfvars"
 - Use ALB for 99% of web applications; NLB for raw TCP/UDP or extreme performance
 - WebSockets work on both, but NLB is better for long-lived connections
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Console, CLI, Terraform implementation + performance comparison + screenshots checklist |
+| `verify.md` | Console verification table, CLI checks, path routing test, latency comparison, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — ALB with path rules, NLB, target groups |
+| `code/load_test.py` | Python script — measures and compares ALB vs NLB latency |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `code/load_test.py` — Measure and compare ALB vs NLB latency

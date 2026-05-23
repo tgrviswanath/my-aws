@@ -31,6 +31,18 @@ python backup_manager.py --instance mysql-lab-01
 - Handle `ClientError` exceptions for proper error handling
 - Use `--dry-run` flag on EC2 operations to test permissions without executing
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Phase-by-phase script usage + screenshots checklist |
+| `verify.md` | Environment check, per-script verification, expected outputs, checklist |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — S3 bucket and IAM role for automation |
+| `scripts/s3_uploader.py` | Upload files/folders to S3 with progress |
+| `scripts/ec2_manager.py` | List, start, stop EC2 instances |
+| `scripts/backup_manager.py` | Create RDS snapshots and S3 backups |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `scripts/s3_uploader.py` — Upload files to S3

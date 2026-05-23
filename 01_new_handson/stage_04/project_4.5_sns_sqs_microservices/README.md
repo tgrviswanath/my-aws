@@ -42,6 +42,17 @@ terraform output sns_topic_arn
 - Batch size: Lambda can process up to 10 SQS messages per invocation
 - Idempotency: design consumers to handle duplicate messages safely
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Deploy, publish test message, verify fan-out to all queues, DLQ test |
+| `verify.md` | Console verification, CLI publish/consume tests, DLQ check, Lambda trigger test, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — SNS topic, SQS queues, DLQ, Lambda consumers, subscriptions, IAM |
+| `src/consumers.py` | SQS consumer Lambda handlers (inventory, email, analytics) |
+| `src/order_publisher.py` | SNS message publisher |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `src/publisher.py` — SNS message publisher

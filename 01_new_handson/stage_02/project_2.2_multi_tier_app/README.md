@@ -46,6 +46,16 @@ terraform apply -var-file="terraform.tfvars"
 - Health check path must return HTTP 200 — configure your app's `/health` endpoint
 - CloudFront in front of ALB adds caching and DDoS protection
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Console, CLI, Terraform implementation + auto scaling test + screenshots checklist |
+| `verify.md` | Console verification table, CLI checks, ASG recovery test, Terraform state, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — ALB, ASG, launch template, RDS, security groups |
+| `code/health_check.py` | Python script — checks health of all 3 tiers (ALB, EC2, RDS) |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `code/health_check.py` — Check health of all application tiers

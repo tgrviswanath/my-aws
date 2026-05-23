@@ -44,6 +44,16 @@ terraform output api_url
 - Use Lambda environment variables for config — never hardcode table names or regions
 - Lambda timeout default is 3 seconds — increase for DB operations
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Deploy, test all endpoints, error cases, Lambda logs |
+| `verify.md` | Console verification, CLI CRUD tests, Terraform state, error case checks, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — API Gateway, Lambda, DynamoDB, IAM |
+| `src/handler.py` | Lambda CRUD handler for DynamoDB |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `src/handler.py` — Lambda CRUD handler for DynamoDB

@@ -106,6 +106,152 @@ kubectl get pods -n dev -w
 
 ---
 
+## Phase 7 — Verification & Validation
+
+### 7.1 AWS Console Verification
+1. **EKS** → **Clusters** → `handson-eks-cluster` → confirm status = Active
+2. **EKS** → **Compute** → **Node groups** → confirm nodes = Ready
+3. **EC2** → **Instances** → confirm EKS worker nodes running
+4. **EC2** → **Load Balancers** → confirm ALB created by ingress controller
+
+### 7.2 CLI Verification Commands
+```bash
+# Confirm EKS cluster is active
+aws eks describe-cluster --name handson-eks-cluster \
+  --query "cluster.{Status:status,Version:version,Endpoint:endpoint}"
+# Expected: Status=ACTIVE
+
+# Confirm nodes are ready
+kubectl get nodes -o wide
+# Expected: all nodes STATUS=Ready
+
+# Confirm ArgoCD is running
+kubectl get pods -n argocd
+# Expected: all pods Running (argocd-server, argocd-repo-server, etc.)
+
+# Confirm ArgoCD application exists and is synced
+kubectl get applications -n argocd
+# Expected: flask-api-dev  Synced  Healthy
+
+# Confirm app pods are running in dev namespace
+kubectl get pods -n dev -l app=flask-api
+# Expected: pods in Running state
+
+# Confirm service and ingress exist
+kubectl get svc,ingress -n dev
+# Expected: flask-api service + ingress with ADDRESS
+
+# Confirm ArgoCD is watching the correct repo
+kubectl get application flask-api-dev -n argocd \
+  -o jsonpath='{.spec.source.repoURL}'
+# Expected: your GitHub repo URL
+```
+
+### 7.3 Functional Tests
+```bash
+# Test 1: App is accessible via ingress
+INGRESS_URL=$(kubectl get ingress -n dev \
+  -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')
+curl -s http://$INGRESS_URL/health | python3 -m json.tool
+# Expected: {"status": "ok"}
+
+# Test 2: GitOps — change replica count via Git
+sed -i 's/replicas: 1/replicas: 2/' k8s/overlays/dev/patch-replicas.yaml
+git add . && git commit -m "scale: dev replicas to 2"
+git push origin main
+# Wait for ArgoCD to sync (up to 3 minutes)
+kubectl get pods -n dev -w
+# Expected: second pod appears automatically
+
+# Test 3: Verify ArgoCD synced the change
+argocd app get flask-api-dev --grpc-web
+# Expected: Sync Status=Synced, Health Status=Healthy
+
+# Test 4: Self-healing — delete a pod manually
+POD=$(kubectl get pods -n dev -l app=flask-api -o jsonpath='{.items[0].metadata.name}')
+kubectl delete pod $POD -n dev
+kubectl get pods -n dev -w
+# Expected: new pod created within seconds (Kubernetes self-healing)
+
+# Test 5: Drift detection — manually scale outside GitOps
+kubectl scale deployment flask-api -n dev --replicas=5
+kubectl get pods -n dev
+# Expected: 5 pods briefly, then ArgoCD reverts to 2 (what's in Git) within 3 min
+kubectl get pods -n dev -w
+# Expected: scales back to 2
+
+# Test 6: Dev vs Prod overlay difference
+kubectl get deployment flask-api -n dev \
+  -o jsonpath='{.spec.replicas}'
+# Expected: 1 (dev overlay)
+
+kubectl get deployment flask-api -n prod \
+  -o jsonpath='{.spec.replicas}'
+# Expected: 3 (prod overlay)
+```
+
+### 7.4 Terraform State Verification
+```bash
+cd terraform
+terraform state list | grep -E "eks|node_group|iam"
+# Expected: aws_eks_cluster, aws_eks_node_group, IAM roles
+
+terraform output
+# Expected: cluster_name, cluster_endpoint, kubeconfig_command
+
+terraform plan
+# Expected: No changes. Infrastructure is up-to-date.
+```
+
+### 7.5 Logs & Monitoring Checks
+```bash
+# Check ArgoCD sync history
+argocd app history flask-api-dev --grpc-web
+# Expected: recent sync entries with Succeeded status
+
+# Check pod logs for errors
+kubectl logs -n dev -l app=flask-api --tail=20
+# Expected: no ERROR lines
+
+# Check ArgoCD application events
+kubectl describe application flask-api-dev -n argocd | grep -A 20 "Events:"
+# Expected: Sync succeeded events
+
+# Check EKS cluster logs (control plane)
+aws eks describe-cluster --name handson-eks-cluster \
+  --query "cluster.logging.clusterLogging"
+# Expected: logging enabled for api, audit, authenticator
+```
+
+### 7.6 Expected Successful Outputs
+| Check | Expected Result |
+|-------|----------------|
+| EKS cluster | Status=ACTIVE |
+| Nodes | All STATUS=Ready |
+| ArgoCD pods | All Running |
+| App sync status | Synced + Healthy |
+| Git change → pods | New pods within 3 min |
+| Deleted pod | Recreated within seconds |
+| Manual scale to 5 | Reverted to Git value within 3 min |
+| Dev replicas | 1 (from dev overlay) |
+| Prod replicas | 3 (from prod overlay) |
+
+### 7.7 Verification Checklist
+- [ ] EKS cluster status = ACTIVE
+- [ ] All worker nodes STATUS = Ready
+- [ ] ArgoCD all pods Running in `argocd` namespace
+- [ ] ArgoCD application `flask-api-dev` Synced + Healthy
+- [ ] App pods running in `dev` namespace
+- [ ] Ingress has an ADDRESS (ALB provisioned)
+- [ ] `curl /health` via ingress returns HTTP 200
+- [ ] Git commit (replica change) triggers ArgoCD sync within 3 min
+- [ ] Deleted pod recreated automatically (self-healing)
+- [ ] Manual kubectl scale reverted by ArgoCD (drift detection)
+- [ ] Dev overlay = 1 replica, Prod overlay = 3 replicas
+- [ ] Terraform state contains EKS cluster, no drift
+
+---
+
 ## Screenshots to Take
 - [ ] EKS cluster nodes running
 - [ ] ArgoCD UI showing applications

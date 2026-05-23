@@ -48,6 +48,17 @@ terraform output state_machine_arn
 - Parallel branches must all succeed for the workflow to continue
 - Step Functions console shows a visual execution graph — invaluable for debugging
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Deploy, start execution, verify each state, parallel branch test, error handling test |
+| `verify.md` | Console verification, CLI execution tests, state machine graph check, error/retry test, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — Step Functions state machine, Lambda functions, IAM, DynamoDB, SNS |
+| `src/steps.py` | Lambda handlers for each workflow step |
+| `state_machine/definition.json` | Step Functions state machine definition (ASL) |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `src/workflow_handlers.py` — Step Functions task Lambda handlers

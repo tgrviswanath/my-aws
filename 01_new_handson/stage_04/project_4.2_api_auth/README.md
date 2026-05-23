@@ -45,6 +45,17 @@ terraform output
 - Store JWT in memory (not localStorage) to prevent XSS attacks
 - RBAC: use Cognito Groups to assign roles, check group claims in Lambda
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Deploy, register, login, protected endpoint tests, JWT decode, RBAC |
+| `verify.md` | Console verification, CLI auth flow tests, JWT decode check, Terraform state, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — Cognito User Pool, App Client, JWT Authorizer, Lambda |
+| `src/auth_handler.py` | JWT authentication Lambda (register/login) |
+| `src/protected_handler.py` | Protected endpoint Lambda (validates group claims) |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `src/auth_handler.py` — JWT authentication Lambda

@@ -40,6 +40,16 @@ terraform apply -var-file="terraform.tfvars"
 - Use Secrets Manager (Project 8.1) to store DB credentials — never hardcode them
 - `db.t3.micro` is free tier eligible
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Console, CLI, Terraform implementation + SQL operations + screenshots checklist |
+| `verify.md` | Console verification table, CLI checks, MySQL query verification, Terraform state, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — RDS instance, subnet group, security group |
+| `code/db_operations.py` | Python script — connects to RDS and runs CRUD operations |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `code/db_operations.py` — Connect to RDS MySQL and run CRUD operations

@@ -30,6 +30,16 @@ terraform apply -var-file="terraform.tfvars"
 - User data scripts run once at first boot — useful for automated setup
 - Always use key pairs, never password-based SSH
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Console, CLI, Terraform implementation + screenshots checklist |
+| `verify.md` | Console verification table, CLI checks, SSH hardening test, Terraform state, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — EC2, security group, key pair |
+| `code/setup_nginx.sh` | EC2 user-data script — Nginx install, reverse proxy, SSH hardening |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `code/setup_nginx.sh` — EC2 user-data / setup script

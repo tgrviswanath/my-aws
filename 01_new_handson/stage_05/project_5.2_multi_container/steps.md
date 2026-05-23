@@ -127,6 +127,104 @@ docker compose down -v
 
 ---
 
+## Phase 9 — Verification & Validation
+
+### 9.1 AWS Console Verification
+Not applicable for local Docker Compose. All verification is done locally.
+
+### 9.2 CLI Verification Commands
+```bash
+# Confirm all 4 services are running and healthy
+docker compose ps
+# Expected: all services show "Up (healthy)" or "Up"
+
+# Confirm inter-service DNS resolution
+docker compose exec backend ping -c 2 db
+docker compose exec backend ping -c 2 redis
+# Expected: both succeed (Docker Compose internal DNS)
+
+# Confirm backend cannot reach db directly from frontend network
+docker compose exec frontend ping -c 2 db 2>&1 || echo "BLOCKED as expected"
+```
+
+### 9.3 Functional Tests
+```bash
+# Test 1: Backend health check
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4000/health)
+echo "Backend health: $HTTP_STATUS"
+# Expected: 200
+
+# Test 2: First request hits database (cache miss)
+RESPONSE=$(curl -s http://localhost:4000/items)
+echo $RESPONSE | python3 -c "import sys,json; d=json.load(sys.stdin); print('Source:', d.get('source','unknown'))"
+# Expected: Source: database
+
+# Test 3: Second request hits Redis cache (cache hit)
+RESPONSE=$(curl -s http://localhost:4000/items)
+echo $RESPONSE | python3 -c "import sys,json; d=json.load(sys.stdin); print('Source:', d.get('source','unknown'))"
+# Expected: Source: cache
+
+# Test 4: Create item invalidates cache
+curl -s -X POST http://localhost:4000/items \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Verification Item"}' | python3 -m json.tool
+# Next GET should show source: database again
+
+# Test 5: Verify Redis key exists with TTL
+docker compose exec redis redis-cli -a redispassword TTL items:all
+# Expected: positive number (< 60)
+
+# Test 6: Verify MySQL has data
+docker compose exec db mysql -u appuser -papppassword appdb \
+  -e "SELECT COUNT(*) as item_count FROM items;"
+# Expected: count > 0
+
+# Test 7: Data persistence after restart
+docker compose stop && docker compose start
+sleep 5
+curl -s http://localhost:4000/items | python3 -c \
+  "import sys,json; items=json.load(sys.stdin).get('items',[]); print(f'Items after restart: {len(items)}')"
+# Expected: same count as before restart
+```
+
+### 9.4 Logs & Monitoring Checks
+```bash
+# Check for errors across all services
+docker compose logs --tail=20 2>&1 | grep -i "error\|exception\|fatal"
+# Expected: no output
+
+# Check backend connected to DB and Redis
+docker compose logs backend | grep -i "connected\|ready\|started"
+# Expected: connection success messages
+
+# Check MySQL is ready
+docker compose logs db | grep "ready for connections"
+# Expected: "ready for connections" appears
+```
+
+### 9.5 Expected Successful Outputs
+| Check | Expected Result |
+|-------|----------------|
+| `docker compose ps` | All services Up/healthy |
+| First `GET /items` | `"source": "database"` |
+| Second `GET /items` | `"source": "cache"` |
+| Redis `TTL items:all` | Positive integer |
+| MySQL item count | > 0 |
+| Data after restart | Same count as before |
+
+### 9.6 Verification Checklist
+- [ ] All 4 services running (`docker compose ps`)
+- [ ] Backend health check returns 200
+- [ ] First items request: `source: database`
+- [ ] Second items request: `source: cache`
+- [ ] Redis key `items:all` exists with TTL
+- [ ] MySQL contains seeded data
+- [ ] Backend can ping `db` and `redis` by service name
+- [ ] Frontend cannot reach `db` directly (network isolation)
+- [ ] Data persists after `docker compose stop && start`
+
+---
+
 ## Screenshots to Take
 - [ ] `docker compose ps` showing all 4 services healthy
 - [ ] First API call showing `"source": "database"`

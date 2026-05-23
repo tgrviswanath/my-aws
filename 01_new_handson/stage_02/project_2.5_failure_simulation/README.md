@@ -40,6 +40,16 @@ python code/chaos_simulator.py --action restore --rollback-file rollback_*.json
 - The most common real-world issues: wrong security group, wrong subnet, missing IAM permission
 - Chaos engineering mindset: if you haven't broken it, you don't understand it
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | 5 failure scenarios with break/observe/fix steps + screenshots checklist |
+| `verify.md` | Pre-lab setup checks, per-scenario verification, expected outputs, full checklist |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — test environment with VPC, ASG, RDS, flow logs |
+| `code/chaos_simulator.py` | Python script — simulates failures with automatic rollback file |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `code/chaos_simulator.py` — Simulate failures to test resilience

@@ -45,6 +45,17 @@ project_0.1_local_dev_setup/
 - Always use `--endpoint-url=http://localhost:4566` with AWS CLI for local testing
 - Use a separate AWS CLI profile (`localstack`) to avoid mixing with real credentials
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Phase-by-phase setup: tools, LocalStack, S3, Lambda, DynamoDB, Terraform |
+| `verify.md` | Tool version checks, LocalStack health, CLI verification, Terraform state, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown (LocalStack = free) |
+| `docker-compose.yml` | LocalStack container definition |
+| `terraform/main.tf` | Terraform configuration targeting LocalStack |
+| `code/localstack_demo.py` | Python script — creates DynamoDB, Lambda, API Gateway locally |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `code/localstack_demo.py` — Run AWS services locally

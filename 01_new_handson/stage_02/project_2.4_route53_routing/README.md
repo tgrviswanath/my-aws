@@ -35,6 +35,16 @@ terraform apply -var-file="terraform.tfvars"
 - Latency routing uses AWS's internal latency data — not real-time
 - TTL matters: low TTL = faster failover but more DNS queries (cost)
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Console, CLI, Terraform implementation + failover test + screenshots checklist |
+| `verify.md` | Console verification table, CLI checks, failover timing test, Terraform state, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — health checks, weighted, failover, latency records |
+| `code/dns_checker.py` | Python script — inspects Route53 routing policies and health check status |
+| `docs/architecture.md` | Architecture diagrams and notes |
+
 ## Code
 
 ### `code/dns_checker.py` — Inspect Route53 routing policies and health checks

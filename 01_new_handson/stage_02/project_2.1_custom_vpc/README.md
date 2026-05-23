@@ -47,6 +47,18 @@ terraform apply
 - CIDR planning matters — leave room to grow (use /16 for VPC, /24 for subnets)
 - Private subnets need NAT to download packages — without it, EC2 can't reach the internet
 
+## Files
+| File | Purpose |
+|------|---------|
+| `steps.md` | Console, CLI, Terraform implementation + screenshots checklist |
+| `verify.md` | Console verification table, CLI checks, NAT health test, Terraform state, expected outputs |
+| `cost_estimate.md` | Per-resource cost breakdown |
+| `terraform/main.tf` | Terraform — VPC, subnets, IGW, NAT, route tables |
+| `code/vpc_checker.py` | Python script — verifies VPC architecture programmatically |
+| `docs/architecture.md` | Architecture diagrams and notes |
+| `notes/cli_cmd_line_method.md` | CLI command reference |
+| `notes/ui_console_method` | Console step-by-step notes |
+
 ## Code
 
 ### `code/vpc_checker.py` — Verify VPC architecture
