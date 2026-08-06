@@ -58,3 +58,31 @@ curl http://localhost:5000
 | Production server | gunicorn instead of Flask dev server |
 | Pinned versions | `flask==3.0.3`, `gunicorn==22.0.0` |
 | `PYTHONUNBUFFERED=1` | Logs appear immediately (no buffering) |
+
+## Input / Output
+
+### Input
+| Type | Description | Example |
+|------|-------------|---------|
+| AWS Account | Active subscription | IAM user with required permissions |
+| Configuration | Service settings | CIDR blocks, instance types, regions |
+| Source Data | Application or data files | Docker images, SQL scripts, CSV files |
+
+### Output
+| Type | Description | Access |
+|------|-------------|--------|
+| AWS Resources | Deployed infrastructure | AWS Console or CLI |
+| Service Endpoints | HTTP/HTTPS URLs, connection strings | Resource overview |
+| CloudWatch Logs | Execution and audit trail | CloudWatch Log groups |
+| Metrics | Performance data | CloudWatch Metrics |
+
+## Key Concepts
+| Concept | Explanation |
+|---------|-------------|
+| IAM Role | AWS identity for services â€” no static credentials |
+| Security Group | Virtual firewall for EC2/RDS â€” stateful |
+| VPC | Isolated network â€” your private AWS cloud |
+| Region | Geographic AWS datacenter location |
+| Availability Zone | Isolated datacenters within a region |
+| CloudWatch | AWS monitoring and logging service |
+| Free Tier | AWS free usage limits per service per month |

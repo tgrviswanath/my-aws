@@ -1,0 +1,9 @@
+product_id,product_name,category,unit_price,in_stock,created_date
+PROD-001,Widget A,Electronics,29.99,true,2023-01-01
+PROD-002,Widget B,Electronics,49.99,true,2023-01-01
+PROD-003,Widget C,Accessories,19.99,true,2023-02-15
+PROD-004,Gadget Pro,Electronics,99.99,true,2023-03-10
+PROD-005,Gadget Lite,Electronics,59.99,false,2023-03-10
+PROD-006,Cable Pack,Accessories,9.99,true,2023-04-01
+PROD-007,Carry Case,Accessories,24.99,true,2023-04-15
+PROD-008,Power Bank,Electronics,39.99,true,2023-05-01

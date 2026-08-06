@@ -6,9 +6,9 @@
 
 | Resource | Where to check | Expected state |
 |---|---|---|
-| API Gateway | API Gateway → APIs | HTTP API with `/shorten`, `/{code}`, `/stats/{code}` routes |
-| Lambda Function | Lambda → Functions | `handson-shortener`, Runtime = Python 3.11 |
-| DynamoDB Table | DynamoDB → Tables | `handson-urls`, Status = **Active**, TTL enabled |
+| API Gateway | API Gateway → APIs | `handson-url-shortener-api` HTTP API with `/shorten`, `/{code}`, `/stats/{code}` routes |
+| Lambda Function | Lambda → Functions | `handson-url-shortener-handler`, Runtime = Python 3.11 |
+| DynamoDB Table | DynamoDB → Tables | `handson-url-shortener-urls`, Status = **Active**, TTL enabled |
 | TTL Attribute | DynamoDB → Table → Additional settings | TTL attribute = `ttl`, Status = **Enabled** |
 
 📸 Screenshot: POST /shorten returning short code  
@@ -84,9 +84,17 @@ cd terraform
 terraform state list
 # Expected:
 # aws_apigatewayv2_api.main
+# aws_apigatewayv2_stage.default
+# aws_apigatewayv2_integration.lambda
+# aws_apigatewayv2_route.shorten
+# aws_apigatewayv2_route.redirect
+# aws_apigatewayv2_route.stats
 # aws_lambda_function.shortener
+# aws_lambda_permission.api_gw
 # aws_dynamodb_table.urls
-# aws_iam_role.lambda_exec
+# aws_iam_role.lambda
+# aws_iam_role_policy_attachment.lambda_basic
+# aws_iam_role_policy.dynamodb
 
 terraform state show aws_dynamodb_table.urls
 # Shows: ttl.enabled=true, ttl.attribute_name=ttl
@@ -131,12 +139,12 @@ location: https://docs.aws.amazon.com/lambda/latest/dg/welcome.html
 
 **GET /stats/{code} (200):**
 ```json
-{ "code": "aB3xY9", "original_url": "https://docs.aws.amazon.com/...", "clicks": "3", "created_at": "2024-01-01T12:00:00Z" }
+{ "code": "aB3xY9", "short_url": "https://api.../aB3xY9", "original_url": "https://docs.aws.amazon.com/...", "clicks": 3, "created_at": "2024-01-01T12:00:00Z" }
 ```
 
 **GET /nonexistent (404):**
 ```json
-{ "message": "Short URL not found" }
+{ "error": "Short URL 'nonexistent' not found or expired" }
 ```
 
 ---
@@ -144,13 +152,58 @@ location: https://docs.aws.amazon.com/lambda/latest/dg/welcome.html
 ## 6. Verification Checklist
 
 - [ ] API Gateway deployed with `/shorten`, `/{code}`, `/stats/{code}` routes
-- [ ] Lambda function active, runtime = Python 3.11
-- [ ] DynamoDB table status = ACTIVE
+- [ ] Lambda function `handson-url-shortener-handler` active, runtime = Python 3.11
+- [ ] DynamoDB table `handson-url-shortener-urls` status = ACTIVE
 - [ ] DynamoDB TTL enabled on `ttl` attribute
 - [ ] POST /shorten returns 6-char short code
 - [ ] GET /{code} returns 302 with correct Location header
-- [ ] GET /stats/{code} returns click count
+- [ ] GET /stats/{code} returns click count as integer
 - [ ] Click counter increments on each redirect visit
-- [ ] GET /nonexistent returns 404
+- [ ] GET /nonexistent returns 404 with `{"error": "Short URL 'nonexistent' not found or expired"}`
 - [ ] DynamoDB item has `ttl` set to ~30 days from creation
 - [ ] `terraform plan` shows no changes
+
+---
+
+## Section 1: Prerequisites Verified
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 1 | AWS CLI installed | ws --version returns 2.x | Download from aws.amazon.com/cli |
+| 2 | Logged in | ws sts get-caller-identity returns JSON | Run ws configure |
+| 3 | Correct region | ws configure get region returns us-east-1 | Run ws configure again |
+
+`ash
+aws sts get-caller-identity
+aws configure list
+`
+
+## Section 2: Resources Created
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 4 | Primary resource | Status: Active/Running/Available | Re-run creation command |
+| 5 | Configuration applied | Settings match intended values | Check resource details |
+| 6 | Service responding | Expected response code/output | Check security groups and logs |
+
+`ash
+# Verify resources exist
+aws ec2 describe-instances --query 'Reservations[*].Instances[*].{ID:InstanceId,State:State.Name}' --output table
+`
+
+## Section 3: Validation Complete
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 7 | End-to-end test | Correct output from service | Check CloudWatch Logs |
+| 8 | No errors in logs | Zero error entries | Review CloudWatch Log groups |
+
+## Common Issues
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| AccessDenied error | Missing IAM permissions | Add required policy to IAM user/role |
+| Resource not found | Wrong region or name | Check ws configure get region |
+| Timeout connecting | Security group blocking | Add inbound rule for required port |
+| Quota exceeded | Service limit reached | Request limit increase or use different region |
+| Authentication failure | Expired credentials | Run ws configure with fresh access keys |

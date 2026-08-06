@@ -1,5 +1,5 @@
 {
-  "Comment": "Document processing workflow",
+  "Comment": "Document processing workflow — matches terraform/main.tf deployment",
   "StartAt": "Validate",
   "States": {
     "Validate": {
@@ -17,11 +17,6 @@
         {
           "ErrorEquals": ["ValueError"],
           "Next": "ValidationFailed",
-          "ResultPath": "$.error"
-        },
-        {
-          "ErrorEquals": ["States.ALL"],
-          "Next": "ProcessingFailed",
           "ResultPath": "$.error"
         }
       ],
@@ -94,12 +89,6 @@
       "Type": "Fail",
       "Error": "ValidationError",
       "Cause": "Document failed validation checks"
-    },
-
-    "ProcessingFailed": {
-      "Type": "Fail",
-      "Error": "ProcessingError",
-      "Cause": "An unexpected error occurred during processing"
     }
   }
 }

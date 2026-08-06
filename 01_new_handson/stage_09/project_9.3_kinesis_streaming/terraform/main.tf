@@ -1,14 +1,11 @@
 terraform {
   required_providers {
-    aws    = { source = "hashicorp/aws"    version = "~> 5.0" }
-    archive = { source = "hashicorp/archive" version = "~> 2.0" }
+    aws     = { source = "hashicorp/aws",     version = "~> 5.0" }
+    archive = { source = "hashicorp/archive", version = "~> 2.0" }
   }
 }
 
 provider "aws" { region = var.region }
-
-variable "region"  { default = "us-east-1" }
-variable "project" { default = "handson" }
 
 locals {
   common_tags = { Project = var.project, Stage = "stage-09", ManagedBy = "terraform" }
@@ -18,8 +15,8 @@ locals {
 
 resource "aws_kinesis_stream" "events" {
   name             = "${var.project}-events"
-  shard_count      = 1   # 1 MB/s in, 2 MB/s out — enough for learning
-  retention_period = 24  # hours
+  shard_count      = var.shard_count
+  retention_period = var.retention_hours
 
   stream_mode_details {
     stream_mode = "PROVISIONED"
@@ -48,7 +45,11 @@ resource "aws_iam_role" "lambda" {
   name = "${var.project}-kinesis-consumer-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{ Effect = "Allow" Principal = { Service = "lambda.amazonaws.com" } Action = "sts:AssumeRole" }]
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
   })
   tags = local.common_tags
 }
@@ -91,8 +92,8 @@ resource "aws_lambda_function" "consumer" {
   function_name    = "${var.project}-kinesis-consumer"
   role             = aws_iam_role.lambda.arn
   handler          = "consumer_lambda.handler"
-  runtime          = "python3.11"
-  timeout          = 60
+  runtime          = var.lambda_runtime
+  timeout          = var.lambda_timeout
   source_code_hash = data.archive_file.lambda.output_base64sha256
 
   environment {

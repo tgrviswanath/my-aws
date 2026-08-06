@@ -1,171 +1,220 @@
-# Verification & Validation — Project 9.4 Spark Processing on EMR
+# Verification & Validation — Project 9.4 Spark Processing on EMR Serverless
+
+> Resource names from main.tf:
+> EMR App: `handson-spark` | IAM Role: `handson-emr-serverless-role`
+> Input: `raw/orders/` | Output: `processed/spark/`
 
 ---
 
 ## 1. AWS Console Verification
 
-| Resource | Where to check | Expected state |
-|---|---|---|
-| EMR Cluster | EMR → Clusters | `handson-spark-cluster` listed, Status = **Waiting** or **Running** |
-| Master Node | Cluster → Hardware tab | Master instance running |
-| Core Nodes | Cluster → Hardware tab | Core instances running |
-| Spark Step | Cluster → Steps tab | Step Status = **Completed** after job run |
-| S3 Output | S3 → data lake bucket → processed/ | Parquet output files from Spark job |
-| CloudWatch Logs | CloudWatch → Log Groups | EMR logs visible |
-| EMR Studio | EMR → Studios (if configured) | Studio accessible |
+| Resource | Navigation Path | Expected State |
+|----------|----------------|---------------|
+| IAM Role | IAM → Roles → `handson-emr-serverless-role` | Exists with 3 inline policies |
+| Trust policy | Role → Trust relationships tab | `emr-serverless.amazonaws.com` |
+| S3 Script | S3 → bucket → `scripts/spark_job.py` | File present ~3 KB |
+| EMR App | EMR → EMR Serverless → `handson-spark` | Status = Started or Stopped |
+| EMR Release | App details | `emr-6.15.0` |
+| Job Run | App → Job runs tab | `handson-order-analysis` State = **Success** |
+| Job Metrics | Job run details | vCPU-hours and memory GB-hours shown |
+| Spark Logs | Job run → Logs → Driver stdout | "Output written to..." message |
+| S3 Output 1 | S3 → `processed/spark/product_monthly/` | year=/month= partition folders |
+| S3 Output 2 | S3 → `processed/spark/customer_clv/` | Parquet files + `_SUCCESS` |
 
-📸 Screenshot: EMR cluster in Waiting state (ready for jobs)  
-📸 Screenshot: Spark step showing Completed status  
-📸 Screenshot: S3 processed/ output with Parquet files
+📸 Screenshot: EMR Serverless job run Status = Success with metrics
+📸 Screenshot: S3 product_monthly/ showing year/month partition structure
+📸 Screenshot: S3 customer_clv/ showing Parquet files
 
 ---
 
-## 2. AWS CLI Verification
+## 2. AWS CLI Verification (PowerShell)
 
-```bash
-# 2.1 Confirm cluster exists and is ready
-CLUSTER_ID=$(aws emr list-clusters \
-  --active \
-  --query "Clusters[?Name=='handson-spark-cluster'].Id" --output text)
-echo "Cluster ID: $CLUSTER_ID"
+```powershell
+# Assumes $APP_ID, $JOB_RUN_ID, $BUCKET, $ROLE_NAME are set
 
-aws emr describe-cluster \
-  --cluster-id $CLUSTER_ID \
-  --query "Cluster.{Status:Status.State,Name:Name,MasterDNS:MasterPublicDnsName}"
-# Expected: Status=WAITING (ready for steps)
+# 2.1 Confirm IAM role and policies
+aws iam list-role-policies --role-name $ROLE_NAME --query "PolicyNames"
+# Expected: ["emr-s3-access","emr-glue-access","emr-cloudwatch-access"]
 
-# 2.2 Upload Spark script to S3
-BUCKET=$(aws s3 ls | grep handson-data-lake | awk '{print $3}')
-aws s3 cp src/spark_job.py s3://$BUCKET/scripts/spark_job.py
-echo "Script uploaded"
+aws iam get-role --role-name $ROLE_NAME `
+  --query "Role.AssumeRolePolicyDocument.Statement[0].Principal.Service"
+# Expected: "emr-serverless.amazonaws.com"
 
-# 2.3 Submit Spark step
-STEP_ID=$(aws emr add-steps \
-  --cluster-id $CLUSTER_ID \
-  --steps "[{
-    \"Type\": \"Spark\",
-    \"Name\": \"Handson Spark Job\",
-    \"ActionOnFailure\": \"CONTINUE\",
-    \"Args\": [
-      \"--deploy-mode\", \"cluster\",
-      \"--master\", \"yarn\",
-      \"s3://$BUCKET/scripts/spark_job.py\",
-      \"--input\", \"s3://$BUCKET/raw/\",
-      \"--output\", \"s3://$BUCKET/processed/spark-output/\"
-    ]
-  }]" \
-  --query "StepIds[0]" --output text)
-echo "Step ID: $STEP_ID"
+# 2.2 Confirm script in S3
+aws s3 ls "s3://$BUCKET/scripts/spark_job.py"
+# Expected: date time size spark_job.py
 
-# 2.4 Monitor step status
-for i in {1..30}; do
-  STATUS=$(aws emr describe-step \
-    --cluster-id $CLUSTER_ID \
-    --step-id $STEP_ID \
-    --query "Step.Status.State" --output text)
-  echo "Step status: $STATUS"
-  [ "$STATUS" = "COMPLETED" ] && break
-  [ "$STATUS" = "FAILED" ] && echo "❌ Step failed!" && break
-  sleep 30
-done
-# Expected: COMPLETED
+# 2.3 Confirm application state
+aws emr-serverless get-application --application-id $APP_ID `
+  --query "application.{Name:name,State:state,Release:releaseLabel,MaxCPU:maximumCapacity.cpu}"
+# Expected: Name=handson-spark, Release=emr-6.15.0, MaxCPU=20 vCPU
 
-# 2.5 Confirm output in S3
-aws s3 ls s3://$BUCKET/processed/spark-output/ --recursive | head -10
-# Expected: Parquet files listed
+# 2.4 Confirm job run succeeded
+aws emr-serverless get-job-run `
+  --application-id $APP_ID --job-run-id $JOB_RUN_ID `
+  --query "jobRun.{State:state,Name:name,CreatedAt:createdAt,UpdatedAt:updatedAt}"
+# Expected: State=SUCCESS
 
-# 2.6 Check cluster metrics
-aws cloudwatch get-metric-statistics \
-  --namespace AWS/ElasticMapReduce \
-  --metric-name CoreNodesRunning \
-  --dimensions Name=JobFlowId,Value=$CLUSTER_ID \
-  --start-time $(date -u -d '30 minutes ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-30M +%Y-%m-%dT%H:%M:%SZ) \
-  --end-time $(date -u +%Y-%m-%dT%H:%M:%SZ) \
-  --period 300 \
-  --statistics Average \
-  --query "Datapoints[*].Average"
-# Expected: core node count > 0
+# 2.5 Confirm product_monthly output exists
+aws s3 ls "s3://$BUCKET/processed/spark/product_monthly/" --recursive |
+  Select-String ".parquet"
+# Expected: one or more lines with .snappy.parquet paths
+
+# 2.6 Confirm customer_clv output exists
+aws s3 ls "s3://$BUCKET/processed/spark/customer_clv/"
+# Expected: part-00000-*.snappy.parquet + _SUCCESS file
+
+# 2.7 List all job runs for the application
+aws emr-serverless list-job-runs --application-id $APP_ID `
+  --query "jobRuns[*].{Name:name,State:state,Id:id}" --output table
+# Expected: handson-order-analysis with SUCCESS state
 ```
 
 ---
 
-## 3. Terraform State Verification
+## 3. Health Check — End-to-End Test (PowerShell)
 
-```bash
-cd terraform
+```powershell
+Write-Host "=== EMR SERVERLESS END-TO-END TEST ===" -ForegroundColor Cyan
 
-terraform state list
-# Expected:
-# aws_emr_cluster.main
-# aws_security_group.emr_master
-# aws_security_group.emr_core
-# aws_iam_role.emr_service
-# aws_iam_role.emr_ec2
-# aws_iam_instance_profile.emr_ec2
+# 1. Verify app is in a usable state
+$APP_STATE = aws emr-serverless get-application --application-id $APP_ID `
+  --query "application.state" --output text
+Write-Host "[1] App state: $APP_STATE"
+if ($APP_STATE -ne "STARTED") {
+  Write-Host "Starting application..."
+  aws emr-serverless start-application --application-id $APP_ID
+  Start-Sleep -Seconds 30
+}
 
-terraform state show aws_emr_cluster.main
-# Shows: name, release_label (emr-6.x.x), master_instance_group, core_instance_group
+# 2. Submit a fresh job run
+$NEW_JOB = aws emr-serverless start-job-run `
+  --application-id $APP_ID --execution-role-arn $ROLE_ARN `
+  --name "verify-run" `
+  --job-driver "{`"sparkSubmit`":{`"entryPoint`":`"s3://$BUCKET/scripts/spark_job.py`",`"entryPointArguments`":[`"--input`",`"s3://$BUCKET/raw/orders/`",`"--output`",`"s3://$BUCKET/processed/spark/`"]}}" `
+  --query "jobRunId" --output text
+Write-Host "[2] Job submitted: $NEW_JOB"
 
-terraform output cluster_id
-# Expected: j-XXXXXXXXXXXXX
+# 3. Poll to completion
+for ($i=0; $i -lt 30; $i++) {
+  $S = aws emr-serverless get-job-run --application-id $APP_ID `
+    --job-run-id $NEW_JOB --query "jobRun.state" --output text
+  Write-Host "   State: $S"
+  if ($S -eq "SUCCESS" -or $S -eq "FAILED") { break }
+  Start-Sleep -Seconds 15
+}
+Write-Host "[3] Final state: $S"
 
-terraform plan
-# Expected: No changes. Infrastructure is up-to-date.
+# 4. Check output
+$COUNT = (aws s3 ls "s3://$BUCKET/processed/spark/" --recursive |
+          Select-String ".parquet").Count
+Write-Host "[4] Parquet files in output: $COUNT"
+
+Write-Host "=== TEST COMPLETE ===" -ForegroundColor Green
 ```
 
 ---
 
-## 4. Health Check — Spark Job Output Validation
+## 4. Expected Successful Outputs
 
-```bash
-BUCKET=$(aws s3 ls | grep handson-data-lake | awk '{print $3}')
-
-# Count output files
-FILE_COUNT=$(aws s3 ls s3://$BUCKET/processed/spark-output/ --recursive | grep ".parquet" | wc -l)
-echo "Parquet output files: $FILE_COUNT"
-# Expected: > 0
-
-# Query output via Athena (after running Glue crawler on output)
-QUERY_ID=$(aws athena start-query-execution \
-  --query-string "SELECT COUNT(*) as total FROM processed_db.spark_output LIMIT 1;" \
-  --query-execution-context Database=processed_db \
-  --result-configuration OutputLocation=s3://$BUCKET/athena-results/ \
-  --query "QueryExecutionId" --output text)
-aws athena wait query-execution-complete --query-execution-id $QUERY_ID
-aws athena get-query-results --query-execution-id $QUERY_ID \
-  --query "ResultSet.Rows[1].Data[0].VarCharValue"
-# Expected: row count > 0
-```
-
----
-
-## 5. Expected Successful Outputs
-
-**CLI — describe-cluster:**
+**IAM role policies:**
 ```json
-{ "Status": "WAITING", "Name": "handson-spark-cluster", "MasterDNS": "ec2-xxx.compute-1.amazonaws.com" }
+{"PolicyNames": ["emr-s3-access", "emr-glue-access", "emr-cloudwatch-access"]}
 ```
 
-**CLI — describe-step:**
+**EMR application:**
 ```json
-{ "State": "COMPLETED" }
+{"Name": "handson-spark", "State": "STARTED", "Release": "emr-6.15.0", "MaxCPU": "20 vCPU"}
 ```
 
-**S3 output:**
+**Job run:**
+```json
+{"State": "SUCCESS", "Name": "handson-order-analysis"}
 ```
-processed/spark-output/part-00000-abc123.snappy.parquet
-processed/spark-output/part-00001-abc123.snappy.parquet
+
+**Spark driver stdout (from S3 logs):**
+```
+Spark version: 3.4.x
+Reading from: s3://YOUR_BUCKET/raw/orders/
+Total records: 1000
+Output written to: s3://YOUR_BUCKET/processed/spark/
+Product monthly records: 15
+Customer CLV records: 200
+```
+
+**S3 output structure:**
+```
+processed/spark/
+  product_monthly/
+    year=2024/
+      month=1/  part-00000-abc.snappy.parquet
+      month=2/  part-00000-abc.snappy.parquet
+    _SUCCESS
+  customer_clv/
+    part-00000-abc.snappy.parquet
+    _SUCCESS
 ```
 
 ---
 
-## 6. Verification Checklist
+## 5. Verification Checklist
 
-- [ ] EMR cluster `handson-spark-cluster` Status = WAITING (ready)
-- [ ] Master and core nodes running
-- [ ] Spark script uploaded to S3 scripts/ prefix
-- [ ] Spark step submitted and Status = COMPLETED
-- [ ] Parquet output files exist in S3 processed/spark-output/
-- [ ] Output queryable via Athena
-- [ ] CloudWatch shows CoreNodesRunning > 0
-- [ ] `terraform plan` shows no changes
+- [ ] IAM role `handson-emr-serverless-role` exists
+- [ ] Trust principal = `emr-serverless.amazonaws.com` (not `emr.amazonaws.com`)
+- [ ] Role has `emr-s3-access` inline policy (s3:GetObject/PutObject on bucket)
+- [ ] Role has `emr-glue-access` inline policy (glue:GetTable etc.)
+- [ ] Role has `emr-cloudwatch-access` inline policy (logs:PutLogEvents etc.)
+- [ ] `scripts/spark_job.py` exists in S3 bucket
+- [ ] EMR Serverless application `handson-spark` exists
+- [ ] Application release = `emr-6.15.0`
+- [ ] Application max capacity = `20 vCPU / 40 GB`
+- [ ] Auto-stop enabled with 15-minute idle timeout
+- [ ] Job run `handson-order-analysis` State = SUCCESS
+- [ ] `processed/spark/product_monthly/` has Parquet files with year=/month= folders
+- [ ] `processed/spark/customer_clv/` has Parquet files + `_SUCCESS`
+- [ ] Driver stdout shows "Output written to..."
+
+---
+
+## Section 1: Prerequisites Verified
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 1 | AWS CLI installed | ws --version returns 2.x | Download from aws.amazon.com/cli |
+| 2 | Logged in | ws sts get-caller-identity returns JSON | Run ws configure |
+| 3 | Correct region | ws configure get region returns us-east-1 | Run ws configure again |
+
+`ash
+aws sts get-caller-identity
+aws configure list
+`
+
+## Section 2: Resources Created
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 4 | Primary resource | Status: Active/Running/Available | Re-run creation command |
+| 5 | Configuration applied | Settings match intended values | Check resource details |
+| 6 | Service responding | Expected response code/output | Check security groups and logs |
+
+`ash
+# Verify resources exist
+aws ec2 describe-instances --query 'Reservations[*].Instances[*].{ID:InstanceId,State:State.Name}' --output table
+`
+
+## Section 3: Validation Complete
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 7 | End-to-end test | Correct output from service | Check CloudWatch Logs |
+| 8 | No errors in logs | Zero error entries | Review CloudWatch Log groups |
+
+## Common Issues
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| AccessDenied error | Missing IAM permissions | Add required policy to IAM user/role |
+| Resource not found | Wrong region or name | Check ws configure get region |
+| Timeout connecting | Security group blocking | Add inbound rule for required port |
+| Quota exceeded | Service limit reached | Request limit increase or use different region |
+| Authentication failure | Expired credentials | Run ws configure with fresh access keys |

@@ -33,13 +33,13 @@ curl -s -X POST $API_URL/orders \
 
 ```bash
 # Check inventory Lambda logs
-aws logs tail /aws/lambda/handson-inventory-consumer --follow &
+aws logs tail /aws/lambda/handson-orders-inventory-consumer --follow &
 
 # Check email Lambda logs
-aws logs tail /aws/lambda/handson-email-consumer --follow &
+aws logs tail /aws/lambda/handson-orders-email-consumer --follow &
 
 # Check analytics Lambda logs
-aws logs tail /aws/lambda/handson-analytics-consumer --follow &
+aws logs tail /aws/lambda/handson-orders-analytics-consumer --follow &
 
 # Place another order and watch all three fire simultaneously
 curl -s -X POST $API_URL/orders \
@@ -57,9 +57,12 @@ aws sns publish \
   --topic-arn $SNS_ARN \
   --message '{"invalid": "data that will cause consumer to fail"}'
 
-# After 3 retries, message moves to DLQ
-# Check DLQ
-DLQ_URL=$(terraform output -raw inventory_dlq_url)
+# After 3 retries, message moves to DLQ (wait ~3 × visibility timeout = ~180 seconds)
+echo "Waiting for 3 retries to complete (approx 3 minutes)..."
+sleep 180
+
+# Check DLQ — Terraform outputs dlq_urls as a map
+DLQ_URL=$(terraform -chdir=terraform output -json dlq_urls | python3 -c "import sys,json; print(json.load(sys.stdin)['inventory'])")
 aws sqs receive-message --queue-url $DLQ_URL | python3 -m json.tool
 ```
 

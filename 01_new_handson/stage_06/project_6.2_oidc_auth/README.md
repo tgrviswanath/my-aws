@@ -6,8 +6,8 @@ Deep-dives into OIDC (OpenID Connect) for passwordless GitHub → AWS authentica
 ## Why OIDC Matters
 ```
 Old way (dangerous):
-  GitHub Secret: AWS_ACCESS_KEY_ID = AKIAIOSFODNN7EXAMPLE
-  GitHub Secret: AWS_SECRET_ACCESS_KEY = wJalrXUtnFEMI/K7MDENG/...
+  GitHub Secret: AWS_ACCESS_KEY_ID = YOUR_ACCESS_KEY_ID
+  GitHub Secret: AWS_SECRET_ACCESS_KEY = YOUR_SECRET_ACCESS_KEY
   Problem: Long-lived credentials, leaked = full account compromise
 
 OIDC way (secure):

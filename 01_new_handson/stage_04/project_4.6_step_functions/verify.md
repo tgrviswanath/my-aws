@@ -6,11 +6,11 @@
 
 | Resource | Where to check | Expected state |
 |---|---|---|
-| State Machine | Step Functions → State machines | `handson-document-workflow`, Status = **Active** |
+| State Machine | Step Functions → State machines | `handson-doc-proc-state-machine`, Status = **Active** |
 | State Machine Type | Details tab | Type = Standard |
-| Visual Workflow | State machine → Definition tab | All states visible in graph |
+| Visual Workflow | State machine → Definition tab | All states visible in graph: Validate → ExtractText → ParallelAnalysis → StoreResults → Notify |
 | Executions | State machine → Executions tab | Successful executions listed |
-| Lambda Functions | Lambda → Functions | One function per workflow step |
+| Lambda Functions | Lambda → Functions | 6 functions: `handson-doc-proc-validate`, `handson-doc-proc-extract_text`, `handson-doc-proc-classify`, `handson-doc-proc-check_compliance`, `handson-doc-proc-store_results`, `handson-doc-proc-notify` |
 
 📸 Screenshot: Step Functions visual workflow diagram showing all states  
 📸 Screenshot: Successful execution with all states green  
@@ -85,18 +85,20 @@ cd terraform
 
 terraform state list
 # Expected:
-# aws_sfn_state_machine.document_workflow
-# aws_lambda_function.validate
-# aws_lambda_function.extract_text
-# aws_lambda_function.classify
-# aws_lambda_function.check_compliance
-# aws_lambda_function.store_results
-# aws_lambda_function.notify
-# aws_iam_role.step_functions_exec
-# aws_iam_role.lambda_exec
+# aws_sfn_state_machine.doc_processor
+# aws_lambda_function.step["validate"]
+# aws_lambda_function.step["extract_text"]
+# aws_lambda_function.step["classify"]
+# aws_lambda_function.step["check_compliance"]
+# aws_lambda_function.step["store_results"]
+# aws_lambda_function.step["notify"]
+# aws_iam_role.sfn
+# aws_iam_role.lambda
+# aws_iam_role_policy.sfn_lambda
+# aws_iam_role_policy_attachment.lambda_basic
 
-terraform state show aws_sfn_state_machine.document_workflow
-# Shows: type=STANDARD, definition (JSON state machine definition)
+terraform state show aws_sfn_state_machine.doc_processor
+# Shows: type=STANDARD, name=handson-doc-proc-state-machine, definition JSON
 
 terraform output
 # Expected: state_machine_arn, state_machine_name
@@ -145,7 +147,7 @@ EOF
 
 **State machine status:**
 ```json
-{ "Name": "handson-document-workflow", "Status": "ACTIVE", "Type": "STANDARD" }
+{ "Name": "handson-doc-proc-state-machine", "Status": "ACTIVE", "Type": "STANDARD" }
 ```
 
 **Execution history (state transitions):**
@@ -181,3 +183,48 @@ TaskStateEntered      Notify            2024-01-01T12:00:04Z
 - [ ] Failed execution (`.exe` file): status = FAILED at Validate step
 - [ ] Visual workflow in console shows all states with correct connections
 - [ ] `terraform plan` shows no changes
+
+---
+
+## Section 1: Prerequisites Verified
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 1 | AWS CLI installed | ws --version returns 2.x | Download from aws.amazon.com/cli |
+| 2 | Logged in | ws sts get-caller-identity returns JSON | Run ws configure |
+| 3 | Correct region | ws configure get region returns us-east-1 | Run ws configure again |
+
+`ash
+aws sts get-caller-identity
+aws configure list
+`
+
+## Section 2: Resources Created
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 4 | Primary resource | Status: Active/Running/Available | Re-run creation command |
+| 5 | Configuration applied | Settings match intended values | Check resource details |
+| 6 | Service responding | Expected response code/output | Check security groups and logs |
+
+`ash
+# Verify resources exist
+aws ec2 describe-instances --query 'Reservations[*].Instances[*].{ID:InstanceId,State:State.Name}' --output table
+`
+
+## Section 3: Validation Complete
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 7 | End-to-end test | Correct output from service | Check CloudWatch Logs |
+| 8 | No errors in logs | Zero error entries | Review CloudWatch Log groups |
+
+## Common Issues
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| AccessDenied error | Missing IAM permissions | Add required policy to IAM user/role |
+| Resource not found | Wrong region or name | Check ws configure get region |
+| Timeout connecting | Security group blocking | Add inbound rule for required port |
+| Quota exceeded | Service limit reached | Request limit increase or use different region |
+| Authentication failure | Expired credentials | Run ws configure with fresh access keys |

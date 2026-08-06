@@ -1,0 +1,11 @@
+order_id,customer_id,product_name,amount,order_date,status
+ORD-001,CUST-101,Widget A,29.99,2024-01-15,completed
+ORD-002,CUST-102,Widget B,49.99,2024-01-15,completed
+ORD-003,CUST-101,Widget C,19.99,2024-01-16,completed
+ORD-004,CUST-103,Widget A,29.99,2024-01-16,pending
+ORD-005,CUST-104,Widget B,49.99,2024-01-17,completed
+ORD-006,CUST-105,Widget C,19.99,2024-01-17,completed
+ORD-007,CUST-101,Widget A,29.99,2024-01-18,cancelled
+ORD-008,CUST-102,Widget B,49.99,2024-01-18,completed
+ORD-009,CUST-103,Widget C,19.99,2024-01-19,completed
+ORD-010,CUST-104,Widget A,29.99,2024-01-19,completed

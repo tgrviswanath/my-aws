@@ -51,3 +51,40 @@ Automations:
 | Stop idle EC2 | ~$15/instance/month | CPU < 5% for 7 days |
 | Delete unattached EBS | ~$0.10/GB/month | No attachment for 7 days |
 | Remove old snapshots | ~$0.05/GB/month | Older than 30 days |
+
+---
+
+## Input / Output
+
+### Input
+| Type | Description | Example |
+|------|-------------|---------|
+| AWS Account | Active subscription with required permissions | IAM user or role |
+| Configuration | Resource settings | Region, names, sizes |
+| Source Data | Files or code to deploy | Application source, data files |
+
+### Output
+| Type | Description | Access |
+|------|-------------|--------|
+| AWS Resources | Deployed and running services | AWS Console / CLI |
+| Endpoints | Service URLs and connection strings | Resource overview page |
+| Logs | Execution and audit logs | CloudWatch Logs |
+
+## Quick Start
+`ash
+# Configure AWS CLI
+aws configure
+
+# Set region
+export AWS_DEFAULT_REGION=us-east-1
+
+# Create resource group
+aws ec2 describe-regions --output table
+`
+
+## Lessons Learned
+- Always tag AWS resources for cost tracking and organization
+- Use IAM roles instead of access keys wherever possible
+- Delete resources after learning to avoid unexpected charges
+- Enable CloudWatch logging for all services in production
+- Use the free tier for all lab exercises to minimize cost

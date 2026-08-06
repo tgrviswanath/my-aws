@@ -232,3 +232,16 @@ docker compose logs db | grep "ready for connections"
 - [ ] Redis CLI showing cached key with TTL
 - [ ] MySQL showing seeded data
 - [ ] Data persisting after container restart
+
+# AWS CLI Quick Reference
+
+`ash
+# Verify setup
+aws sts get-caller-identity
+aws configure list
+
+# Common commands
+aws ec2 describe-instances --output table
+aws s3 ls
+aws lambda list-functions --output table
+`

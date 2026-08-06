@@ -1,0 +1,6 @@
+customer_id,name,email,country,signup_date
+CUST-101,Alice Smith,alice@example.com,US,2023-06-01
+CUST-102,Bob Jones,bob@example.com,UK,2023-07-15
+CUST-103,Carol White,carol@example.com,CA,2023-08-20
+CUST-104,David Brown,david@example.com,AU,2023-09-05
+CUST-105,Eva Green,eva@example.com,DE,2023-10-12

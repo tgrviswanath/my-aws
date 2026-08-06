@@ -149,3 +149,48 @@ You are not authorized to perform this operation.
 - [ ] dev-user CANNOT delete S3 (AccessDenied confirmed)
 - [ ] `terraform plan` shows no changes
 - [ ] `iam_setup.py --dry-run` runs without errors
+
+---
+
+## Section 1: Prerequisites Verified
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 1 | AWS CLI installed | ws --version returns 2.x | Download from aws.amazon.com/cli |
+| 2 | Logged in | ws sts get-caller-identity returns JSON | Run ws configure |
+| 3 | Correct region | ws configure get region returns us-east-1 | Run ws configure again |
+
+`ash
+aws sts get-caller-identity
+aws configure list
+`
+
+## Section 2: Resources Created
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 4 | Primary resource | Status: Active/Running/Available | Re-run creation command |
+| 5 | Configuration applied | Settings match intended values | Check resource details |
+| 6 | Service responding | Expected response code/output | Check security groups and logs |
+
+`ash
+# Verify resources exist
+aws ec2 describe-instances --query 'Reservations[*].Instances[*].{ID:InstanceId,State:State.Name}' --output table
+`
+
+## Section 3: Validation Complete
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 7 | End-to-end test | Correct output from service | Check CloudWatch Logs |
+| 8 | No errors in logs | Zero error entries | Review CloudWatch Log groups |
+
+## Common Issues
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| AccessDenied error | Missing IAM permissions | Add required policy to IAM user/role |
+| Resource not found | Wrong region or name | Check ws configure get region |
+| Timeout connecting | Security group blocking | Add inbound rule for required port |
+| Quota exceeded | Service limit reached | Request limit increase or use different region |
+| Authentication failure | Expired credentials | Run ws configure with fresh access keys |

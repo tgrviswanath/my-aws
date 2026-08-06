@@ -63,3 +63,31 @@ Internet → Private subnet: BLOCKED (no inbound route)
 | private-db-a | 10.0.5.0/24 | 251 | DB tier AZ-a |
 | private-db-b | 10.0.6.0/24 | 251 | DB tier AZ-b |
 | Reserved | 10.0.7–255.x | ~64,000 | Future growth |
+
+## Input / Output
+
+### Input
+| Type | Description | Example |
+|------|-------------|---------|
+| AWS Account | Active subscription | IAM user with required permissions |
+| Configuration | Service settings | CIDR blocks, instance types, regions |
+| Source Data | Application or data files | Docker images, SQL scripts, CSV files |
+
+### Output
+| Type | Description | Access |
+|------|-------------|--------|
+| AWS Resources | Deployed infrastructure | AWS Console or CLI |
+| Service Endpoints | HTTP/HTTPS URLs, connection strings | Resource overview |
+| CloudWatch Logs | Execution and audit trail | CloudWatch Log groups |
+| Metrics | Performance data | CloudWatch Metrics |
+
+## Key Concepts
+| Concept | Explanation |
+|---------|-------------|
+| IAM Role | AWS identity for services â€” no static credentials |
+| Security Group | Virtual firewall for EC2/RDS â€” stateful |
+| VPC | Isolated network â€” your private AWS cloud |
+| Region | Geographic AWS datacenter location |
+| Availability Zone | Isolated datacenters within a region |
+| CloudWatch | AWS monitoring and logging service |
+| Free Tier | AWS free usage limits per service per month |

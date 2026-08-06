@@ -301,7 +301,7 @@ aws iam create-access-key --user-name alice
 # Update application with new key
 aws iam delete-access-key \
   --user-name alice \
-  --access-key-id AKIAIOSFODNN7EXAMPLE
+  --access-key-id YOUR_ACCESS_KEY_ID
 
 # 3. Use IAM roles instead of access keys for EC2/Lambda
 # 4. Never use root account for daily operations

@@ -245,3 +245,16 @@ ssh -i ~/.ssh/lab_key root@<container-ip>
 - [ ] Log analysis output (grep results)
 - [ ] Cron log showing scheduled entries
 - [ ] SSH key-based login success
+
+# AWS CLI Quick Reference
+
+`ash
+# Verify setup
+aws sts get-caller-identity
+aws configure list
+
+# Common commands
+aws ec2 describe-instances --output table
+aws s3 ls
+aws lambda list-functions --output table
+`

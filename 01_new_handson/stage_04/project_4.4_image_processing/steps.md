@@ -15,9 +15,9 @@ docker run --rm \
 # Zip the layer
 cd layer && zip -r ../pillow-layer.zip python/ && cd ..
 
-# Option B: Use pip with platform flag
+# Option B: Use pip with platform flag (no Docker)
 pip install Pillow \
-  --platform mlinux_2_x86_64 \
+  --platform manylinux2014_x86_64 \
   --target layer/python \
   --implementation cp \
   --python-version 3.11 \

@@ -1,126 +1,169 @@
 # Steps — Project 9.9 Redshift Data Warehouse
+# PowerShell (Windows)
 
-## Phase 1 — Deploy
+---
 
-```bash
-cd terraform
-terraform init
-terraform apply \
-  -var="admin_password=Admin@1234!" \
-  -var="vpc_id=vpc-xxxxxxxxxx" \
-  -var='private_subnet_ids=["subnet-xxx","subnet-yyy"]'
+## Phase 0 — Set Variables
 
-ENDPOINT=$(terraform output -raw redshift_endpoint)
-IAM_ROLE=$(terraform output -raw iam_role_arn)
+```powershell
+cd D:\1.projects\AI\my-aws\01_new_handson\stage_09\project_9.9_redshift
+
+$REGION     = "us-east-1"
+$ACCOUNT    = aws sts get-caller-identity --query Account --output text
+$BUCKET     = "handson-data-lake-$ACCOUNT"
+$NS_NAME    = "handson-namespace"
+$WG_NAME    = "handson-workgroup"
+$ROLE_NAME  = "handson-redshift-role"
+$DB         = "analytics"
+$ADMIN_USER = "admin"
+$ADMIN_PASS = "Admin@1234!"   # CHANGE THIS
+
+$VPC_ID     = aws ec2 describe-vpcs --query "Vpcs[?IsDefault==\`true\`].VpcId" --output text
+$SUBNET_IDS = (aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" `
+               --query "Subnets[0:2].SubnetId" --output text) -split "`t"
+Write-Host "Account: $ACCOUNT | VPC: $VPC_ID"
 ```
 
 ---
 
-## Phase 2 — Connect to Redshift
+## Phase 1 — Create IAM Role
 
-```bash
-# Install psql client
-sudo apt-get install -y postgresql-client
+```powershell
+@'
+{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"redshift.amazonaws.com"},"Action":"sts:AssumeRole"}]}
+'@ | Out-File "$env:TEMP\rs-trust.json" -Encoding utf8
 
-# Connect
-psql -h $ENDPOINT -p 5439 -U admin -d analytics
+aws iam create-role --role-name $ROLE_NAME `
+  --assume-role-policy-document "file://$env:TEMP\rs-trust.json"
+aws iam attach-role-policy --role-name $ROLE_NAME `
+  --policy-arn "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+aws iam attach-role-policy --role-name $ROLE_NAME `
+  --policy-arn "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess"
+
+$ROLE_ARN = aws iam get-role --role-name $ROLE_NAME --query "Role.Arn" --output text
+Write-Host "Role ARN: $ROLE_ARN"
 ```
 
 ---
 
-## Phase 3 — Create Tables and Load Data
+## Phase 2 — Create Security Group
 
-```sql
--- Create orders fact table
-CREATE TABLE fct_orders (
-    order_id     VARCHAR(50)    NOT NULL,
-    customer_id  VARCHAR(50)    NOT NULL,
-    product      VARCHAR(100),
-    amount       DECIMAL(10,2)  NOT NULL,
-    order_date   DATE           NOT NULL,
-    order_year   SMALLINT,
-    order_month  SMALLINT
-)
-DISTSTYLE KEY
-DISTKEY (customer_id)    -- distribute by customer for join performance
-SORTKEY (order_date);    -- sort by date for range queries
+```powershell
+$SG_ID = aws ec2 create-security-group `
+  --group-name "handson-redshift-sg" `
+  --description "Redshift port 5439" `
+  --vpc-id $VPC_ID --query "GroupId" --output text
 
--- Load from S3 using COPY (bulk load — much faster than INSERT)
-COPY fct_orders
-FROM 's3://handson-data-lake-ACCOUNTID/processed/orders/'
-IAM_ROLE 'arn:aws:iam::ACCOUNTID:role/handson-redshift-role'
-FORMAT AS PARQUET;
-
--- Verify load
-SELECT COUNT(*) FROM fct_orders;
-SELECT * FROM fct_orders LIMIT 5;
+$VPC_CIDR = aws ec2 describe-vpcs --vpc-ids $VPC_ID `
+  --query "Vpcs[0].CidrBlock" --output text
+aws ec2 authorize-security-group-ingress `
+  --group-id $SG_ID --protocol tcp --port 5439 --cidr $VPC_CIDR
+Write-Host "SG: $SG_ID allows port 5439 from $VPC_CIDR"
 ```
 
 ---
 
-## Phase 4 — Run Analytical Queries
+## Phase 3 — Create Namespace + Workgroup
 
-```sql
--- Revenue by product (fast — columnar storage)
-SELECT
-    product,
-    COUNT(*) AS order_count,
-    SUM(amount) AS total_revenue,
-    AVG(amount) AS avg_order_value
-FROM fct_orders
-GROUP BY product
-ORDER BY total_revenue DESC;
+```powershell
+# Namespace
+aws redshift-serverless create-namespace `
+  --namespace-name $NS_NAME --admin-username $ADMIN_USER `
+  --admin-user-password $ADMIN_PASS --db-name $DB `
+  --iam-roles $ROLE_ARN --tags "Key=Project,Value=handson"
 
--- Monthly revenue trend
-SELECT
-    order_year,
-    order_month,
-    SUM(amount) AS monthly_revenue,
-    COUNT(*) AS order_count
-FROM fct_orders
-GROUP BY order_year, order_month
-ORDER BY order_year, order_month;
+# Wait for AVAILABLE
+for ($i=0; $i -lt 20; $i++) {
+  $ST = aws redshift-serverless get-namespace `
+    --namespace-name $NS_NAME --query "namespace.status" --output text
+  if ($ST -eq "AVAILABLE") { break }
+  Write-Host "Namespace: $ST"; Start-Sleep -Seconds 15
+}
 
--- Top customers by lifetime value
-SELECT
-    customer_id,
-    COUNT(*) AS total_orders,
-    SUM(amount) AS lifetime_value,
-    MIN(order_date) AS first_order,
-    MAX(order_date) AS last_order
-FROM fct_orders
-GROUP BY customer_id
-ORDER BY lifetime_value DESC
-LIMIT 10;
+# Workgroup
+aws redshift-serverless create-workgroup `
+  --namespace-name $NS_NAME --workgroup-name $WG_NAME `
+  --base-capacity 8 --subnet-ids $SUBNET_IDS `
+  --security-group-ids $SG_ID --publicly-accessible false `
+  --tags "Key=Project,Value=handson"
+
+# Wait for AVAILABLE (5-10 min)
+Write-Host "Waiting for workgroup (5-10 min)..."
+for ($i=0; $i -lt 40; $i++) {
+  $ST = aws redshift-serverless get-workgroup `
+    --workgroup-name $WG_NAME --query "workgroup.status" --output text
+  Write-Host "[$i] $ST"
+  if ($ST -eq "AVAILABLE") { break }
+  Start-Sleep -Seconds 15
+}
+
+$ENDPOINT = aws redshift-serverless get-workgroup `
+  --workgroup-name $WG_NAME --query "workgroup.endpoint.address" --output text
+Write-Host "Endpoint: $ENDPOINT"
 ```
 
 ---
 
-## Phase 5 — Redshift Spectrum (Query S3 Directly)
+## Phase 4 — Setup Tables + Load Data
 
-```sql
--- Create external schema pointing to Glue catalog
-CREATE EXTERNAL SCHEMA spectrum_schema
-FROM DATA CATALOG
-DATABASE 'handson_data_lake'
-IAM_ROLE 'arn:aws:iam::ACCOUNTID:role/handson-redshift-role'
-CREATE EXTERNAL DATABASE IF NOT EXISTS;
+```powershell
+pip install psycopg2-binary boto3
 
--- Query S3 data directly without loading
-SELECT * FROM spectrum_schema.orders LIMIT 10;
+$env:REDSHIFT_HOST     = $ENDPOINT
+$env:REDSHIFT_USER     = $ADMIN_USER
+$env:REDSHIFT_PASSWORD = $ADMIN_PASS
+$env:REDSHIFT_DB       = $DB
+$env:S3_BUCKET         = $BUCKET
+$env:IAM_ROLE_ARN      = $ROLE_ARN
 
--- Join Redshift table with S3 data
-SELECT r.customer_id, r.lifetime_value, s.product
-FROM fct_orders_summary r
-JOIN spectrum_schema.orders s ON r.customer_id = s.customer_id
-LIMIT 10;
+python code\redshift_operations.py setup
+# Expected: ✓ Schema ready, ✓ fact_orders, ✓ dim_date, ✓ populated
+
+python code\redshift_operations.py load
+# Expected: ✓ Load complete — N rows in fact_orders
+
+python code\redshift_operations.py report
+# Expected: 4 formatted analytics tables
+```
+
+---
+
+## Phase 5 — Query via Data API
+
+```powershell
+$QID = aws redshift-data execute-statement `
+  --workgroup-name $WG_NAME --database $DB `
+  --sql "SELECT product_id,COUNT(*) orders,SUM(total_amount) revenue FROM analytics.fact_orders GROUP BY 1 ORDER BY 3 DESC LIMIT 5;" `
+  --query "Id" --output text
+Start-Sleep -Seconds 5
+aws redshift-data get-statement-result --id $QID `
+  --query "Records[*][0:3][*].stringValue"
+```
+
+---
+
+## Phase 6 — Cleanup
+
+```powershell
+aws redshift-serverless delete-workgroup --workgroup-name $WG_NAME
+Start-Sleep -Seconds 120  # wait for workgroup deletion
+aws redshift-serverless delete-namespace --namespace-name $NS_NAME
+aws ec2 delete-security-group --group-id $SG_ID
+aws iam detach-role-policy --role-name $ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+aws iam detach-role-policy --role-name $ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess"
+aws iam delete-role --role-name $ROLE_NAME
+Write-Host "✅ Cleanup complete"
 ```
 
 ---
 
 ## Screenshots to Take
-- [ ] Redshift Serverless workgroup created
-- [ ] COPY command loading data from S3
-- [ ] Analytical query results (revenue by product)
-- [ ] Query execution time (sub-second for aggregations)
-- [ ] Redshift Spectrum querying S3 directly
+
+- [ ] IAM role `handson-redshift-role` with 2 policies attached
+- [ ] Workgroup `handson-workgroup` Status = Available
+- [ ] Workgroup details showing endpoint URL
+- [ ] Terminal: `setup` output — all ✓
+- [ ] Terminal: `load` — COPY complete + row count
+- [ ] Terminal: `report` — formatted analytics tables
+- [ ] Redshift Query Editor v2 — query result + execution time
+- [ ] CLI: Data API result for top products

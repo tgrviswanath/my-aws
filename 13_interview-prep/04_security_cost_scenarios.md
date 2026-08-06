@@ -8,18 +8,18 @@
 ```
 Immediate response (within minutes):
 1. Deactivate the exposed access key immediately
-   aws iam update-access-key --access-key-id AKIAIOSFODNN7EXAMPLE --status Inactive --user-name alice
+   aws iam update-access-key --access-key-id YOUR_ACCESS_KEY_ID --status Inactive --user-name alice
 
 2. Check CloudTrail for unauthorized usage
    aws cloudtrail lookup-events \
-     --lookup-attributes AttributeKey=AccessKeyId,AttributeValue=AKIAIOSFODNN7EXAMPLE \
+     --lookup-attributes AttributeKey=AccessKeyId,AttributeValue=YOUR_ACCESS_KEY_ID \
      --start-time 2024-01-01T00:00:00Z
 
 3. Create new access key for the developer
    aws iam create-access-key --user-name alice
 
 4. Delete the old key
-   aws iam delete-access-key --access-key-id AKIAIOSFODNN7EXAMPLE --user-name alice
+   aws iam delete-access-key --access-key-id YOUR_ACCESS_KEY_ID --user-name alice
 
 5. Review and revoke any resources created with the compromised key
 

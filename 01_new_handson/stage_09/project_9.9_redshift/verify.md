@@ -1,179 +1,204 @@
 # Verification & Validation — Project 9.9 Redshift Data Warehouse
 
+> Namespace: `handson-namespace` | Workgroup: `handson-workgroup`
+> Database: `analytics` | Port: 5439 | IAM Role: `handson-redshift-role`
+
 ---
 
 ## 1. AWS Console Verification
 
-| Resource | Where to check | Expected state |
-|---|---|---|
-| Redshift Serverless | Redshift → Serverless dashboard | Namespace + Workgroup listed, Status = **Available** |
-| Workgroup | Redshift Serverless → Workgroups | `handson-workgroup` Status = **Available** |
-| Query Editor | Redshift → Query Editor v2 | Can connect and run queries |
-| Tables | Query Editor → Schema browser | `fact_orders`, `dim_customers`, `dim_products` tables visible |
-| S3 IAM Role | IAM → Roles | Redshift role with S3 read access |
+| Check | Navigation | Expected |
+|-------|-----------|----------|
+| Namespace | Redshift → Serverless → Namespaces | `handson-namespace` Status = **Available** |
+| Workgroup | Redshift → Serverless → Workgroups | `handson-workgroup` Status = **Available** |
+| Endpoint | Workgroup → Details tab | URL ends in `.redshift-serverless.amazonaws.com` |
+| IAM role | IAM → Roles → `handson-redshift-role` | S3ReadOnly + GlueConsole attached |
+| Query Editor | Redshift → Query Editor v2 | Can run `SELECT 1;` |
+| Tables | Query Editor → Schema browser | `analytics.fact_orders` + `analytics.dim_date` |
+| Row count | `SELECT COUNT(*) FROM analytics.fact_orders` | > 0 after COPY |
 
-📸 Screenshot: Redshift Serverless workgroup Available  
-📸 Screenshot: Query Editor showing tables in analytics schema  
-📸 Screenshot: `redshift_operations.py report` output with analytics results
+📸 Screenshot: Workgroup Status = Available + endpoint URL
+📸 Screenshot: Query Editor showing tables + revenue query result
+📸 Screenshot: Terminal `load` output showing row count
 
 ---
 
-## 2. AWS CLI Verification
+## 2. CLI Verification (PowerShell)
 
-```bash
-# 2.1 Confirm Redshift Serverless workgroup is available
-aws redshift-serverless get-workgroup \
-  --workgroup-name handson-workgroup \
+```powershell
+Write-Host "=== REDSHIFT VERIFICATION ===" -ForegroundColor Cyan
+
+# Workgroup status
+aws redshift-serverless get-workgroup --workgroup-name $WG_NAME `
   --query "workgroup.{Status:status,Endpoint:endpoint.address,Port:endpoint.port}"
-# Expected: status=AVAILABLE, endpoint populated
+# Expected: status=AVAILABLE, Endpoint=...amazonaws.com, Port=5439
 
-# 2.2 Confirm namespace exists
-aws redshift-serverless get-namespace \
-  --namespace-name handson-namespace \
-  --query "namespace.{Status:status,DBName:dbName,AdminUser:adminUsername}"
-# Expected: status=AVAILABLE
+# Namespace status
+aws redshift-serverless get-namespace --namespace-name $NS_NAME `
+  --query "namespace.{Status:status,DB:dbName,Admin:adminUsername}"
+# Expected: status=AVAILABLE, DB=analytics, Admin=admin
 
-# 2.3 Set connection env vars
-export REDSHIFT_HOST=$(aws redshift-serverless get-workgroup \
-  --workgroup-name handson-workgroup \
-  --query "workgroup.endpoint.address" --output text)
-export REDSHIFT_USER=admin
-export REDSHIFT_DB=analytics
+# Row counts via Data API
+$QID = aws redshift-data execute-statement `
+  --workgroup-name $WG_NAME --database $DB `
+  --sql "SELECT 'fact_orders' tbl,COUNT(*) n FROM analytics.fact_orders UNION ALL SELECT 'dim_date',COUNT(*) FROM analytics.dim_date;" `
+  --query "Id" --output text
+Start-Sleep -Seconds 5
+aws redshift-data describe-statement --id $QID `
+  --query "{Status:Status,Rows:ResultRows}"
+# Expected: Status=FINISHED, Rows=2
 
-# 2.4 Create tables
-python code/redshift_operations.py setup
-# Expected: Tables created: fact_orders, dim_customers, dim_products
+aws redshift-data get-statement-result --id $QID `
+  --query "Records[*][*].stringValue"
+# Expected: [["fact_orders","N"],["dim_date","4018"]]
 
-# 2.5 Load data from S3
-BUCKET=$(aws s3 ls | grep handson-data-lake | awk '{print $3}')
-python code/redshift_operations.py load \
-  --bucket $BUCKET \
-  --prefix processed/orders/
-# Expected: COPY command completed, N rows loaded
+# Python operations
+python code\redshift_operations.py setup
+python code\redshift_operations.py load
+python code\redshift_operations.py report
 
-# 2.6 Run analytical queries
-python code/redshift_operations.py query
-# Expected: query results printed
-
-# 2.7 Print full analytics report
-python code/redshift_operations.py report
-# Expected: daily revenue, top products, customer LTV printed
-
-# 2.8 Verify via Redshift Data API
-QUERY_ID=$(aws redshift-data execute-statement \
-  --workgroup-name handson-workgroup \
-  --database analytics \
-  --sql "SELECT COUNT(*) as total_orders, SUM(amount) as total_revenue FROM fact_orders;" \
-  --query "Id" --output text)
-sleep 5
-aws redshift-data get-statement-result \
-  --id $QUERY_ID \
-  --query "Records[0][*].longValue"
-# Expected: total_orders and total_revenue values
+Write-Host "=== COMPLETE ===" -ForegroundColor Green
 ```
 
 ---
 
-## 3. Terraform State Verification
+## 3. End-to-End Health Check
 
-```bash
-cd terraform
+```powershell
+Write-Host "=== HEALTH CHECK ===" -ForegroundColor Cyan
 
-terraform state list
-# Expected:
-# aws_redshiftserverless_namespace.main
-# aws_redshiftserverless_workgroup.main
-# aws_iam_role.redshift
-# aws_iam_role_policy_attachment.redshift_s3
-# aws_security_group.redshift
-# aws_vpc_endpoint.redshift (if private access)
+# 1. Workgroup available
+$ST = aws redshift-serverless get-workgroup `
+  --workgroup-name $WG_NAME --query "workgroup.status" --output text
+Write-Host "[1] Workgroup: $ST"
 
-terraform state show aws_redshiftserverless_workgroup.main
-# Shows: workgroup_name, namespace_name, base_capacity (RPU)
+# 2. fact_orders has rows
+$QID = aws redshift-data execute-statement `
+  --workgroup-name $WG_NAME --database $DB `
+  --sql "SELECT COUNT(*) FROM analytics.fact_orders;" `
+  --query "Id" --output text
+Start-Sleep -Seconds 5
+$CNT = aws redshift-data get-statement-result --id $QID `
+  --query "Records[0][0].longValue" --output text
+Write-Host "[2] fact_orders rows: $CNT"
 
-terraform output redshift_endpoint
-# Expected: handson-workgroup.xxx.us-east-1.redshift-serverless.amazonaws.com
+# 3. Top product query works
+$QID2 = aws redshift-data execute-statement `
+  --workgroup-name $WG_NAME --database $DB `
+  --sql "SELECT product_id, SUM(total_amount) AS rev FROM analytics.fact_orders GROUP BY 1 ORDER BY 2 DESC LIMIT 1;" `
+  --query "Id" --output text
+Start-Sleep -Seconds 5
+$TOP = aws redshift-data get-statement-result --id $QID2 `
+  --query "Records[0][*].stringValue" --output text
+Write-Host "[3] Top product: $TOP"
 
-terraform plan
-# Expected: No changes. Infrastructure is up-to-date.
+# 4. dim_date joined query
+$QID3 = aws redshift-data execute-statement `
+  --workgroup-name $WG_NAME --database $DB `
+  --sql "SELECT d.day_name, COUNT(*) FROM analytics.fact_orders o JOIN analytics.dim_date d ON d.full_date=o.order_date GROUP BY 1 ORDER BY 2 DESC LIMIT 3;" `
+  --query "Id" --output text
+Start-Sleep -Seconds 5
+$DAYS = aws redshift-data get-statement-result --id $QID3 `
+  --query "Records[*][0].stringValue" --output text
+Write-Host "[4] Top order days: $DAYS"
+
+Write-Host "=== HEALTH CHECK COMPLETE ===" -ForegroundColor Green
 ```
 
 ---
 
-## 4. Health Check — Analytics Queries
+## 4. Expected Successful Outputs
 
-```bash
-# Run all analytical queries via Redshift Data API
-QUERIES=(
-  "SELECT COUNT(*) FROM fact_orders;"
-  "SELECT product_name, SUM(amount) as revenue FROM fact_orders JOIN dim_products USING(product_id) GROUP BY product_name ORDER BY revenue DESC LIMIT 5;"
-  "SELECT DATE_TRUNC('day', order_date) as day, SUM(amount) as daily_revenue FROM fact_orders GROUP BY 1 ORDER BY 1 DESC LIMIT 7;"
-)
+**`redshift_operations.py setup`:**
+```
+Creating schema: analytics  ✓
+Creating table: analytics.fact_orders  ✓
+Creating table: analytics.dim_date  ✓
+Populating dim_date (2020–2030)...  ✓
+Setup complete
+```
 
-for SQL in "${QUERIES[@]}"; do
-  QUERY_ID=$(aws redshift-data execute-statement \
-    --workgroup-name handson-workgroup \
-    --database analytics \
-    --sql "$SQL" \
-    --query "Id" --output text)
-  sleep 3
-  STATE=$(aws redshift-data describe-statement \
-    --id $QUERY_ID \
-    --query "Status" --output text)
-  echo "Query: $SQL"
-  echo "Status: $STATE"
-  [ "$STATE" = "FINISHED" ] && echo "✅ Query succeeded" || echo "❌ Query failed"
-  echo "---"
-done
+**`redshift_operations.py load`:**
+```
+Source: s3://handson-data-lake-.../processed/orders/
+Running COPY command...
+✓ Load complete — 1,000 total rows in fact_orders
+VACUUM SORT ONLY  ✓
+ANALYZE  ✓
+Post-load optimization complete
+```
+
+**`redshift_operations.py report`:**
+```
+Top 10 Products by Revenue
++--------------+-------------+-----------+---------------+-----------+
+| PRODUCT_ID   | ORDER_COUNT | UNITS_SOLD | TOTAL_REVENUE | AVG_PRICE |
++--------------+-------------+-----------+---------------+-----------+
+| PROD-A001    | 234         | 468       | 6789.00       | 29.00     |
+| ...
+(10 row(s))
+
+Customer Lifetime Value (Top 20)
++-------------+-------------+----------------+ ...
 ```
 
 ---
 
-## 5. Expected Successful Outputs
+## 5. Verification Checklist
 
-**CLI — get-workgroup:**
-```json
-{ "status": "AVAILABLE", "Endpoint": "handson-workgroup.xxx.us-east-1.redshift-serverless.amazonaws.com", "Port": 5439 }
-```
-
-**redshift_operations.py report:**
-```
-=== Analytics Report ===
-Total Orders: 1,000
-Total Revenue: $49,823.50
-
-Top 5 Products by Revenue:
-  1. Widget A    $12,450.00
-  2. Widget B    $9,823.50
-  3. Widget C    $8,234.00
-
-Daily Revenue (last 7 days):
-  2024-01-15: $1,234.56
-  2024-01-14: $1,102.34
-  ...
-
-Customer LTV (top 5):
-  CUST-001: $892.50 (12 orders)
-  CUST-002: $756.00 (9 orders)
-```
-
-**terraform output:**
-```
-redshift_endpoint = "handson-workgroup.xxx.us-east-1.redshift-serverless.amazonaws.com"
-redshift_port     = "5439"
-```
-
----
-
-## 6. Verification Checklist
-
-- [ ] Redshift Serverless namespace Status = AVAILABLE
-- [ ] Redshift Serverless workgroup `handson-workgroup` Status = AVAILABLE
-- [ ] Redshift endpoint accessible (port 5439)
-- [ ] IAM role has S3 read access for COPY command
-- [ ] `redshift_operations.py setup` creates tables without error
-- [ ] `redshift_operations.py load` COPY command succeeds, rows loaded > 0
-- [ ] `redshift_operations.py query` returns analytical results
-- [ ] `redshift_operations.py report` prints daily revenue, top products, LTV
+- [ ] Namespace `handson-namespace` Status = AVAILABLE
+- [ ] Workgroup `handson-workgroup` Status = AVAILABLE, port 5439
+- [ ] IAM role `handson-redshift-role`: AmazonS3ReadOnlyAccess + AWSGlueConsoleFullAccess
+- [ ] `setup` completes — schema + 2 tables created
+- [ ] `dim_date` has ~4018 rows (2020–2030 dates)
+- [ ] `load` COPY succeeds — `fact_orders` row count > 0
+- [ ] `VACUUM SORT ONLY` runs without error
+- [ ] `ANALYZE` runs without error
+- [ ] `report` prints 4 formatted query result tables
 - [ ] Redshift Data API query returns results
-- [ ] `terraform plan` shows no changes
+- [ ] Query Editor v2 can connect and run SQL
+
+---
+
+## Section 1: Prerequisites Verified
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 1 | AWS CLI installed | ws --version returns 2.x | Download from aws.amazon.com/cli |
+| 2 | Logged in | ws sts get-caller-identity returns JSON | Run ws configure |
+| 3 | Correct region | ws configure get region returns us-east-1 | Run ws configure again |
+
+`ash
+aws sts get-caller-identity
+aws configure list
+`
+
+## Section 2: Resources Created
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 4 | Primary resource | Status: Active/Running/Available | Re-run creation command |
+| 5 | Configuration applied | Settings match intended values | Check resource details |
+| 6 | Service responding | Expected response code/output | Check security groups and logs |
+
+`ash
+# Verify resources exist
+aws ec2 describe-instances --query 'Reservations[*].Instances[*].{ID:InstanceId,State:State.Name}' --output table
+`
+
+## Section 3: Validation Complete
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 7 | End-to-end test | Correct output from service | Check CloudWatch Logs |
+| 8 | No errors in logs | Zero error entries | Review CloudWatch Log groups |
+
+## Common Issues
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| AccessDenied error | Missing IAM permissions | Add required policy to IAM user/role |
+| Resource not found | Wrong region or name | Check ws configure get region |
+| Timeout connecting | Security group blocking | Add inbound rule for required port |
+| Quota exceeded | Service limit reached | Request limit increase or use different region |
+| Authentication failure | Expired credentials | Run ws configure with fresh access keys |

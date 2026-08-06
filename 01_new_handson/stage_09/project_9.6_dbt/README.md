@@ -1,75 +1,133 @@
 # Project 9.6 — dbt Transformation Pipeline
 
 ## What This Does
-Uses dbt (data build tool) to transform raw data in Athena/Redshift into clean, tested, documented analytical models. dbt is the standard tool for the "T" in ELT.
 
-## dbt Project Structure
+Uses dbt Core (free, open source) to transform raw orders data in Athena into clean,
+tested, documented analytical tables. dbt is the industry standard for the "T" in ELT.
+
+## Model Lineage
+
 ```
-dbt_project/
-├── models/
-│   ├── staging/          ← clean raw data (1:1 with source tables)
-│   │   ├── stg_orders.sql
-│   │   └── stg_customers.sql
-│   ├── intermediate/     ← business logic
-│   │   └── int_order_items.sql
-│   └── marts/            ← final analytical tables
-│       ├── fct_orders.sql
-│       └── dim_customers.sql
-├── tests/                ← data quality tests
-├── macros/               ← reusable SQL snippets
-└── dbt_project.yml
+Source: handson_data_lake.orders  (raw CSV → Glue Catalog from Project 9.1)
+    │
+    │  {{ source('raw', 'orders') }}
+    ▼
+stg_orders  (VIEW)             models/staging/stg_orders.sql
+    │  Clean: cast types, normalize case, filter nulls
+    │
+    │  {{ ref('stg_orders') }}
+    ▼
+fct_orders  (INCREMENTAL TABLE) models/marts/fct_orders.sql
+    │  Business logic: unit_price, order_tier segmentation
+    │  Tests: not_null, unique, accepted_values (schema.yml)
+    ▼
+Athena queries → BI dashboards / Redshift Spectrum
 ```
 
-## Key Concepts
-| Concept | Description |
-|---------|-------------|
-| Model | A SQL SELECT statement that becomes a table/view |
-| Materialization | table, view, incremental, ephemeral |
-| Test | Assert data quality (not null, unique, accepted values) |
-| Source | Reference to raw data tables |
-| Ref | Reference to another dbt model (builds DAG) |
-| Macro | Reusable Jinja SQL function |
+## Files
 
-## How to Run
-```bash
+| File | Purpose |
+|------|---------|
+| `models/staging/stg_orders.sql` | Staging: clean raw orders → VIEW |
+| `models/marts/fct_orders.sql` | Mart: business logic → INCREMENTAL TABLE |
+| `models/marts/schema.yml` | Tests + docs for fct_orders |
+
+## Pipeline Input / Output
+
+| | Detail |
+|-|--------|
+| **Input** | `handson_data_lake.orders` (Glue table over S3 raw CSV) |
+| **stg_orders output** | VIEW — cleaned, cast, normalized (product_name, order_status, order_amount_usd) |
+| **fct_orders output** | TABLE — adds unit_price_usd, order_tier; incremental merge on order_id |
+
+## Quick Start
+
+```powershell
+# 1. Install
 pip install dbt-athena-community
+
+# 2. Configure connection
+# Create ~/.dbt/profiles.yml (see GUIDE.md Phase 2)
+
+# 3. Go to dbt project
 cd dbt_project
-dbt run          # build all models
-dbt test         # run all tests
-dbt docs generate && dbt docs serve  # view documentation
-```
 
-## Lessons Learned
-- dbt is SQL-first — no Python needed for transformations
-- Incremental models: only process new/changed rows — much faster than full refresh
-- `ref()` function builds the dependency DAG automatically
-- dbt tests: `not_null`, `unique`, `accepted_values`, `relationships` — run after every build
-- dbt docs: auto-generated documentation with lineage graph — share with stakeholders
+# 4. Create project files
+# Create dbt_project.yml, models/staging/schema.yml, packages.yml (see GUIDE.md Phase 3)
 
-## Code
-
-### `dbt_project/` — dbt transformation models
-
-```bash
-pip install dbt-athena-community
-# or: pip install dbt-redshift
-
-# Install dependencies
-cd dbt_project
+# 5. Install packages and test connection
 dbt deps
-
-# Test connection
 dbt debug
 
-# Run all models
+# 6. Run models
 dbt run
 
-# Run tests
+# 7. Test data quality
 dbt test
 
-# Generate and serve documentation
-dbt docs generate
-dbt docs serve
+# 8. View documentation
+dbt docs generate && dbt docs serve
 ```
 
-Models: `stg_orders` (staging) → `int_orders_enriched` (intermediate) → `fct_daily_revenue` (fact table).
+## AWS Resources Used
+
+| Resource | Name | Cost |
+|----------|------|------|
+| Athena Workgroup | `handson-dbt` | ~$0/month (per query) |
+| S3 Staging Bucket | `handson-dbt-staging-ACCOUNT` | ~$0.01/month |
+| Glue Data Catalog | `handson_data_lake` | ✅ Free |
+| dbt Core | local tool | ✅ Free |
+
+## Key Concepts
+
+- **`source()`** — references raw tables outside dbt (shows in lineage graph)
+- **`ref()`** — references another dbt model (builds execution order DAG)
+- **`is_incremental()`** — guards WHERE clause for incremental runs only
+- **`materialized='incremental'`** — only processes new/changed rows
+- **`unique_key='order_id'`** — merge strategy key (upsert)
+- **schema.yml tests** — `not_null`, `unique`, `accepted_values` run after every build
+
+## Cost
+
+~$0.01/session | dbt Core is 100% free
+
+## Full Guide
+
+**→ See [GUIDE.md](GUIDE.md)**
+
+---
+
+## Input / Output
+
+### Input
+| Type | Description | Example |
+|------|-------------|---------|
+| AWS Account | Active subscription with required permissions | IAM user or role |
+| Configuration | Resource settings | Region, names, sizes |
+| Source Data | Files or code to deploy | Application source, data files |
+
+### Output
+| Type | Description | Access |
+|------|-------------|--------|
+| AWS Resources | Deployed and running services | AWS Console / CLI |
+| Endpoints | Service URLs and connection strings | Resource overview page |
+| Logs | Execution and audit logs | CloudWatch Logs |
+
+## Quick Start
+`ash
+# Configure AWS CLI
+aws configure
+
+# Set region
+export AWS_DEFAULT_REGION=us-east-1
+
+# Create resource group
+aws ec2 describe-regions --output table
+`
+
+## Lessons Learned
+- Always tag AWS resources for cost tracking and organization
+- Use IAM roles instead of access keys wherever possible
+- Delete resources after learning to avoid unexpected charges
+- Enable CloudWatch logging for all services in production
+- Use the free tier for all lab exercises to minimize cost

@@ -6,12 +6,12 @@
 
 | Resource | Where to check | Expected state |
 |---|---|---|
-| API Gateway | API Gateway → APIs | HTTP API exists, Stage = `$default` |
-| Lambda Function | Lambda → Functions | `handson-items` function, Runtime = Python 3.11 |
+| API Gateway | API Gateway → APIs | `handson-api-gateway` HTTP API, Stage = `$default` |
+| Lambda Function | Lambda → Functions | `handson-api-handler`, Runtime = Python 3.11 |
 | Lambda Trigger | Lambda → Configuration → Triggers | API Gateway trigger attached |
-| DynamoDB Table | DynamoDB → Tables | `handson-items`, Status = **Active** |
-| Lambda Logs | CloudWatch → Log Groups | `/aws/lambda/handson-items` exists |
-| IAM Role | IAM → Roles | Lambda execution role with DynamoDB policy |
+| DynamoDB Table | DynamoDB → Tables | `handson-api-items`, Status = **Active** |
+| Lambda Logs | CloudWatch → Log Groups | `/aws/lambda/handson-api-handler` exists |
+| IAM Role | IAM → Roles | `handson-api-lambda-role` with DynamoDB policy |
 
 📸 Screenshot: API Gateway showing invoke URL  
 📸 Screenshot: Lambda function with API Gateway trigger  
@@ -29,7 +29,7 @@ TABLE=$(cd terraform && terraform output -raw table_name)
 # 2.1 Lambda exists and active
 aws lambda get-function --function-name $LAMBDA_NAME \
   --query "Configuration.{State:State,Runtime:Runtime,Timeout:Timeout,Memory:MemorySize}"
-# Expected: State=Active, Runtime=python3.11
+# Expected: State=Active, Runtime=python3.11, Timeout=30
 
 # 2.2 DynamoDB table active
 aws dynamodb describe-table --table-name $TABLE \
@@ -46,7 +46,7 @@ echo "Created item: $ITEM_ID"
 
 # 2.4 GET — list items
 curl -s $API_URL/items | python3 -m json.tool
-# Expected: array containing the created item
+# Expected: {"items": [{...}], "count": 1}
 
 # 2.5 GET — specific item
 curl -s $API_URL/items/$ITEM_ID | python3 -m json.tool
@@ -60,17 +60,17 @@ curl -s -X PUT $API_URL/items/$ITEM_ID \
 
 # 2.7 DELETE — remove item
 curl -s -X DELETE $API_URL/items/$ITEM_ID | python3 -m json.tool
-# Expected: 200 with success message
+# Expected: {"message": "Item $ITEM_ID deleted"}
 
 # 2.8 GET after delete — 404
 curl -s $API_URL/items/$ITEM_ID | python3 -m json.tool
-# Expected: {"message": "Item not found"} with 404 status
+# Expected: {"error": "Item $ITEM_ID not found"} with 404 status
 
 # 2.9 Error cases
 curl -s -X POST $API_URL/items \
   -H "Content-Type: application/json" \
   -d '{"description":"missing name"}' | python3 -m json.tool
-# Expected: 400 Bad Request
+# Expected: {"error": "Field 'name' is required"} with 400
 ```
 
 ---
@@ -85,15 +85,22 @@ terraform state list
 # aws_apigatewayv2_api.main
 # aws_apigatewayv2_stage.default
 # aws_apigatewayv2_integration.lambda
-# aws_apigatewayv2_route.items
-# aws_lambda_function.handler
-# aws_lambda_permission.apigw
+# aws_apigatewayv2_route.list
+# aws_apigatewayv2_route.get
+# aws_apigatewayv2_route.create
+# aws_apigatewayv2_route.update
+# aws_apigatewayv2_route.delete
+# aws_lambda_function.api
+# aws_lambda_permission.api_gw
 # aws_dynamodb_table.items
-# aws_iam_role.lambda_exec
-# aws_iam_role_policy_attachment.dynamodb
+# aws_iam_role.lambda
+# aws_iam_role_policy_attachment.lambda_basic
+# aws_iam_role_policy.dynamodb
+# aws_cloudwatch_log_group.lambda
+# aws_cloudwatch_log_group.api_gw
 
-terraform state show aws_lambda_function.handler
-# Shows: runtime=python3.11, timeout, environment variables (TABLE_NAME)
+terraform state show aws_lambda_function.api
+# Shows: function_name=handson-api-handler, runtime=python3.11, timeout=30
 
 terraform output
 # Expected: api_url, lambda_name, table_name
@@ -130,27 +137,27 @@ aws logs filter-log-events \
 
 **POST /items (201):**
 ```json
-{ "id": "abc-123-uuid", "name": "Test Item", "description": "verify test", "created_at": "2024-01-01T12:00:00Z" }
+{ "id": "abc-123-uuid", "name": "Test Item", "description": "verify test", "created_at": "2024-01-01T12:00:00Z", "updated_at": "2024-01-01T12:00:00Z" }
 ```
 
 **GET /items (200):**
 ```json
-[{ "id": "abc-123-uuid", "name": "Test Item", "description": "verify test" }]
+{ "items": [{ "id": "abc-123-uuid", "name": "Test Item", "description": "verify test" }], "count": 1 }
 ```
 
 **DELETE /items/{id} (200):**
 ```json
-{ "message": "Item deleted" }
+{ "message": "Item abc-123-uuid deleted" }
 ```
 
 **GET /items/{id} after delete (404):**
 ```json
-{ "message": "Item not found" }
+{ "error": "Item abc-123-uuid not found" }
 ```
 
 **POST missing name (400):**
 ```json
-{ "message": "name is required" }
+{ "error": "Field 'name' is required" }
 ```
 
 ---
@@ -158,16 +165,61 @@ aws logs filter-log-events \
 ## 6. Verification Checklist
 
 - [ ] API Gateway HTTP API deployed with invoke URL
-- [ ] Lambda function state = Active, runtime = Python 3.11
-- [ ] DynamoDB table status = ACTIVE, billing = PAY_PER_REQUEST
+- [ ] Lambda function `handson-api-handler` state = Active, runtime = Python 3.11
+- [ ] DynamoDB table `handson-api-items` status = ACTIVE, billing = PAY_PER_REQUEST
 - [ ] Lambda has API Gateway trigger
-- [ ] Lambda execution role has DynamoDB read/write permissions
-- [ ] POST /items returns 201 with item ID
-- [ ] GET /items returns array of items
+- [ ] Lambda execution role `handson-api-lambda-role` has DynamoDB read/write permissions
+- [ ] POST /items returns 201 with item id
+- [ ] GET /items returns `{"items": [...], "count": N}`
 - [ ] GET /items/{id} returns specific item
 - [ ] PUT /items/{id} updates item fields
-- [ ] DELETE /items/{id} returns 200
-- [ ] GET /items/{id} after delete returns 404
-- [ ] POST without `name` returns 400
-- [ ] CloudWatch log group `/aws/lambda/handson-items` exists
+- [ ] DELETE /items/{id} returns 200 with `{"message": "Item {id} deleted"}`
+- [ ] GET /items/{id} after delete returns 404 with `{"error": "Item {id} not found"}`
+- [ ] POST without `name` returns 400 with `{"error": "Field 'name' is required"}`
+- [ ] CloudWatch log group `/aws/lambda/handson-api-handler` exists
 - [ ] `terraform plan` shows no changes
+
+---
+
+## Section 1: Prerequisites Verified
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 1 | AWS CLI installed | ws --version returns 2.x | Download from aws.amazon.com/cli |
+| 2 | Logged in | ws sts get-caller-identity returns JSON | Run ws configure |
+| 3 | Correct region | ws configure get region returns us-east-1 | Run ws configure again |
+
+`ash
+aws sts get-caller-identity
+aws configure list
+`
+
+## Section 2: Resources Created
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 4 | Primary resource | Status: Active/Running/Available | Re-run creation command |
+| 5 | Configuration applied | Settings match intended values | Check resource details |
+| 6 | Service responding | Expected response code/output | Check security groups and logs |
+
+`ash
+# Verify resources exist
+aws ec2 describe-instances --query 'Reservations[*].Instances[*].{ID:InstanceId,State:State.Name}' --output table
+`
+
+## Section 3: Validation Complete
+
+| # | Check | Expected | Fix |
+|---|-------|----------|-----|
+| 7 | End-to-end test | Correct output from service | Check CloudWatch Logs |
+| 8 | No errors in logs | Zero error entries | Review CloudWatch Log groups |
+
+## Common Issues
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| AccessDenied error | Missing IAM permissions | Add required policy to IAM user/role |
+| Resource not found | Wrong region or name | Check ws configure get region |
+| Timeout connecting | Security group blocking | Add inbound rule for required port |
+| Quota exceeded | Service limit reached | Request limit increase or use different region |
+| Authentication failure | Expired credentials | Run ws configure with fresh access keys |

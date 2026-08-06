@@ -38,3 +38,31 @@ RPO: ~60 seconds (RDS replication lag)
 | Pilot Light | 30-60 min | Minutes | Medium |
 | Warm Standby | 5-15 min | Seconds | High |
 | Multi-site Active/Active | < 1 min | Near-zero | Very High |
+
+## Input / Output
+
+### Input
+| Type | Description | Example |
+|------|-------------|---------|
+| AWS Account | Active subscription | IAM user with required permissions |
+| Configuration | Service settings | CIDR blocks, instance types, regions |
+| Source Data | Application or data files | Docker images, SQL scripts, CSV files |
+
+### Output
+| Type | Description | Access |
+|------|-------------|--------|
+| AWS Resources | Deployed infrastructure | AWS Console or CLI |
+| Service Endpoints | HTTP/HTTPS URLs, connection strings | Resource overview |
+| CloudWatch Logs | Execution and audit trail | CloudWatch Log groups |
+| Metrics | Performance data | CloudWatch Metrics |
+
+## Key Concepts
+| Concept | Explanation |
+|---------|-------------|
+| IAM Role | AWS identity for services â€” no static credentials |
+| Security Group | Virtual firewall for EC2/RDS â€” stateful |
+| VPC | Isolated network â€” your private AWS cloud |
+| Region | Geographic AWS datacenter location |
+| Availability Zone | Isolated datacenters within a region |
+| CloudWatch | AWS monitoring and logging service |
+| Free Tier | AWS free usage limits per service per month |
